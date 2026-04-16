@@ -1,0 +1,54 @@
+/* Custom styles for Hitee
+******************************************************************************* */
+
+// Fix oversized icons
+.bx, .menu-icon i {
+    font-size: 1.25rem !important;
+}
+
+.layout-navbar .navbar-nav .nav-link i {
+    font-size: 1.5rem !important;
+}
+
+.app-brand .app-brand-logo img {
+    height: 34px;
+}
+
+.authentication-inner .app-brand-logo img {
+    height: 60px;
+}
+
+/* Social Buttons */
+.btn-facebook {
+    background-color: #1877F2 !important;
+    border: 1px solid #166fe5 !important;
+    color: #fff !important;
+}
+.btn-facebook:hover {
+    background-color: #166fe5 !important;
+    border-color: #145db2 !important;
+    color: #fff !important;
+}
+
+.btn-google {
+    background-color: #dd4b39 !important;
+    border: 1px solid #c23321 !important;
+    color: #fff !important;
+}
+.btn-google:hover {
+    background-color: #c23321 !important;
+    border-color: #a52b1c !important;
+    color: #fff !important;
+}
+.btn-google i {
+    color: #fff !important;
+}
+
+/* Ensure white text for table action buttons */
+.table .btn-icon {
+    color: #fff !important;
+}
+
+.table .btn-icon i {
+    color: #fff !important;
+}
