@@ -105,6 +105,68 @@ class SearchController extends Controller
     }
 
     /**
+     * Search route stops for Select2 AJAX.
+     */
+    public function stops(Request $request)
+    {
+        $search = $request->get('q');
+        $query = RouteStop::query();
+
+        if ($search) {
+            $query->where('stop_name', 'LIKE', "%$search%");
+        }
+
+        $stops = $query->groupBy('stop_name')->paginate(10);
+
+        return response()->json([
+            'results' => collect($stops->items())->map(fn($s) => ['id' => $s->stop_name, 'text' => $s->stop_name])->toArray(),
+            'pagination' => ['more' => $stops->hasMorePages()]
+        ]);
+    }
+
+    /**
+     * Find buses covering a specific from/to stop pair.
+     */
+    public function findBuses(Request $request)
+    {
+        $from = $request->get('from');
+        $to = $request->get('to');
+
+        if (!$from || !$to) return response()->json(['buses' => []]);
+
+        $routes = Route::whereHas('stops', function($q) use ($from) {
+            $q->where('stop_name', $from);
+        })->whereHas('stops', function($q) use ($to) {
+            $q->where('stop_name', $to);
+        })->with(['buses.merchant', 'stops'])->get();
+
+        $validBuses = collect();
+
+        foreach ($routes as $route) {
+            $stops = $route->stops->pluck('stop_name')->toArray();
+            $fromIdx = array_search($from, $stops);
+            $toIdx = array_search($to, $stops);
+
+            // Ensure 'from' comes before 'to' in the ordered sequence
+            if ($fromIdx !== false && $toIdx !== false && $fromIdx < $toIdx) {
+                foreach ($route->buses as $bus) {
+                    $validBuses->push([
+                        'id' => $bus->id,
+                        'name' => $bus->name,
+                        'number' => $bus->bus_number,
+                        'merchant' => $bus->merchant->name,
+                        'route' => $route->name,
+                        'fare' => $bus->activeFare ? $bus->activeFare->name : 'Standard',
+                        'url' => route('buses.show', $bus->id)
+                    ]);
+                }
+            }
+        }
+
+        return response()->json(['buses' => $validBuses->unique('id')->values()]);
+    }
+
+    /**
      * Find nearby assets within 5km for a given lat/lng.
      */
     public function nearby(Request $request)

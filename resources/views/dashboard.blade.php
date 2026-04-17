@@ -138,45 +138,81 @@
                 </div>
             </div>
             @if(auth()->user()->hasRole('super-admin'))
-            <div class="col-lg-6 col-md-12 col-6 mb-6">
+            <div class="col-lg-6 col-md-12 col-6 mb-4">
                 <div class="card">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar flex-shrink-0 me-2">
                                 <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-user"></i></span>
                             </div>
+                            <div class="card-info">
+                                <h6 class="mb-0">{{ $userCount }}</h6>
+                                <small class="text-muted">Users</small>
+                            </div>
                         </div>
-                        <p class="mb-1">Total Users</p>
-                        <h4 class="card-title mb-3">{{ $userCount }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12 col-6 mb-4">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar flex-shrink-0 me-2">
+                                <span class="avatar-initial rounded bg-label-warning"><i class="bx bx-credit-card"></i></span>
+                            </div>
+                            <div class="card-info">
+                                <h6 class="mb-0">{{ $cardCount }}</h6>
+                                <small class="text-muted">Cards</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12 col-6 mb-4">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar flex-shrink-0 me-2">
+                                <span class="avatar-initial rounded bg-label-success"><i class="bx bx-transfer-alt"></i></span>
+                            </div>
+                            <div class="card-info">
+                                <h6 class="mb-0">{{ $transactionCount }}</h6>
+                                <small class="text-muted">Txns</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             @endif
 
             @if(auth()->user()->hasRole('super-admin', 'merchant'))
-            <div class="col-lg-6 col-md-12 col-6 mb-6">
+            <div class="col-lg-6 col-md-12 col-6 mb-4">
                 <div class="card">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar flex-shrink-0 me-2">
                                 <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-bus"></i></span>
                             </div>
+                            <div class="card-info">
+                                <h6 class="mb-0">{{ $busCount }}</h6>
+                                <small class="text-muted">{{ auth()->user()->hasRole('merchant') ? 'Buses' : 'Fleet' }}</small>
+                            </div>
                         </div>
-                        <p class="mb-1">{{ auth()->user()->hasRole('merchant') ? 'My Buses' : 'Total Buses' }}</p>
-                        <h4 class="card-title mb-3">{{ $busCount }}</h4>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-12 col-6 mb-6">
+            <div class="col-lg-6 col-md-12 col-6 mb-4">
                 <div class="card">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar flex-shrink-0 me-2">
                                 <span class="avatar-initial rounded bg-label-info"><i class="bx bxs-parking"></i></span>
                             </div>
+                            <div class="card-info">
+                                <h6 class="mb-0">{{ $parkingCount }}</h6>
+                                <small class="text-muted">Parkings</small>
+                            </div>
                         </div>
-                        <p class="mb-1">{{ auth()->user()->hasRole('merchant') ? 'My Parkings' : 'Total Parkings' }}</p>
-                        <h4 class="card-title mb-3">{{ $parkingCount }}</h4>
                     </div>
                 </div>
             </div>
@@ -200,20 +236,57 @@
 
     <!-- Nearby for Customers -->
     @if(auth()->user()->hasRole('customers'))
-    <div class="col-12 mb-4">
-        <div class="card">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Route Finder</h5>
+            </div>
+            <div class="card-body">
+                <form id="routeSearchForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small">From Stop</label>
+                            <select id="search_from_stop" class="form-select select2-ajax-stops"></select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small">To Stop</label>
+                            <select id="search_to_stop" class="form-select select2-ajax-stops"></select>
+                        </div>
+                        <div class="col-12">
+                            <button type="button" id="btnSearchBuses" class="btn btn-primary w-100">Find Buses</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="route-search-results" class="mt-4" style="display:none;">
+                    <h6>Available Buses</h6>
+                    <div id="buses-list" class="list-group list-group-flush"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Nearby Assets (5km)</h5>
                 <button id="refreshNearby" class="btn btn-sm btn-outline-primary"><i class="bx bx-refresh"></i> Refresh</button>
             </div>
             <div class="card-body">
                 <div id="nearby-status" class="alert alert-info py-2 mb-3">
-                    <i class="bx bx-loader-alt bx-spin me-2"></i> Detecting your location...
+                    <i class="bx bx-loader-alt bx-spin me-2"></i> Detecting location...
                 </div>
                 <div class="row" id="nearby-assets-container">
                     <!-- Dynamic content -->
                 </div>
-                <div id="map" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 mb-4">
+        <div class="card">
+            <h5 class="card-header">Local Area Map</h5>
+            <div class="card-body">
+                <div id="map"></div>
             </div>
         </div>
     </div>
@@ -250,14 +323,27 @@
         });
 
         const markers = L.layerGroup().addTo(map);
+        const routeLayer = L.layerGroup().addTo(map);
 
         function renderMarkers(busList, parkingList) {
             markers.clearLayers();
+            routeLayer.clearLayers();
             const bounds = [];
+
             busList.forEach(bus => {
                 if (bus.latitude && bus.longitude) {
+                    let popupContent = `<strong>Bus: ${bus.name}</strong><br>No: ${bus.bus_number}`;
+
+                    if (bus.route && bus.route.stops && bus.route.stops.length > 0) {
+                        popupContent += `<br><span class="text-primary small">Route: ${bus.route.name}</span>`;
+
+                        // Draw Polyline for this bus route
+                        const latlngs = bus.route.stops.map(s => [s.latitude, s.longitude]);
+                        L.polyline(latlngs, {color: '#696cff', weight: 3, opacity: 0.4, dashArray: '5, 10'}).addTo(routeLayer);
+                    }
+
                     L.marker([bus.latitude, bus.longitude], {icon: busIcon})
-                        .bindPopup(`<strong>Bus: ${bus.name}</strong><br>No: ${bus.bus_number}`)
+                        .bindPopup(popupContent)
                         .addTo(markers);
                     bounds.push([bus.latitude, bus.longitude]);
                 }
@@ -299,6 +385,56 @@
             detectLocation();
             $('#refreshNearby').on('click', detectLocation);
         }
+
+        // Route Finder Logic
+        if ($('.select2-ajax-stops').length) {
+            $('.select2-ajax-stops').select2({
+                ajax: {
+                    url: "{{ route('search.stops') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: params => ({ q: params.term, page: params.page }),
+                    processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                    cache: true
+                },
+                placeholder: 'Search for a stop...',
+                minimumInputLength: 1,
+                width: '100%'
+            });
+        }
+
+        $('#btnSearchBuses').on('click', function() {
+            const from = $('#search_from_stop').val();
+            const to = $('#search_to_stop').val();
+
+            if (!from || !to) {
+                showAlert('Please select both From and To stops.', 'warning');
+                return;
+            }
+
+            $('#buses-list').html('<div class="text-center py-3"><span class="spinner-border text-primary spinner-border-sm"></span> Searching...</div>');
+            $('#route-search-results').show();
+
+            $.get("{{ route('search.find-buses') }}", { from, to }, function(data) {
+                if (data.buses.length === 0) {
+                    $('#buses-list').html('<div class="alert alert-secondary py-2 small mt-2">No buses found for this route sequence.</div>');
+                } else {
+                    let html = '';
+                    data.buses.forEach(bus => {
+                        html += `
+                            <a href="${bus.url}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">${bus.name}</h6>
+                                    <small class="text-muted">${bus.number} • ${bus.merchant}</small>
+                                </div>
+                                <i class="bx bx-chevron-right"></i>
+                            </a>
+                        `;
+                    });
+                    $('#buses-list').html(html);
+                }
+            });
+        });
 
         // Fix Select2
         if ($.fn.select2) {

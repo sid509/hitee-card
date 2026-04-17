@@ -13,10 +13,16 @@ use App\Http\Controllers\ParkingController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\RouteController;
+use App\Http\Controllers\FareController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\BalanceController;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
 use App\Models\Card;
+use App\Models\BalanceIn;
+use App\Models\BalanceOut;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -63,6 +69,7 @@ Route::middleware(['auth'])->group(function () {
         
         $userCount = User::count();
         $cardCount = Card::count();
+        $transactionCount = BalanceIn::count() + BalanceOut::count();
 
         $busesQuery = Bus::query();
         $parkingsQuery = Parking::query();
@@ -75,10 +82,10 @@ Route::middleware(['auth'])->group(function () {
         $busCount = (clone $busesQuery)->count();
         $parkingCount = (clone $parkingsQuery)->count();
 
-        $buses = $busesQuery->get(['id', 'name', 'bus_number', 'latitude', 'longitude']);
+        $buses = $busesQuery->with(['route.stops'])->get(['id', 'name', 'bus_number', 'latitude', 'longitude', 'route_id']);
         $parkings = $parkingsQuery->get(['id', 'name', 'location', 'latitude', 'longitude']);
 
-        return view('dashboard', compact('userCount', 'busCount', 'parkingCount', 'cardCount', 'buses', 'parkings'));
+        return view('dashboard', compact('userCount', 'busCount', 'parkingCount', 'cardCount', 'transactionCount', 'buses', 'parkings'));
     })->name('dashboard');
 
     // Profile Management
@@ -114,6 +121,13 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('users.index');
     })->name('impersonate.leave');
 
+    // Route & Fare Management
+    Route::resource('routes', RouteController::class);
+    Route::resource('fares', FareController::class)->except(['edit', 'update', 'destroy']);
+    Route::post('/fares/{fare}/approve', [FareController::class, 'approve'])->name('fares.approve');
+    Route::post('/fares/assign-bus', [FareController::class, 'assignBus'])->name('fares.assign-bus');
+    Route::get('/fares/matrix-form', [FareController::class, 'getMatrixForm'])->name('fares.matrix-form');
+
     // Business Logic Resources
     Route::resource('buses', BusController::class);
     Route::resource('parkings', ParkingController::class);
@@ -123,15 +137,17 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/support/send', [SupportController::class, 'send'])->name('support.send');
 
     // Search
-    Route::controller(\App\Http\Controllers\SearchController::class)->group(function () {
+    Route::controller(SearchController::class)->group(function () {
         Route::get('/search/users', 'users')->name('search.users');
         Route::get('/search/merchants', 'merchants')->name('search.merchants');
         Route::get('/search/references', 'references')->name('search.references');
         Route::get('/search/nearby', 'nearby')->name('search.nearby');
+        Route::get('/search/stops', 'stops')->name('search.stops');
+        Route::get('/search/find-buses', 'findBuses')->name('search.find-buses');
     });
 
     // Transaction Management
-    Route::controller(\App\Http\Controllers\BalanceController::class)->group(function () {
+    Route::controller(BalanceController::class)->group(function () {
         Route::get('/transactions/logs/{userId?}', 'logs')->name('transactions.logs');
         Route::post('/transactions/manual-add', 'manualAdd')->name('transactions.manual-add');
         Route::post('/transactions/manual-deduct', 'manualDeduct')->name('transactions.manual-deduct');

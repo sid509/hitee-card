@@ -52,11 +52,10 @@
         </li>
         @endif
 
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">Management</span>
-        </li>
-        
         @if(auth()->user()->hasRole('super-admin', 'merchant'))
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Fleet Management</span>
+        </li>
         <li class="menu-item {{ request()->routeIs('buses.*') ? 'active' : '' }}">
             <a href="{{ route('buses.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-bus"></i>
@@ -67,6 +66,18 @@
             <a href="{{ route('parkings.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bxs-parking"></i>
                 <div class="text-truncate">Parkings</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('routes.*') ? 'active' : '' }}">
+            <a href="{{ route('routes.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-map-alt"></i>
+                <div class="text-truncate">Routes</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('fares.*') ? 'active' : '' }}">
+            <a href="{{ route('fares.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                <div class="text-truncate">Fares</div>
             </a>
         </li>
         <li class="menu-header small text-uppercase">

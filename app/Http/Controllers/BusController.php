@@ -19,7 +19,7 @@ class BusController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Bus::with('merchant');
+            $query = Bus::with(['merchant', 'route']);
             
             // Limit buses to merchant's own if they are a merchant
             if (auth()->user()->hasRole('merchant')) {
@@ -28,6 +28,7 @@ class BusController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->addColumn('route_name', fn($row) => $row->route->name ?? 'N/A')
                 ->addColumn('action', function($row){
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant');
                     $canDelete = auth()->user()->hasRole('super-admin');

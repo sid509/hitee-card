@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             BusSeeder::class,
             CardSeeder::class,
             ParkingSeeder::class,
+            RouteFareSeeder::class,
             BalanceSeeder::class,
         ]);
     }

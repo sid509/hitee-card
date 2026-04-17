@@ -76,6 +76,16 @@ class User extends Authenticatable
         return $this->hasMany(MerchantWithdrawal::class, 'merchant_id');
     }
 
+    public function merchantRoutes()
+    {
+        return $this->hasMany(Route::class, 'merchant_id');
+    }
+
+    public function merchantFares()
+    {
+        return $this->hasMany(Fare::class, 'merchant_id');
+    }
+
     public function merchantBalance()
     {
         $income = $this->merchantIncomes()->sum('amount');

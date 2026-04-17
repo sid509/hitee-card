@@ -35,17 +35,38 @@
                                 <span class="fw-medium me-2">Merchant:</span>
                                 <span>{{ $bus->merchant->name ?? 'N/A' }}</span>
                             </li>
+                            <li class="mb-3">
+                                <span class="fw-medium me-2">Route:</span>
+                                <span>{{ $bus->route->name ?? 'Not Assigned' }}</span>
+                            </li>
                         </ul>
                     </div>
                 </div>
             </div>
 
+            <!-- Fare Info Card -->
+            @if($bus->activeFare)
+            <div class="card mb-4 border-primary shadow-none">
+                <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
+                    <h6 class="text-white mb-0">Active Fare</h6>
+                    <i class="bx bx-info-circle"></i>
+                </div>
+                <div class="card-body pt-3">
+                    <h6 class="mb-1">{{ $bus->activeFare->name }}</h6>
+                    <p class="small text-muted mb-0">Effective From: {{ $bus->activeFare->effective_from ? formatDate($bus->activeFare->effective_from) : 'Immediate' }}</p>
+                    <button class="btn btn-sm btn-outline-primary mt-3 w-100" data-bs-toggle="modal" data-bs-target="#viewFareMatrixModal">
+                        <i class="bx bx-table me-1"></i> View Pricing Matrix
+                    </button>
+                </div>
+            </div>
+            @endif
+
             <!-- Income Card -->
-            <div class="card bg-success text-white">
+            <div class="card bg-success text-white mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-white mb-1">Total Lifetime Income</h6>
+                            <h6 class="text-white mb-1">Lifetime Income</h6>
                             <h4 class="text-white mb-0">Rs. {{ number_format($bus->totalIncome(), 2) }}</h4>
                         </div>
                         <div class="avatar">
@@ -56,10 +77,21 @@
             </div>
         </div>
 
-        <!-- Income History -->
+        <!-- Map and Route -->
         <div class="col-md-8">
+            <div class="card mb-4">
+                <h5 class="card-header d-flex align-items-center">
+                    <i class="bx bx-map-pin me-2 text-primary"></i>
+                    {{ $bus->route ? 'Route: ' . $bus->route->name : 'Asset Location' }}
+                </h5>
+                <div class="card-body">
+                    <div id="bus-map" style="height: 400px; border-radius: 8px; border: 1px solid #eee;"></div>
+                </div>
+            </div>
+
+            <!-- Income History -->
             <div class="card">
-                <h5 class="card-header">Bus Income History</h5>
+                <h5 class="card-header">Transaction History</h5>
                 <div class="card-body">
                     <div class="table-responsive text-nowrap">
                         <table class="table table-hover bus-income-table w-100">
@@ -79,9 +111,91 @@
 </div>
 @endsection
 
+@push('modals')
+@if($bus->activeFare)
+<!-- Fare Matrix Modal -->
+<div class="modal fade" id="viewFareMatrixModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pricing Matrix: {{ $bus->activeFare->name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>From \ To</th>
+                                @foreach($bus->activeFare->route->stops as $stop)
+                                    <th>{{ $stop->stop_name }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($bus->activeFare->route->stops as $fromStop)
+                                <tr>
+                                    <th class="bg-light text-start">{{ $fromStop->stop_name }}</th>
+                                    @foreach($bus->activeFare->route->stops as $toStop)
+                                        <td>
+                                            @php
+                                                $matrix = $bus->activeFare->matrices->where('from_stop_id', $fromStop->id)->where('to_stop_id', $toStop->id)->first();
+                                            @endphp
+                                            @if($fromStop->id == $toStop->id)
+                                                <span class="text-muted">-</span>
+                                            @else
+                                                <span class="fw-medium">Rs. {{ $matrix ? number_format($matrix->amount, 2) : '0.00' }}</span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+@endpush
+
 @push('page-js')
 <script type="module">
     $(function () {
+        const bus = @json($bus);
+        const routeStops = @json($bus->route ? $bus->route->stops : []);
+
+        const map = L.map('bus-map').setView([bus.latitude || 27.7172, bus.longitude || 85.3240], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        if (routeStops.length > 0) {
+            const latlngs = routeStops.map(s => [s.latitude, s.longitude]);
+            L.polyline(latlngs, {color: '#696cff', weight: 5, opacity: 0.6, dashArray: '10, 10'}).addTo(map);
+            
+            routeStops.forEach((s, i) => {
+                L.circleMarker([s.latitude, s.longitude], {
+                    radius: 6, 
+                    color: '#696cff', 
+                    fillColor: 'white', 
+                    fillOpacity: 1,
+                    weight: 2
+                }).addTo(map).bindPopup(`<strong>Stop ${i+1}:</strong> ${s.stop_name}`);
+            });
+        }
+
+        if (bus.latitude && bus.longitude) {
+            const busIcon = L.divIcon({
+                html: '<i class="bx bx-bus bg-primary text-white p-1 rounded-circle shadow" style="font-size: 24px; border: 2px solid white;"></i>',
+                className: 'custom-div-icon',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+            L.marker([bus.latitude, bus.longitude], {icon: busIcon, zIndexOffset: 1000}).addTo(map).bindPopup('<strong>Current Location</strong>');
+        }
+
         $('.bus-income-table').DataTable({
             processing: true,
             serverSide: true,

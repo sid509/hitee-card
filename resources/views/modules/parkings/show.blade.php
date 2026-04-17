@@ -52,8 +52,18 @@
             </div>
         </div>
 
-        <!-- Income History -->
+        <!-- Map and History -->
         <div class="col-md-8">
+            <div class="card mb-4">
+                <h5 class="card-header d-flex align-items-center">
+                    <i class="bx bxs-map me-2 text-info"></i>
+                    Location Visualization
+                </h5>
+                <div class="card-body">
+                    <div id="parking-map" style="height: 350px; border-radius: 8px; border: 1px solid #eee;"></div>
+                </div>
+            </div>
+
             <div class="card">
                 <h5 class="card-header">Parking Income History</h5>
                 <div class="card-body">
@@ -78,6 +88,23 @@
 @push('page-js')
 <script type="module">
     $(function () {
+        const parking = @json($parking);
+
+        const map = L.map('parking-map').setView([parking.latitude || 27.7172, parking.longitude || 85.3240], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        if (parking.latitude && parking.longitude) {
+            const parkingIcon = L.divIcon({
+                html: '<i class="bx bxs-parking bg-info text-white p-1 rounded-circle shadow" style="font-size: 24px; border: 2px solid white;"></i>',
+                className: 'custom-div-icon',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+            L.marker([parking.latitude, parking.longitude], {icon: parkingIcon}).addTo(map).bindPopup(`<strong>${parking.name}</strong>`);
+        }
+
         $('.parking-income-table').DataTable({
             processing: true,
             serverSide: true,

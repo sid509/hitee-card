@@ -20,112 +20,130 @@ class BalanceSeeder extends Seeder
      */
     public function run(): void
     {
-        $users = User::all();
+        $users = User::whereHas('roles', fn($q) => $q->where('slug', 'customers'))->get();
         $merchants = User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get();
-        $admin = User::whereHas('roles', fn($q) => $q->where('slug', 'super-admin'))->first() ?? $users->first();
-        $buses = Bus::all();
+        $admin = User::whereHas('roles', fn($q) => $q->where('slug', 'super-admin'))->first();
+        
+        $buses = Bus::with(['activeFare.matrices'])->get();
         $parkings = Parking::all();
 
-        if ($merchants->isEmpty() || $buses->isEmpty() || $parkings->isEmpty()) {
-            $this->command->warn("Please ensure Merchants, Buses, and Parkings are seeded before running BalanceSeeder.");
-            return;
-        }
+        if ($users->isEmpty() || $buses->isEmpty()) return;
 
         foreach ($users as $user) {
-            // 1. Initial Credit
+            // 1. Initial Heavy Fund Loading (to ensure they don't run out)
             BalanceIn::create([
                 'user_id' => $user->id,
-                'amount' => rand(5000, 10000),
+                'amount' => 15000,
                 'type' => 'manual',
-                'remarks' => 'Initial system load',
+                'remarks' => 'Welcome system load',
                 'created_by' => $admin->id,
                 'status' => 'completed',
-                'created_at' => Carbon::now()->subMonths(4),
+                'created_at' => Carbon::now()->subMonths(6),
             ]);
 
-            // 2. Generate 50 mixed transactions
-            for ($i = 0; $i < 49; $i++) {
-                $isCredit = rand(0, 1);
-                $date = Carbon::now()->subDays(rand(1, 120));
+            // 2. Generate 100 realistic transactions per user
+            for ($i = 0; $i < 100; $i++) {
+                $date = Carbon::now()->subDays(rand(1, 180)); // Last 6 months
+                $isCredit = rand(0, 10) > 8; // 20% chance of topup, 80% chance of spending
 
                 if ($isCredit) {
                     $types = ['manual', 'cashback', 'khalti'];
+                    $type = $types[array_rand($types)];
                     BalanceIn::create([
                         'user_id' => $user->id,
-                        'amount' => rand(100, 1000),
-                        'type' => $types[array_rand($types)],
-                        'remarks' => 'Funds loaded #' . ($i + 1),
+                        'amount' => rand(500, 2000),
+                        'type' => $type,
+                        'remarks' => $type == 'khalti' ? 'Self topup' : 'System adjustment',
                         'created_by' => $admin->id,
                         'status' => 'completed',
                         'created_at' => $date,
                     ]);
                 } else {
-                    $currentBalance = $user->balance();
-                    $deductAmount = rand(20, 200);
+                    // Spending: 70% Bus, 30% Parking
+                    $isBus = rand(0, 10) > 3;
 
-                    if ($currentBalance >= $deductAmount) {
-                        $activityType = ['fare_deduction', 'parking', 'penalty', 'manual_deduction'][rand(0, 3)];
-                        
-                        $merchantId = null;
-                        $refId = null;
-                        $refType = null;
+                    if ($isBus) {
+                        $bus = $buses->random();
+                        $amount = 25; // Default
 
-                        if ($activityType === 'fare_deduction') {
-                            $bus = $buses->random();
-                            $merchantId = $bus->merchant_id;
-                            $refId = $bus->id;
-                            $refType = 'App\Models\Bus';
-                        } elseif ($activityType === 'parking') {
-                            $parking = $parkings->random();
-                            $merchantId = $parking->merchant_id;
-                            $refId = $parking->id;
-                            $refType = 'App\Models\Parking';
+                        // Use actual fare from matrix if exists
+                        if ($bus->activeFare && $bus->activeFare->matrices->isNotEmpty()) {
+                            $amount = $bus->activeFare->matrices->random()->amount;
                         }
 
-                        DB::transaction(function() use ($user, $merchantId, $deductAmount, $activityType, $refId, $refType, $admin, $date) {
+                        DB::transaction(function() use ($user, $bus, $amount, $date, $admin) {
                             $out = BalanceOut::create([
                                 'user_id' => $user->id,
-                                'merchant_id' => $merchantId,
-                                'amount' => $deductAmount,
-                                'type' => $activityType,
-                                'remarks' => 'System generated ' . str_replace('_', ' ', $activityType),
-                                'reference_id' => $refId,
-                                'reference_type' => $refType,
+                                'merchant_id' => $bus->merchant_id,
+                                'amount' => $amount,
+                                'type' => 'fare_deduction',
+                                'remarks' => 'Travel fare on ' . $bus->bus_number,
+                                'reference_id' => $bus->id,
+                                'reference_type' => 'App\Models\Bus',
                                 'created_by' => $admin->id,
                                 'created_at' => $date,
                             ]);
 
-                            if ($merchantId && in_array($activityType, ['fare_deduction', 'parking'])) {
-                                MerchantIncome::create([
-                                    'merchant_id' => $merchantId,
-                                    'balance_out_id' => $out->id,
-                                    'reference_id' => $refId,
-                                    'reference_type' => $refType,
-                                    'amount' => $deductAmount,
-                                    'type' => $activityType === 'fare_deduction' ? 'fare' : 'parking',
-                                    'created_at' => $date,
-                                ]);
-                            }
+                            MerchantIncome::create([
+                                'merchant_id' => $bus->merchant_id,
+                                'balance_out_id' => $out->id,
+                                'reference_id' => $bus->id,
+                                'reference_type' => 'App\Models\Bus',
+                                'amount' => $amount,
+                                'type' => 'fare',
+                                'created_at' => $date,
+                            ]);
+                        });
+                    } else {
+                        $parking = $parkings->random();
+                        $amount = rand(20, 100);
+
+                        DB::transaction(function() use ($user, $parking, $amount, $date, $admin) {
+                            $out = BalanceOut::create([
+                                'user_id' => $user->id,
+                                'merchant_id' => $parking->merchant_id,
+                                'amount' => $amount,
+                                'type' => 'parking',
+                                'remarks' => 'Parking fee at ' . $parking->name,
+                                'reference_id' => $parking->id,
+                                'reference_type' => 'App\Models\Parking',
+                                'created_by' => $admin->id,
+                                'created_at' => $date,
+                            ]);
+
+                            MerchantIncome::create([
+                                'merchant_id' => $parking->merchant_id,
+                                'balance_out_id' => $out->id,
+                                'reference_id' => $parking->id,
+                                'reference_type' => 'App\Models\Parking',
+                                'amount' => $amount,
+                                'type' => 'parking',
+                                'created_at' => $date,
+                            ]);
                         });
                     }
                 }
             }
         }
 
-        // 3. Generate some random withdrawals for merchants
+        // 3. Realistic Merchant Withdrawals
         foreach ($merchants as $merchant) {
-            $balance = $merchant->merchantBalance();
-            if ($balance > 500) {
-                for ($j = 0; $j < 3; $j++) {
-                    $withdrawAmount = rand(100, floor($balance / 3));
+            $totalIncome = $merchant->merchantIncomes()->sum('amount');
+            if ($totalIncome > 2000) {
+                // Withdraw 70% of income in 5-10 batches
+                $withdrawTarget = $totalIncome * 0.7;
+                $batches = rand(5, 10);
+                $batchAmount = $withdrawTarget / $batches;
+
+                for ($j = 0; $j < $batches; $j++) {
                     MerchantWithdrawal::create([
                         'merchant_id' => $merchant->id,
-                        'amount' => $withdrawAmount,
+                        'amount' => $batchAmount,
                         'status' => 'completed',
-                        'transaction_id' => 'KHLT_SEED_' . str_shuffle(time()),
+                        'transaction_id' => 'KHLT_WD_' . bin2hex(random_bytes(4)),
                         'gateway_name' => 'khalti',
-                        'remarks' => 'Seed withdrawal',
-                        'created_at' => Carbon::now()->subDays(rand(1, 30)),
+                        'remarks' => 'Settlement to bank',
+                        'created_at' => Carbon::now()->subDays(rand(1, 150)),
                     ]);
                 }
             }

@@ -21,39 +21,41 @@
             <table class="table table-hover data-table w-100">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Bus Number</th>
-                        <th>HWID</th>
-                        <th>Merchant</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
-    </div>
-</div>
-@endsection
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Bus Number</th>
+                                <th>Merchant</th>
+                                <th>Route</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        </table>
+                        </div>
+                        </div>
+                        </div>
+                        @endsection
 
-@push('page-js')
-<script type="module">
-    $(function () {
-        var table = $('.data-table').DataTable({
-            processing: true,
-            serverSide: true,
-            responsive: true,
-            ajax: "{{ route('buses.index') }}",
-            columns: [
-                {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'name', name: 'name'},
-                {data: 'bus_number', name: 'bus_number'},
-                {data: 'hwid', name: 'hwid'},
-                {data: 'merchant.name', name: 'merchant.name', defaultContent: 'N/A'},
-                {data: 'status', name: 'status'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
-            ]
-        });
-    });
-</script>
+                        @push('page-js')
+                        <script type="module">
+                        $(function () {
+                        var table = $('.data-table').DataTable({
+                        processing: true,
+                        serverSide: true,
+                        responsive: true,
+                        ajax: "{{ route('buses.index') }}",
+                        columns: [
+                        {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
+                        {data: 'name', name: 'name'},
+                        {data: 'bus_number', name: 'bus_number'},
+                        {data: 'merchant.name', name: 'merchant.name', defaultContent: 'N/A'},
+                        {data: 'route_name', name: 'route_name', orderable: false},
+                        {data: 'status', name: 'status'},
+                        {data: 'action', name: 'action', orderable: false, searchable: false},
+                        ]
+                        });
+                        });
+                        </script>
 @endpush
