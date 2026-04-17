@@ -33,6 +33,8 @@ class BusController extends Controller
                     $canDelete = auth()->user()->hasRole('super-admin');
                     
                     $actions = '';
+                    // View Button
+                    $actions .= '<a href="'.route('buses.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     // Edit Button
                     if ($canEdit) {
                         $actions .= '<a href="'.route('buses.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
@@ -52,6 +54,17 @@ class BusController extends Controller
         }
 
         return view('modules.buses.index');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Bus $bus)
+    {
+        // Merchant can only view their own
+        if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
+        
+        return view('modules.buses.show', compact('bus'));
     }
 
     /**

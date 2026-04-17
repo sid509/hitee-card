@@ -28,6 +28,11 @@ class UserController extends Controller
                         return '<span class="badge bg-label-primary">'.$role->name.'</span>';
                     })->implode(' ');
                 })
+                ->addColumn('balance', function($row){
+                    $balance = $row->balance();
+                    $class = $balance < 0 ? 'bg-label-danger' : '';
+                    return '<span class="badge '.$class.'">Rs. '.number_format($balance, 2).'</span>';
+                })
                 ->editColumn('created_at', function($row){
                     return formatDate($row->created_at);
                 })
@@ -38,6 +43,12 @@ class UserController extends Controller
                     // View Button
                     $actions .= '<a href="'.route('users.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     
+                    // Balance Button
+                    if (auth()->user()->hasRole('super-admin')) {
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 add-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" title="Add Balance"><i class="bx bx-wallet"></i></button>';
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-warning me-1 deduct-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" title="Deduct Balance"><i class="bx bx-minus-circle"></i></button>';
+                    }
+
                     // Impersonate Button for super-admins
                     if (auth()->user()->canImpersonate() && $row->id !== auth()->id()) {
                         $actions .= '<a href="'.route('impersonate', $row->id).'" class="btn btn-icon btn-sm btn-warning me-1" title="Impersonate"><i class="bx bx-user-check"></i></a>';
@@ -53,11 +64,13 @@ class UserController extends Controller
                                 </form>';
                     return $actions;
                 })
-                ->rawColumns(['action', 'role_names'])
+                ->rawColumns(['action', 'role_names', 'balance'])
                 ->make(true);
         }
 
-        return view('modules.users.index');
+        return view('modules.users.index', [
+            'merchants' => User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get()
+        ]);
     }
 
     /**

@@ -106,6 +106,27 @@ Route::middleware(['auth'])->group(function () {
 
     // Support
     Route::post('/support/send', [SupportController::class, 'send'])->name('support.send');
+
+    // Search
+    Route::controller(\App\Http\Controllers\SearchController::class)->group(function () {
+        Route::get('/search/users', 'users')->name('search.users');
+        Route::get('/search/merchants', 'merchants')->name('search.merchants');
+        Route::get('/search/references', 'references')->name('search.references');
+    });
+
+    // Transaction Management
+    Route::controller(\App\Http\Controllers\BalanceController::class)->group(function () {
+        Route::get('/transactions/logs/{userId?}', 'logs')->name('transactions.logs');
+        Route::post('/transactions/manual-add', 'manualAdd')->name('transactions.manual-add');
+        Route::post('/transactions/manual-deduct', 'manualDeduct')->name('transactions.manual-deduct');
+        Route::post('/transactions/khalti-payment', 'khaltiPayment')->name('khalti.payment');
+        Route::get('/transactions/khalti-verify', 'khaltiVerify')->name('khalti.verify');
+
+        // Merchant specific
+        Route::get('/merchant/income', 'merchantTransactions')->name('merchant.income');
+        Route::get('/merchant/withdrawals', 'merchantWithdrawals')->name('merchant.withdrawals');
+        Route::post('/merchant/withdraw', 'merchantWithdraw')->name('merchant.withdraw');
+    });
 });
 
 /**

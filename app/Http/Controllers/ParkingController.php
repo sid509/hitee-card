@@ -33,6 +33,8 @@ class ParkingController extends Controller
                     $canDelete = auth()->user()->hasRole('super-admin');
                     
                     $actions = '';
+                    // View Button
+                    $actions .= '<a href="'.route('parkings.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     // Edit Button
                     if ($canEdit) {
                         $actions .= '<a href="'.route('parkings.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
@@ -52,6 +54,17 @@ class ParkingController extends Controller
         }
 
         return view('modules.parkings.index');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Parking $parking)
+    {
+        // Merchant can only view their own
+        if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
+        
+        return view('modules.parkings.show', compact('parking'));
     }
 
     /**

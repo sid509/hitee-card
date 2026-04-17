@@ -69,6 +69,21 @@
                 <div class="text-truncate">Parkings</div>
             </a>
         </li>
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Earnings</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('merchant.income') ? 'active' : '' }}">
+            <a href="{{ route('merchant.income') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-trending-up"></i>
+                <div class="text-truncate">Income</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('merchant.withdrawals') ? 'active' : '' }}">
+            <a href="{{ route('merchant.withdrawals') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-export"></i>
+                <div class="text-truncate">Withdrawals</div>
+            </a>
+        </li>
         @endif
 
         @if(auth()->user()->hasRole('super-admin', 'customers'))
@@ -76,6 +91,12 @@
             <a href="{{ route('cards.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-credit-card"></i>
                 <div class="text-truncate">Cards</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('transactions.*') ? 'active' : '' }}">
+            <a href="{{ route('transactions.logs') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-list-ul"></i>
+                <div class="text-truncate">Transactions</div>
             </a>
         </li>
         @endif

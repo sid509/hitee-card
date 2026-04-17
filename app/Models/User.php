@@ -49,6 +49,40 @@ class User extends Authenticatable
         ];
     }
 
+    public function balanceIns()
+    {
+        return $this->hasMany(BalanceIn::class);
+    }
+
+    public function balanceOuts()
+    {
+        return $this->hasMany(BalanceOut::class);
+    }
+
+    public function balance()
+    {
+        $in = $this->balanceIns()->where('status', 'completed')->sum('amount');
+        $out = $this->balanceOuts()->sum('amount');
+        return $in - $out;
+    }
+
+    public function merchantIncomes()
+    {
+        return $this->hasMany(MerchantIncome::class, 'merchant_id');
+    }
+
+    public function merchantWithdrawals()
+    {
+        return $this->hasMany(MerchantWithdrawal::class, 'merchant_id');
+    }
+
+    public function merchantBalance()
+    {
+        $income = $this->merchantIncomes()->sum('amount');
+        $withdrawal = $this->merchantWithdrawals()->where('status', 'completed')->sum('amount');
+        return $income - $withdrawal;
+    }
+
     public function roles()
     {
         return $this->belongsToMany(Role::class);

@@ -11,7 +11,7 @@
                     <div class="card-body">
                         <h5 class="card-title text-primary mb-3">{{ __('messages.welcome') }} {{ auth()->user()->name }}! 🎉</h5>
                         <p class="mb-6">
-                            Welcome back to Hitee Platform. Here is what is happening with your fleet today.
+                            Welcome back to Hitee Platform. Here is what is happening with your account today.
                         </p>
 
                         <div class="d-flex flex-wrap gap-2">
@@ -26,41 +26,96 @@
                     </div>
                 </div>
             </div>
-            <div class="card-body border-top">
+        <div class="card-body border-top">
                 <h6 class="text-muted mb-4">Quick Shortcuts</h6>
                 <div class="row g-3">
                     @if(auth()->user()->hasRole('super-admin'))
-                    <div class="col-md-3 col-6">
-                        <a href="{{ route('users.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
-                            <i class="bx bx-user-plus fs-3 mb-2 text-primary"></i>
-                            <span class="small fw-medium">Add User</span>
-                        </a>
-                    </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('users.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-user-plus fs-3 mb-2 text-primary"></i>
+                                <span class="small fw-medium">Add User</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#quickAddBalanceModal" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-wallet fs-3 mb-2 text-success"></i>
+                                <span class="small fw-medium">Load Funds</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('cards.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-credit-card fs-3 mb-2 text-warning"></i>
+                                <span class="small fw-medium">Issue Card</span>
+                            </a>
+                        </div>
                     @endif
-                    <div class="col-md-3 col-6">
-                        <a href="{{ route('buses.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
-                            <i class="bx bx-bus fs-3 mb-2 text-primary"></i>
-                            <span class="small fw-medium">Add Bus</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <a href="{{ route('parkings.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
-                            <i class="bx bx-car fs-3 mb-2 text-primary"></i>
-                            <span class="small fw-medium">Add Parking</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <a href="{{ route('cards.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
-                            <i class="bx bx-credit-card fs-3 mb-2 text-primary"></i>
-                            <span class="small fw-medium">Issue Card</span>
-                        </a>
-                    </div>
+
+                    @if(auth()->user()->hasRole('super-admin', 'merchant'))
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('buses.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-bus fs-3 mb-2 text-primary"></i>
+                                <span class="small fw-medium">Add Bus</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('parkings.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-car fs-3 mb-2 text-primary"></i>
+                                <span class="small fw-medium">Add Parking</span>
+                            </a>
+                        </div>
+                    @endif
+
+                    @if(auth()->user()->hasRole('customers'))
+                        <div class="col-md-3 col-6">
+                            <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-plus-circle fs-3 mb-2 text-primary"></i>
+                                <span class="small fw-medium">Topup Balance</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('transactions.logs') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-list-ul fs-3 mb-2 text-info"></i>
+                                <span class="small fw-medium">Transaction Logs</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('cards.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-credit-card fs-3 mb-2 text-warning"></i>
+                                <span class="small fw-medium">My Cards</span>
+                            </a>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
     <div class="col-lg-4 col-md-4 order-1">
         <div class="row">
+            <div class="col-12 mb-6">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="avatar flex-shrink-0">
+                                <span class="avatar-initial rounded bg-white text-primary"><i class="bx bx-wallet"></i></span>
+                            </div>
+                            <h5 class="card-title text-white mb-0">{{ auth()->user()->hasRole('merchant') ? 'Available Income' : 'My Balance' }}</h5>
+                        </div>
+                        <h2 class="text-white mb-2">Rs. {{ number_format(auth()->user()->hasRole('merchant') ? auth()->user()->merchantBalance() : auth()->user()->balance(), 2) }}</h2>
+                        <div class="d-flex gap-2">
+                            @if(auth()->user()->hasRole('customers'))
+                                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal">Topup</button>
+                                <a href="{{ route('transactions.logs') }}" class="btn btn-sm btn-outline-light">History</a>
+                            @elseif(auth()->user()->hasRole('merchant'))
+                                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#withdrawModal">Withdraw</button>
+                                <a href="{{ route('merchant.income') }}" class="btn btn-sm btn-outline-light">Earnings</a>
+                            @else
+                                <a href="{{ route('transactions.logs') }}" class="btn btn-sm btn-outline-light">History</a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @if(auth()->user()->hasRole('super-admin'))
             <div class="col-lg-6 col-md-12 col-6 mb-6">
                 <div class="card">
                     <div class="card-body">
@@ -74,6 +129,9 @@
                     </div>
                 </div>
             </div>
+            @endif
+
+            @if(auth()->user()->hasRole('super-admin', 'merchant'))
             <div class="col-lg-6 col-md-12 col-6 mb-6">
                 <div class="card">
                     <div class="card-body">
@@ -87,33 +145,163 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-12 col-6 mb-6">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-car"></i></span>
-                            </div>
-                        </div>
-                        <p class="mb-1">Parkings</p>
-                        <h4 class="card-title mb-3">{{ $parkingCount }}</h4>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-12 col-6 mb-6">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-credit-card"></i></span>
-                            </div>
-                        </div>
-                        <p class="mb-1">Cards Issued</p>
-                        <h4 class="card-title mb-3">{{ $cardCount }}</h4>
-                    </div>
-                </div>
-            </div>
+            @endif
         </div>
     </div>
 </div>
+
 @endsection
+
+@push('page-js')
+<!-- Select2 CSS/JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script type="module">
+    $(function() {
+        $('#user_search_quick').select2({
+            dropdownParent: $('#quickAddBalanceModal'),
+            ajax: {
+                url: "{{ route('search.users') }}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term, page: params.page };
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.results,
+                        pagination: { more: data.pagination.more }
+                    };
+                },
+                cache: true
+            },
+            placeholder: 'Search User...',
+            minimumInputLength: 1,
+            width: '100%'
+        });
+
+        // Initialize Select2 for Merchant/Reference in case merchant uses dashboard to withdraw (already handled but good to have)
+        if ($('#merchant_search_withdraw').length) {
+            // ... already defined in modal but good for consistency
+        }
+    });
+</script>
+<style>
+    .select2-container--open { z-index: 9999 !important; }
+</style>
+@endpush
+
+@push('modals')
+@if(auth()->user()->hasRole('super-admin'))
+<!-- Quick Load Funds Modal -->
+<div class="modal fade" id="quickAddBalanceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Load Funds</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('transactions.manual-add') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select User</label>
+                        <select name="user_id" id="user_search_quick" class="form-select" required>
+                            <option value="">Search User...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount (Rs.)</label>
+                        <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select name="type" class="form-select" required>
+                            <option value="manual">Manual Load</option>
+                            <option value="cashback">Cashback</option>
+                            <option value="penalty_reversal">Penalty Reversal</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for loading funds"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Load Funds</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+@if(auth()->user()->hasRole('merchant'))
+<!-- Withdraw Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Withdraw Funds</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('merchant.withdraw') }}" method="POST">
+                @csrf
+                <div class="modal-body text-center">
+                    <img src="{{ asset('assets/img/hitee/khalti.png') }}" alt="Khalti" class="mb-4" style="height: 50px;">
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Available Income Balance</label>
+                        <input type="text" class="form-control" value="Rs. {{ number_format(auth()->user()->merchantBalance(), 2) }}" readonly disabled>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Withdrawal Amount (Rs.)</label>
+                        <input type="number" name="amount" class="form-control form-control-lg" placeholder="100.00" step="0.01" min="100" required>
+                        <div class="form-text">Minimum withdrawal amount is Rs. 100. Funds will be loaded to your Khalti wallet.</div>
+                    </div>
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="Optional remarks"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Process Withdrawal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+@if(auth()->user()->hasRole('customers'))
+<!-- Khalti Topup Modal -->
+<div class="modal fade" id="khaltiTopupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Topup with Khalti</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('khalti.payment') }}" method="POST">
+                @csrf
+                <div class="modal-body text-center">
+                    <img src="{{ asset('assets/img/hitee/khalti.png') }}" alt="Khalti" class="mb-4" style="height: 50px;">
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Topup Amount (Rs.)</label>
+                        <input type="number" name="amount" class="form-control form-control-lg" placeholder="100.00" step="1" min="10" required>
+                        <div class="form-text">Minimum topup amount is Rs. 10.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Pay with Khalti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+@endpush

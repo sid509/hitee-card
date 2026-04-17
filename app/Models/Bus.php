@@ -12,4 +12,14 @@ class Bus extends Model
     {
         return $this->belongsTo(User::class, 'merchant_id');
     }
+
+    public function merchantIncomes()
+    {
+        return $this->morphMany(MerchantIncome::class, 'reference');
+    }
+
+    public function totalIncome()
+    {
+        return $this->merchantIncomes()->sum('amount');
+    }
 }

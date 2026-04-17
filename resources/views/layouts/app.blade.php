@@ -29,14 +29,6 @@
 
     @stack('page-css')
     <style>
-        /* Backdrop blur for modals */
-        body.modal-open .layout-wrapper {
-            filter: blur(5px);
-            transition: filter 0.3s ease;
-        }
-        .modal-backdrop.show {
-            opacity: 0.1;
-        }
         /* Ensure SweetAlert2 is always on top */
         .swal2-container {
             z-index: 99999 !important;
@@ -109,6 +101,7 @@
     </div>
     <!-- / Layout wrapper -->
 
+    @stack('modals')
     @stack('page-js')
 
     <!-- Support Modal -->
