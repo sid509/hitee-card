@@ -66,14 +66,14 @@
                 },
                 success: function(response) {
                     if (response.status) {
-                        toastr.success(response.message);
+                        showToast(response.message, 'Success', 'success');
                         table.ajax.reload();
                     } else {
-                        toastr.info(response.message);
+                        showToast(response.message, 'Info', 'info');
                     }
                 },
                 error: function() {
-                    toastr.error('Failed to sync logs.');
+                    showAlert('Failed to sync logs.', 'error', 'Error');
                 },
                 complete: function() {
                     btn.prop('disabled', false).html('<i class="bx bx-sync me-1"></i> Sync Logs from Buffer');
