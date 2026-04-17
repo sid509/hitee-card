@@ -12,9 +12,9 @@ window.bootstrap = bootstrap;
 import PerfectScrollbar from 'perfect-scrollbar';
 window.PerfectScrollbar = PerfectScrollbar;
 
-import DataTable from 'datatables.net-bs5';
-import 'datatables.net-responsive-bs5';
-window.DataTable = DataTable;
+// import DataTable from 'datatables.net-bs5';
+// import 'datatables.net-responsive-bs5';
+// window.DataTable = DataTable;
 
 // Helpers
 import './hitee/helpers';
