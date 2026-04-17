@@ -23,36 +23,52 @@ class UserSeeder extends Seeder
         $merchantRole = Role::where('slug', 'merchant')->first();
         $customerRole = Role::where('slug', 'customers')->first();
 
-        // 1 Super Admin
+        // 1. Super Admin
         $admin = User::create([
-            'name' => 'Admin User',
+            'name' => 'Sudip Sharki',
             'email' => 'admin@hitee.ai',
             'password' => Hash::make('Admin@Hitee2026'),
             'status' => 'active',
         ]);
         $admin->roles()->attach($superAdminRole);
 
+        // 2. Merchants (Familiar Nepali Business Names/Owners)
+        $merchants = [
+            ['name' => 'Ram Bahadur Thapa', 'email' => 'ram@merchant.com'],
+            ['name' => 'Sita Kumari Dahal', 'email' => 'sita@merchant.com'],
+            ['name' => 'Ganesh Prasad Bhatta', 'email' => 'ganesh@merchant.com'],
+            ['name' => 'Maya Devi Sharma', 'email' => 'maya@merchant.com'],
+            ['name' => 'Krishna Prasad Oli', 'email' => 'krishna@merchant.com'],
+        ];
 
-        // 5 Merchants
-        for ($i = 1; $i <= 5; $i++) {
-            $merchant = User::create([
-                'name' => "Merchant $i",
-                'email' => "merchant$i@hitee.ai",
+        foreach ($merchants as $m) {
+            $user = User::create([
+                'name' => $m['name'],
+                'email' => $m['email'],
                 'password' => Hash::make('password'),
                 'status' => 'active',
             ]);
-            $merchant->roles()->attach($merchantRole);
+            $user->roles()->attach($merchantRole);
         }
 
-        // 14 Customers
-        for ($i = 1; $i <= 14; $i++) {
-            $customer = User::create([
-                'name' => "Customer $i",
-                'email' => "customer$i@hitee.ai",
+        // 3. Customers (Familiar Nepali Names)
+        $customers = [
+            'Aayushma Regmi', 'Bipul Chhetri', 'Deepak Raj Giri', 'Ishani Shrestha', 
+            'Milan Newar', 'Nabin K Bhattarai', 'Priyanka Karki', 'Rajesh Hamal', 
+            'Sandeep Lamichhane', 'Shrinkhala Khatiwada', 'Sushant KC', 'Ujjwal Thapa', 
+            'Anmol KC', 'Dayahang Rai', 'Keki Adhikari', 'Namrata Shrestha',
+            'Pradeep Khadka', 'Saugat Malla', 'Swastima Khadka', 'Bipin Karki'
+        ];
+
+        foreach ($customers as $index => $name) {
+            $email = strtolower(str_replace(' ', '.', $name)) . '@gmail.com';
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
                 'password' => Hash::make('password'),
-                'status' => $i % 5 == 0 ? 'inactive' : 'active',
+                'status' => $index % 10 == 0 ? 'inactive' : 'active',
             ]);
-            $customer->roles()->attach($customerRole);
+            $user->roles()->attach($customerRole);
         }
     }
 }
