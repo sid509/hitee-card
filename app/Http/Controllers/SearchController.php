@@ -27,13 +27,13 @@ class SearchController extends Controller
         $users = $query->paginate(10);
 
         return response()->json([
-            'results' => $users->map(function ($user) {
+            'results' => collect($users->items())->map(function ($user) {
                 return [
                     'id' => $user->id,
                     'text' => $user->name . " (" . $user->email . ") - Bal: Rs. " . number_format($user->balance(), 2),
                     'balance' => $user->balance()
                 ];
-            }),
+            })->toArray(),
             'pagination' => [
                 'more' => $users->hasMorePages()
             ]
@@ -58,12 +58,12 @@ class SearchController extends Controller
         $merchants = $query->paginate(10);
 
         return response()->json([
-            'results' => $merchants->map(function ($merchant) {
+            'results' => collect($merchants->items())->map(function ($merchant) {
                 return [
                     'id' => $merchant->id,
                     'text' => $merchant->name . " (" . $merchant->email . ")"
                 ];
-            }),
+            })->toArray(),
             'pagination' => [
                 'more' => $merchants->hasMorePages()
             ]
@@ -86,7 +86,7 @@ class SearchController extends Controller
             
             $items = $query->paginate(10);
             return response()->json([
-                'results' => $items->map(fn($item) => ['id' => $item->id, 'text' => $item->name . " (" . $item->bus_number . ")"]),
+                'results' => collect($items->items())->map(fn($item) => ['id' => $item->id, 'text' => $item->name . " (" . $item->bus_number . ")"])->toArray(),
                 'pagination' => ['more' => $items->hasMorePages()]
             ]);
         } elseif ($type === 'parking') {
@@ -96,7 +96,7 @@ class SearchController extends Controller
             
             $items = $query->paginate(10);
             return response()->json([
-                'results' => $items->map(fn($item) => ['id' => $item->id, 'text' => $item->name . " (" . $item->location . ")"]),
+                'results' => collect($items->items())->map(fn($item) => ['id' => $item->id, 'text' => $item->name . " (" . $item->location . ")"])->toArray(),
                 'pagination' => ['more' => $items->hasMorePages()]
             ]);
         }

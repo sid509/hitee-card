@@ -147,10 +147,6 @@
 @endpush
 
 @push('page-js')
-<!-- Select2 CSS/JS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
 <script type="module">
     $(function () {
         var table = $('.data-table').DataTable({
@@ -198,60 +194,62 @@
         });
 
         // Select2 Merchant Search
-        $('#merchant_search').select2({
-            dropdownParent: $('#deductBalanceModal'),
-            ajax: {
-                url: "{{ route('search.merchants') }}",
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    return { q: params.term, page: params.page };
+        if ($.fn.select2) {
+            $('#merchant_search').select2({
+                dropdownParent: $('#deductBalanceModal'),
+                ajax: {
+                    url: "{{ route('search.merchants') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term, page: params.page };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.results,
+                            pagination: { more: data.pagination.more }
+                        };
+                    },
+                    cache: true
                 },
-                processResults: function (data, params) {
-                    params.page = params.page || 1;
-                    return {
-                        results: data.results,
-                        pagination: { more: data.pagination.more }
-                    };
-                },
-                cache: true
-            },
-            placeholder: 'Search Merchant...',
-            minimumInputLength: 1,
-            width: '100%'
-        }).on('change', function() {
-            $('#reference_search').val(null).trigger('change');
-            checkReferenceVisibility();
-        });
+                placeholder: 'Search Merchant...',
+                minimumInputLength: 1,
+                width: '100%'
+            }).on('change', function() {
+                $('#reference_search').val(null).trigger('change');
+                checkReferenceVisibility();
+            });
 
-        // Select2 Reference Search
-        $('#reference_search').select2({
-            dropdownParent: $('#deductBalanceModal'),
-            ajax: {
-                url: "{{ route('search.references') }}",
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    return {
-                        q: params.term,
-                        page: params.page,
-                        type: $('#deduct_type').val(),
-                        merchant_id: $('#merchant_search').val()
-                    };
+            // Select2 Reference Search
+            $('#reference_search').select2({
+                dropdownParent: $('#deductBalanceModal'),
+                ajax: {
+                    url: "{{ route('search.references') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page,
+                            type: $('#deduct_type').val(),
+                            merchant_id: $('#merchant_search').val()
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.results,
+                            pagination: { more: data.pagination.more }
+                        };
+                    },
+                    cache: true
                 },
-                processResults: function (data, params) {
-                    params.page = params.page || 1;
-                    return {
-                        results: data.results,
-                        pagination: { more: data.pagination.more }
-                    };
-                },
-                cache: true
-            },
-            placeholder: 'Search...',
-            minimumInputLength: 0,
-            width: '100%'
-        });
+                placeholder: 'Search...',
+                minimumInputLength: 0,
+                width: '100%'
+            });
+        }
 
         $('#deduct_type').on('change', function() {
             $('#reference_search').val(null).trigger('change');

@@ -224,19 +224,14 @@
 @endsection
 
 @push('page-js')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<!-- Select2 CSS/JS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
 <script type="module">
     $(function() {
+        // Initialize Map
         const isCustomer = {{ auth()->user()->hasRole('customers') ? 'true' : 'false' }};
         const buses = @json($buses);
         const parkings = @json($parkings);
         
-        // Initialize Map
-        const map = L.map('map').setView([27.7172, 85.3240], 13); // Default to KTM
+        const map = L.map('map').setView([27.7172, 85.3240], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
@@ -260,112 +255,69 @@
         function renderMarkers(busList, parkingList) {
             markers.clearLayers();
             const bounds = [];
-
             busList.forEach(bus => {
                 if (bus.latitude && bus.longitude) {
-                    const marker = L.marker([bus.latitude, bus.longitude], {icon: busIcon})
+                    L.marker([bus.latitude, bus.longitude], {icon: busIcon})
                         .bindPopup(`<strong>Bus: ${bus.name}</strong><br>No: ${bus.bus_number}`)
                         .addTo(markers);
                     bounds.push([bus.latitude, bus.longitude]);
                 }
             });
-
             parkingList.forEach(p => {
                 if (p.latitude && p.longitude) {
-                    const marker = L.marker([p.latitude, p.longitude], {icon: parkingIcon})
+                    L.marker([p.latitude, p.longitude], {icon: parkingIcon})
                         .bindPopup(`<strong>Parking: ${p.name}</strong><br>${p.location}`)
                         .addTo(markers);
                     bounds.push([p.latitude, p.longitude]);
                 }
             });
-
-            if (bounds.length > 0) {
-                map.fitBounds(bounds, {padding: [50, 50]});
-            }
+            if (bounds.length > 0) map.fitBounds(bounds, {padding: [50, 50]});
         }
 
-        // Render initial markers for Admin/Merchant
-        if (!isCustomer) {
-            renderMarkers(buses, parkings);
-        }
+        if (!isCustomer) renderMarkers(buses, parkings);
 
-        // Nearby Logic for Customers
         if (isCustomer) {
-            function getNearbyAssets(lat, lng) {
-                $('#nearby-status').html('<i class="bx bx-loader-alt bx-spin me-2"></i> Fetching nearby assets...');
-                
-                $.get("{{ route('search.nearby') }}", { lat: lat, lng: lng }, function(data) {
-                    $('#nearby-status').html(`<i class="bx bx-check-circle me-2 text-success"></i> Found <strong>${data.counts.buses}</strong> buses and <strong>${data.counts.parkings}</strong> parkings within 5km.`);
-                    
-                    let html = '';
-                    // Summary Cards
-                    html += `
-                        <div class="col-md-6 mb-3">
-                            <div class="card bg-label-primary">
-                                <div class="card-body py-3 d-flex align-items-center">
-                                    <div class="avatar me-3"><span class="avatar-initial rounded bg-primary"><i class="bx bx-bus"></i></span></div>
-                                    <div><h5 class="mb-0">${data.counts.buses}</h5><span>Buses Nearby</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="card bg-label-info">
-                                <div class="card-body py-3 d-flex align-items-center">
-                                    <div class="avatar me-3"><span class="avatar-initial rounded bg-info"><i class="bx bx-car"></i></span></div>
-                                    <div><h5 class="mb-0">${data.counts.parkings}</h5><span>Parkings Nearby</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    $('#nearby-assets-container').html(html);
-                    
-                    // Add User Marker
-                    L.marker([lat, lng]).bindPopup('Your Location').addTo(markers);
-                    renderMarkers(data.buses, data.parkings);
-                });
-            }
-
             function detectLocation() {
                 if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(function(position) {
-                        getNearbyAssets(position.coords.latitude, position.coords.longitude);
-                    }, function(error) {
-                        $('#nearby-status').attr('class', 'alert alert-warning py-2 mb-3')
-                            .html('<i class="bx bx-error me-2"></i> Location access denied. Showing central Kathmandu.');
-                        getNearbyAssets(27.7172, 85.3240); // Fallback to central KTM
+                    navigator.geolocation.getCurrentPosition(function(pos) {
+                        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                        $('#nearby-status').html('<i class="bx bx-loader-alt bx-spin me-2"></i> Fetching nearby assets...');
+                        $.get("{{ route('search.nearby') }}", { lat, lng }, function(data) {
+                            $('#nearby-status').html(`<i class="bx bx-check-circle me-2 text-success"></i> Found <strong>${data.counts.buses}</strong> buses and <strong>${data.counts.parkings}</strong> parkings within 5km.`);
+                            $('#nearby-assets-container').html(`
+                                <div class="col-md-6 mb-3"><div class="card bg-label-primary"><div class="card-body py-3 d-flex align-items-center"><div class="avatar me-3"><span class="avatar-initial rounded bg-primary"><i class="bx bx-bus"></i></span></div><div><h5 class="mb-0">${data.counts.buses}</h5><span>Buses Nearby</span></div></div></div></div>
+                                <div class="col-md-6 mb-3"><div class="card bg-label-info"><div class="card-body py-3 d-flex align-items-center"><div class="avatar me-3"><span class="avatar-initial rounded bg-info"><i class="bx bx-car"></i></span></div><div><h5 class="mb-0">${data.counts.parkings}</h5><span>Parkings Nearby</span></div></div></div></div>
+                            `);
+                            L.marker([lat, lng]).bindPopup('Your Location').addTo(markers);
+                            renderMarkers(data.buses, data.parkings);
+                        });
+                    }, () => {
+                        $('#nearby-status').attr('class', 'alert alert-warning py-2 mb-3').html('Location denied. Showing Kathmandu.');
+                        $.get("{{ route('search.nearby') }}", { lat: 27.7172, lng: 85.3240 }, (data) => renderMarkers(data.buses, data.parkings));
                     });
-                } else {
-                    getNearbyAssets(27.7172, 85.3240);
                 }
             }
-
             detectLocation();
             $('#refreshNearby').on('click', detectLocation);
         }
 
-        // Existing Select2 Logic
-        $('#user_search_quick').select2({
-            dropdownParent: $('#quickAddBalanceModal'),
-            ajax: {
-                url: "{{ route('search.users') }}",
-                dataType: 'json',
-                delay: 250,
-                data: function (params) {
-                    return { q: params.term, page: params.page };
+        // Fix Select2
+        if ($.fn.select2) {
+            $('#user_search_quick').select2({
+                dropdownParent: $('#quickAddBalanceModal'),
+                ajax: {
+                    url: "{{ route('search.users') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: params => ({ q: params.term, page: params.page }),
+                    processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                    cache: true
                 },
-                processResults: function (data, params) {
-                    params.page = params.page || 1;
-                    return {
-                        results: data.results,
-                        pagination: { more: data.pagination.more }
-                    };
-                },
-                cache: true
-            },
-            placeholder: 'Search User...',
-            minimumInputLength: 1,
-            width: '100%'
-        });
+                placeholder: 'Search User...',
+                minimumInputLength: 1,
+                width: '100%'
+            });
+        }
     });
 </script>
 <style>
