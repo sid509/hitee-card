@@ -17,6 +17,7 @@ use App\Http\Controllers\RouteController;
 use App\Http\Controllers\FareController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\BalanceController;
+use App\Http\Controllers\ActivityLogController;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -100,6 +101,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('roles', RoleController::class);
         Route::resource('permissions', PermissionController::class);
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
         
         // Support Management
         Route::controller(SupportController::class)->group(function () {

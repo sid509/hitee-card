@@ -108,6 +108,11 @@ class User extends Authenticatable
         return $this->hasOne(Card::class)->where('is_currently_active', true);
     }
 
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
     public function buses()
     {
         return $this->hasMany(Bus::class, 'merchant_id');

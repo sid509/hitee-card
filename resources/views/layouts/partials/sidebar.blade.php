@@ -50,6 +50,12 @@
                 <div class="text-truncate">Support Requests</div>
             </a>
         </li>
+        <li class="menu-item {{ request()->routeIs('activity-logs.*') ? 'active' : '' }}">
+            <a href="{{ route('activity-logs.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-history"></i>
+                <div class="text-truncate">Activity Logs</div>
+            </a>
+        </li>
         @endif
 
         @if(auth()->user()->hasRole('super-admin', 'merchant'))

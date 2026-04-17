@@ -50,3 +50,26 @@ if (!function_exists('apiResponse')) {
         return response()->json($response, $http_code);
     }
 }
+
+if (!function_exists('logActivity')) {
+    /**
+     * Log a user activity.
+     *
+     * @param string $action The action being performed.
+     * @param string $description A human-readable description of the activity.
+     * @param array $properties Additional context for the activity.
+     * @param int|null $userId The ID of the user performing the activity. Defaults to current user.
+     * @return \App\Models\ActivityLog
+     */
+    function logActivity($action, $description, $properties = [], $userId = null)
+    {
+        return \App\Models\ActivityLog::create([
+            'user_id' => $userId ?? auth()->id(),
+            'action' => $action,
+            'description' => $description,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'properties' => $properties,
+        ]);
+    }
+}

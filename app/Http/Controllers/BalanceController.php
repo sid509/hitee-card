@@ -39,6 +39,13 @@ class BalanceController extends Controller
             'status' => 'completed',
         ]);
 
+        logActivity('balance_addition', 'Balance added manually', [
+            'amount' => $request->amount,
+            'target_user_id' => $request->user_id,
+            'type' => $request->type,
+            'remarks' => $request->remarks
+        ]);
+
         return back()->with('success', 'Funds loaded successfully.');
     }
 
@@ -88,6 +95,14 @@ class BalanceController extends Controller
                     'type' => $request->type === 'fare_deduction' ? 'fare' : 'parking',
                 ]);
             }
+
+            logActivity('balance_deduction', 'Balance deducted manually', [
+                'amount' => $request->amount,
+                'target_user_id' => $request->user_id,
+                'type' => $request->type,
+                'remarks' => $request->remarks,
+                'merchant_id' => $request->merchant_id
+            ]);
         });
 
         return back()->with('success', 'Transaction processed successfully.');
@@ -123,6 +138,12 @@ class BalanceController extends Controller
             'transaction_id' => 'KHLT_' . time() . '_' . $withdrawal->id,
         ]);
 
+        logActivity('merchant_withdrawal', 'Merchant withdrawal completed', [
+            'amount' => $request->amount,
+            'transaction_id' => $withdrawal->transaction_id,
+            'remarks' => $request->remarks
+        ]);
+
         return back()->with('success', 'Withdrawal processed successfully to your Khalti wallet.');
     }
 
@@ -131,11 +152,19 @@ class BalanceController extends Controller
      */
     public function merchantTransactions(Request $request)
     {
-        $merchantId = auth()->id();
+        $user = auth()->user();
+        $merchantId = $user->id;
         
         if ($request->ajax()) {
-            $query = MerchantIncome::with('transaction.user')
-                ->where('merchant_id', $merchantId);
+            $query = MerchantIncome::with('transaction.user');
+
+            // If super admin and a specific asset is requested, don't limit by current user id
+            // This allows admin to see logs for buses/parkings they don't own
+            if ($user->hasRole('super-admin') && $request->filled('reference_id') && $request->filled('reference_type')) {
+                // No merchant_id filter needed for admin viewing specific asset
+            } else {
+                $query->where('merchant_id', $merchantId);
+            }
 
             if ($request->filled('reference_id')) {
                 $query->where('reference_id', $request->get('reference_id'));
@@ -341,6 +370,13 @@ class BalanceController extends Controller
                         'status' => 'completed',
                         'remarks' => 'Khalti Topup Successful. TXN ID: ' . ($data['transaction_id'] ?? $pidx),
                     ]);
+
+                    logActivity('balance_topup', 'Balance topped up via Khalti', [
+                        'amount' => $balanceIn->amount,
+                        'transaction_id' => $data['transaction_id'] ?? $pidx,
+                        'gateway' => 'khalti'
+                    ]);
+
                     return redirect()->route('dashboard')->with('success', 'Balance topped up successfully!');
                 }
             }

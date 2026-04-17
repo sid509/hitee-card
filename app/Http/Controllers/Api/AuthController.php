@@ -44,6 +44,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        logActivity('registration', 'New user registered via API', [], $user->id);
+
         return apiResponse(true, 'User registered successfully', [
             'user' => $user,
             'access_token' => $token,
@@ -65,6 +67,8 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->firstOrFail();
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        logActivity('login', 'User logged in via API', [], $user->id);
 
         return apiResponse(true, 'Login successful', [
             'user' => $user,
@@ -112,6 +116,8 @@ class AuthController extends Controller
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
+            logActivity('login', 'User logged in via social login (' . $provider . ')', [], $user->id);
+
             return apiResponse(true, 'Social login successful', [
                 'user' => $user,
                 'access_token' => $token,
@@ -130,6 +136,7 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        logActivity('logout', 'User logged out via API');
         $request->user()->currentAccessToken()->delete();
 
         return apiResponse(true, 'Logged out successfully');

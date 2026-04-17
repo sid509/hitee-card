@@ -24,7 +24,10 @@ class ProfileController extends Controller
      */
     public function update(UpdateProfileRequest $request)
     {
-        auth()->user()->update($request->only('name', 'email'));
+        $user = auth()->user();
+        $user->update($request->only('name', 'email'));
+
+        logActivity('profile_update', 'User updated profile details');
 
         return back()->with('success', 'Profile updated successfully.');
     }
@@ -39,6 +42,8 @@ class ProfileController extends Controller
         auth()->user()->update([
             'password' => Hash::make($request->password),
         ]);
+
+        logActivity('password_change', 'User changed their password');
 
         return back()->with('success', 'Password changed successfully.');
     }

@@ -30,6 +30,8 @@ class RegisterController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        logActivity('registration', 'New user registered', [], $user->id);
+
         Auth::login($user);
 
         return redirect()->route('dashboard');
