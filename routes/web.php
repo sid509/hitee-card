@@ -18,6 +18,7 @@ use App\Http\Controllers\FareController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\BalanceController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\RouteFinderController;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -132,9 +133,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/fares/matrix-form', [FareController::class, 'getMatrixForm'])->name('fares.matrix-form');
 
     // Business Logic Resources
+    Route::get('/route-finder', [RouteFinderController::class, 'index'])->name('route-finder.index');
     Route::resource('buses', BusController::class);
     Route::resource('parkings', ParkingController::class);
     Route::resource('cards', CardController::class);
+    Route::post('/cards/{card}/request-change', [CardController::class, 'requestChange'])->name('cards.request-change');
 
     // Support
     Route::post('/support/send', [SupportController::class, 'send'])->name('support.send');

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Route;
+use App\Models\RouteStop;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -83,7 +85,7 @@ class SearchController extends Controller
             $query = Bus::query();
             if ($merchantId) $query->where('merchant_id', $merchantId);
             if ($search) $query->where('name', 'LIKE', "%$search%")->orWhere('bus_number', 'LIKE', "%$search%");
-            
+
             $items = $query->paginate(10);
             return response()->json([
                 'results' => collect($items->items())->map(fn($item) => ['id' => $item->id, 'text' => $item->name . " (" . $item->bus_number . ")"])->toArray(),
@@ -93,7 +95,7 @@ class SearchController extends Controller
             $query = Parking::query();
             if ($merchantId) $query->where('merchant_id', $merchantId);
             if ($search) $query->where('name', 'LIKE', "%$search%")->orWhere('location', 'LIKE', "%$search%");
-            
+
             $items = $query->paginate(10);
             return response()->json([
                 'results' => collect($items->items())->map(fn($item) => ['id' => $item->id, 'text' => $item->name . " (" . $item->location . ")"])->toArray(),
@@ -110,13 +112,13 @@ class SearchController extends Controller
     public function stops(Request $request)
     {
         $search = $request->get('q');
-        $query = RouteStop::query();
+        $query = RouteStop::query()->select('stop_name')->distinct();
 
         if ($search) {
             $query->where('stop_name', 'LIKE', "%$search%");
         }
 
-        $stops = $query->groupBy('stop_name')->paginate(10);
+        $stops = $query->paginate(10);
 
         return response()->json([
             'results' => collect($stops->items())->map(fn($s) => ['id' => $s->stop_name, 'text' => $s->stop_name])->toArray(),

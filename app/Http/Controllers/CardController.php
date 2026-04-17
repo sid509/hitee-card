@@ -47,7 +47,22 @@ class CardController extends Controller
                                     </form>';
                     } elseif (auth()->user()->hasRole('customers')) {
                         // Customer action
-                        $actions .= '<button class="btn btn-sm btn-outline-primary">Request Change</button>';
+                        $canEnable = !$row->is_currently_active || $row->status !== 'active';
+                        $canDisable = $row->is_currently_active && $row->status === 'active';
+                        $canUpgrade = $row->status === 'active' && $row->is_currently_active;
+
+                        if ($canEnable || $canDisable || $canUpgrade) {
+                            $actions .= '<button class="btn btn-sm btn-outline-primary btn-request-change" 
+                                            data-id="'.$row->id.'" 
+                                            data-card-number="'.$row->card_number.'"
+                                            data-can-enable="'.($canEnable ? '1' : '0').'"
+                                            data-can-disable="'.($canDisable ? '1' : '0').'"
+                                            data-can-upgrade="'.($canUpgrade ? '1' : '0').'">
+                                            Request Change
+                                         </button>';
+                        } else {
+                            $actions .= '<span class="text-muted small">No actions available</span>';
+                        }
                     }
                     return $actions;
                 })
@@ -126,5 +141,42 @@ class CardController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
         $card->delete();
         return redirect()->route('cards.index')->with('success', 'Card deleted successfully.');
+    }
+
+    /**
+     * Request a change for the card (Customer only)
+     */
+    public function requestChange(Request $request, Card $card)
+    {
+        // Ensure customer only requests for their own card
+        if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) abort(403);
+
+        $request->validate([
+            'type' => 'required|in:upgrade,enable,disable',
+            'message' => 'nullable|string|max:1000'
+        ]);
+
+        $typeLabel = 'Unknown';
+        if ($request->type === 'upgrade') $typeLabel = 'Card Upgrade';
+        elseif ($request->type === 'enable') $typeLabel = 'Card Activation';
+        elseif ($request->type === 'disable') $typeLabel = 'Card Deactivation';
+        
+        \App\Models\SupportRequest::create([
+            'user_id' => auth()->id(),
+            'subject' => "Card Change Request: {$typeLabel}",
+            'message' => "Request for [{$typeLabel}] for Card: {$card->card_number}. " . ($request->message ?? ''),
+            'status' => 'open'
+        ]);
+
+        logActivity('card_request', "User requested card {$request->type}", [
+            'card_id' => $card->id,
+            'card_number' => $card->card_number,
+            'request_type' => $request->type
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Your request has been submitted successfully.'
+        ]);
     }
 }

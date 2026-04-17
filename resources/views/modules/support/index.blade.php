@@ -18,6 +18,7 @@
                     <tr>
                         <th>ID</th>
                         <th>User</th>
+                        <th>Subject</th>
                         <th>Message</th>
                         <th>Status</th>
                         <th>Created At</th>
@@ -41,6 +42,10 @@
                 <div class="mb-3">
                     <label class="fw-bold">From:</label>
                     <p id="view_user_name"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold">Subject:</label>
+                    <p id="view_subject" class="fw-medium text-primary"></p>
                 </div>
                 <div class="mb-3">
                     <label class="fw-bold">Date:</label>
@@ -89,6 +94,7 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'user_name', name: 'user.name'},
+                {data: 'subject', name: 'subject'},
                 {data: 'message', name: 'message', render: function(data) {
                     return data.length > 50 ? data.substr(0, 50) + '...' : data;
                 }},
@@ -110,6 +116,7 @@
                 const data = res.content;
                 $('#support_id').val(data.id);
                 $('#view_user_name').text(data.user.name);
+                $('#view_subject').text(data.subject || 'General Query');
                 $('#view_created_at').text(data.created_at);
                 $('#view_message').text(data.message);
 

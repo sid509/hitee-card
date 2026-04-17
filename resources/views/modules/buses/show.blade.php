@@ -27,6 +27,7 @@
                                 <span class="fw-medium me-2">Bus Number:</span>
                                 <span>{{ $bus->bus_number }}</span>
                             </li>
+                            @if(!auth()->user()->hasRole('customers'))
                             <li class="mb-3">
                                 <span class="fw-medium me-2">Hardware ID:</span>
                                 <span>{{ $bus->hwid }}</span>
@@ -35,6 +36,7 @@
                                 <span class="fw-medium me-2">Merchant:</span>
                                 <span>{{ $bus->merchant->name ?? 'N/A' }}</span>
                             </li>
+                            @endif
                             <li class="mb-3">
                                 <span class="fw-medium me-2">Route:</span>
                                 <span>{{ $bus->route->name ?? 'Not Assigned' }}</span>
@@ -61,7 +63,8 @@
             </div>
             @endif
 
-            <!-- Income Card -->
+            <!-- Income Card (Admin/Merchant Only) -->
+            @if(!auth()->user()->hasRole('customers'))
             <div class="card bg-success text-white mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -75,6 +78,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         </div>
 
         <!-- Map and Route -->
@@ -82,14 +86,47 @@
             <div class="card mb-4">
                 <h5 class="card-header d-flex align-items-center">
                     <i class="bx bx-map-pin me-2 text-primary"></i>
-                    {{ $bus->route ? 'Route: ' . $bus->route->name : 'Asset Location' }}
+                    {{ $bus->route ? 'Route Plan: ' . $bus->route->name : 'Asset Location' }}
                 </h5>
                 <div class="card-body">
                     <div id="bus-map" style="height: 400px; border-radius: 8px; border: 1px solid #eee;"></div>
                 </div>
             </div>
 
-            <!-- Income History -->
+            <!-- Route Stops List -->
+            @if($bus->route && $bus->route->stops->count() > 0)
+            <div class="card mb-4">
+                <h5 class="card-header">Route Stops Sequence</h5>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        @foreach($bus->route->stops as $index => $stop)
+                            <div class="list-group-item d-flex align-items-center border-0 px-0 py-3">
+                                <div class="me-3 position-relative">
+                                    <span class="badge rounded-pill bg-label-primary px-2 py-1">{{ $index + 1 }}</span>
+                                    @if(!$loop->last)
+                                        <div class="position-absolute start-50 translate-middle-x bg-primary opacity-25" style="width: 2px; height: 30px; top: 100%;"></div>
+                                    @endif
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ $stop->stop_name }}</h6>
+                                    @if($stop->latitude && $stop->longitude)
+                                        <small class="text-muted">{{ $stop->latitude }}, {{ $stop->longitude }}</small>
+                                    @endif
+                                </div>
+                                <div class="ms-auto">
+                                    <button class="btn btn-icon btn-sm btn-outline-primary rounded-pill" onclick="focusStop({{ $stop->latitude }}, {{ $stop->longitude }}, '{{ $stop->stop_name }}')">
+                                        <i class="bx bx-map-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Income History (Admin/Merchant Only) -->
+            @if(!auth()->user()->hasRole('customers'))
             <div class="card">
                 <h5 class="card-header">Transaction History</h5>
                 <div class="card-body">
@@ -106,6 +143,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         </div>
     </div>
 </div>
@@ -196,6 +234,7 @@
             L.marker([bus.latitude, bus.longitude], {icon: busIcon, zIndexOffset: 1000}).addTo(map).bindPopup('<strong>Current Location</strong>');
         }
 
+        @if(!auth()->user()->hasRole('customers'))
         $('.bus-income-table').DataTable({
             processing: true,
             serverSide: true,
@@ -214,6 +253,14 @@
             ],
             order: [[0, 'desc']]
         });
+        @endif
+
+        window.focusStop = function(lat, lng, name) {
+            map.setView([lat, lng], 16);
+            L.popup().setLatLng([lat, lng]).setContent(`<strong>${name}</strong>`).openOn(map);
+            // Smooth scroll to map
+            document.getElementById('bus-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
     });
 </script>
 @endpush

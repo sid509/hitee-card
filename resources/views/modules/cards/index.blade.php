@@ -36,6 +36,48 @@
 </div>
 @endsection
 
+@push('modals')
+@if(auth()->user()->hasRole('customers'))
+<!-- Request Change Modal -->
+<div class="modal fade" id="requestChangeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Request Card Change</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="requestChangeForm">
+                @csrf
+                <input type="hidden" id="request_card_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Card Number</label>
+                        <input type="text" id="request_card_number" class="form-control" readonly disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Request Type</label>
+                        <select name="type" id="request_type" class="form-select" required>
+                            <option value="upgrade" id="opt_upgrade">Upgrade Card</option>
+                            <option value="enable" id="opt_enable">Enable/Activate Card</option>
+                            <option value="disable" id="opt_disable">Disable/Deactivate Card</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Additional Message (Optional)</label>
+                        <textarea name="message" class="form-control" rows="3" placeholder="Explain your request..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" id="btnSubmitRequest" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+@endpush
+
 @push('page-js')
 <script type="module">
     $(function () {
@@ -53,6 +95,56 @@
                 {data: 'is_active_badge', name: 'is_active_badge', orderable: false, searchable: false},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
+        });
+
+        // Request Change Button
+        $(document).on('click', '.btn-request-change', function() {
+            const id = $(this).data('id');
+            const cardNumber = $(this).data('card-number');
+            const canEnable = $(this).data('can-enable');
+            const canDisable = $(this).data('can-disable');
+            const canUpgrade = $(this).data('can-upgrade');
+
+            $('#request_card_id').val(id);
+            $('#request_card_number').val(cardNumber);
+            
+            // Show/Hide options based on applicability
+            if (canEnable) $('#opt_enable').show(); else $('#opt_enable').hide();
+            if (canDisable) $('#opt_disable').show(); else $('#opt_disable').hide();
+            if (canUpgrade) $('#opt_upgrade').show(); else $('#opt_upgrade').hide();
+
+            // Set default selected
+            if (canDisable) $('#request_type').val('disable');
+            else if (canEnable) $('#request_type').val('enable');
+            else if (canUpgrade) $('#request_type').val('upgrade');
+
+            new bootstrap.Modal(document.getElementById('requestChangeModal')).show();
+        });
+
+        $('#requestChangeForm').on('submit', function(e) {
+            e.preventDefault();
+            const id = $('#request_card_id').val();
+            const btn = $('#btnSubmitRequest');
+            
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Submitting...');
+
+            $.ajax({
+                url: `/cards/${id}/request-change`,
+                method: "POST",
+                data: $(this).serialize(),
+                success: function(response) {
+                    $('#requestChangeModal').modal('hide');
+                    showToast(response.message, 'Success', 'success');
+                    table.ajax.reload();
+                },
+                error: function(xhr) {
+                    const msg = xhr.responseJSON?.message || 'Failed to submit request';
+                    showAlert(msg, 'error');
+                },
+                complete: function() {
+                    btn.prop('disabled', false).text('Submit Request');
+                }
+            });
         });
     });
 </script>

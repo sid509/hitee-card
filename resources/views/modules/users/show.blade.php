@@ -135,7 +135,7 @@
                 <h5 class="modal-title">Add Balance for {{ $user->name }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('balance.manual-add') }}" method="POST">
+            <form action="{{ route('transactions.manual-add') }}" method="POST">
                 @csrf
                 <input type="hidden" name="user_id" value="{{ $user->id }}">
                 <div class="modal-body">

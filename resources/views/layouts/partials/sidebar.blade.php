@@ -45,9 +45,14 @@
             </a>
         </li>
         <li class="menu-item {{ request()->routeIs('supports.*') ? 'active' : '' }}">
-            <a href="{{ route('supports.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-support"></i>
-                <div class="text-truncate">Support Requests</div>
+            <a href="{{ route('supports.index') }}" class="menu-link d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="menu-icon tf-icons bx bx-support"></i>
+                    <div class="text-truncate">Support Requests</div>
+                </div>
+                @if(isset($openSupportCount) && $openSupportCount > 0)
+                    <span class="badge badge-center rounded-pill bg-danger" style="width: 1.5rem; height: 1.5rem;">{{ $openSupportCount }}</span>
+                @endif
             </a>
         </li>
         <li class="menu-item {{ request()->routeIs('activity-logs.*') ? 'active' : '' }}">
@@ -104,6 +109,12 @@
         @endif
 
         @if(auth()->user()->hasRole('super-admin', 'customers'))
+        <li class="menu-item {{ request()->routeIs('route-finder.*') ? 'active' : '' }}">
+            <a href="{{ route('route-finder.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-map-pin"></i>
+                <div class="text-truncate">Route Finder</div>
+            </a>
+        </li>
         <li class="menu-item {{ request()->routeIs('cards.*') ? 'active' : '' }}">
             <a href="{{ route('cards.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-credit-card"></i>
