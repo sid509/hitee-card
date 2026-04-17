@@ -16,7 +16,7 @@
                 <div class="card-body">
                     <div class="text-center mb-4">
                         <div class="avatar avatar-xl m-auto mb-3">
-                            <span class="avatar-initial rounded-circle bg-label-info"><i class="bx bx-car bx-lg"></i></span>
+                            <span class="avatar-initial rounded-circle bg-label-info"><i class="bx bx-garage bx-lg"></i></span>
                         </div>
                         <h5>{{ $parking->name }}</h5>
                         <span class="badge bg-label-success">{{ strtoupper($parking->status) }}</span>

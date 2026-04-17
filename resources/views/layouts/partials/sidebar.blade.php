@@ -65,7 +65,7 @@
         </li>
         <li class="menu-item {{ request()->routeIs('parkings.*') ? 'active' : '' }}">
             <a href="{{ route('parkings.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-car"></i>
+                <i class="menu-icon tf-icons bx bx-garage"></i>
                 <div class="text-truncate">Parkings</div>
             </a>
         </li>
