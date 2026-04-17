@@ -106,13 +106,15 @@
             
             const stopName = name || `Stop ${index + 1}`;
             marker.stopName = stopName;
+            marker.bindPopup(`<strong>${marker.stopName}</strong><br><small>Click to edit name</small>`);
             
             marker.on('dragend', updateMap);
-            marker.on('click', () => {
-                const newName = prompt('Enter Stop Name:', marker.stopName);
-                if (newName) {
-                    marker.stopName = newName;
-                    updateMap();
+            marker.on('click', function() {
+                const newName = prompt('Enter Stop Name:', this.stopName);
+                if (newName && newName.trim() !== '') {
+                    this.stopName = newName.trim();
+                    this.setPopupContent(`<strong>${this.stopName}</strong><br><small>Click to edit name</small>`);
+                    renderTable();
                 }
             });
 
@@ -137,16 +139,19 @@
                 markers.forEach((m, i) => {
                     const latlng = m.getLatLng();
                     tbody.append(`
-                        <tr class="stop-item">
+                        <tr class="stop-item" data-index="${i}">
                             <td>${i + 1}</td>
                             <td>
-                                <input type="hidden" name="stops[${i}][name]" value="${m.stopName}">
+                                <input type="hidden" name="stops[${i}][name]" id="input-name-${i}" value="${m.stopName}">
                                 <input type="hidden" name="stops[${i}][lat]" value="${latlng.lat}">
                                 <input type="hidden" name="stops[${i}][lng]" value="${latlng.lng}">
-                                <strong>${m.stopName}</strong>
+                                <span id="display-name-${i}">${m.stopName}</span>
                             </td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-icon btn-danger remove-stop" data-index="${i}"><i class="bx bx-trash"></i></button>
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-sm btn-icon btn-primary edit-stop-name" data-index="${i}"><i class="bx bx-edit"></i></button>
+                                    <button type="button" class="btn btn-sm btn-icon btn-danger remove-stop" data-index="${i}"><i class="bx bx-trash"></i></button>
+                                </div>
                             </td>
                         </tr>
                     `);
@@ -160,6 +165,18 @@
 
         $(document).on('click', '.remove-stop', function() {
             removeStop($(this).data('index'));
+        });
+
+        $(document).on('click', '.edit-stop-name', function() {
+            const index = $(this).data('index');
+            const marker = markers[index];
+            const newName = prompt('Enter new name for this stop:', marker.stopName);
+            
+            if (newName && newName.trim() !== '') {
+                marker.stopName = newName.trim();
+                marker.setPopupContent(`<strong>${marker.stopName}</strong><br><small>Click to edit name</small>`);
+                renderTable();
+            }
         });
 
         // Initialize for Edit
