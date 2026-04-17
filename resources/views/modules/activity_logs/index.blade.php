@@ -10,6 +10,9 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Audit Trail</h5>
+        <button id="sync-logs-btn" class="btn btn-primary btn-sm">
+            <i class="bx bx-sync me-1"></i> Sync Logs from Buffer
+        </button>
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
@@ -49,6 +52,33 @@
                 {data: 'created_at', name: 'created_at'},
             ],
             order: [[6, 'desc']]
+        });
+
+        $('#sync-logs-btn').on('click', function() {
+            var btn = $(this);
+            btn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin me-1"></i> Syncing...');
+
+            $.ajax({
+                url: "{{ route('activity-logs.sync') }}",
+                method: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    if (response.status) {
+                        toastr.success(response.message);
+                        table.ajax.reload();
+                    } else {
+                        toastr.info(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('Failed to sync logs.');
+                },
+                complete: function() {
+                    btn.prop('disabled', false).html('<i class="bx bx-sync me-1"></i> Sync Logs from Buffer');
+                }
+            });
         });
     });
 </script>

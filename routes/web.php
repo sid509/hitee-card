@@ -102,6 +102,7 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('roles', RoleController::class);
         Route::resource('permissions', PermissionController::class);
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+        Route::post('/activity-logs/sync', [ActivityLogController::class, 'sync'])->name('activity-logs.sync');
         
         // Support Management
         Route::controller(SupportController::class)->group(function () {

@@ -53,23 +53,34 @@ if (!function_exists('apiResponse')) {
 
 if (!function_exists('logActivity')) {
     /**
-     * Log a user activity.
+     * Log a user activity to a buffer file.
      *
      * @param string $action The action being performed.
      * @param string $description A human-readable description of the activity.
      * @param array $properties Additional context for the activity.
      * @param int|null $userId The ID of the user performing the activity. Defaults to current user.
-     * @return \App\Models\ActivityLog
+     * @return bool
      */
     function logActivity($action, $description, $properties = [], $userId = null)
     {
-        return \App\Models\ActivityLog::create([
+        $logData = [
             'user_id' => $userId ?? auth()->id(),
             'action' => $action,
             'description' => $description,
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
-            'properties' => $properties,
-        ]);
+            'properties' => json_encode($properties),
+            'created_at' => now()->toDateTimeString(),
+            'updated_at' => now()->toDateTimeString(),
+        ];
+
+        try {
+            // Append as a new line to storage/app/activity_buffer.jsonl
+            \Illuminate\Support\Facades\Storage::disk('local')->append('activity_buffer.jsonl', json_encode($logData));
+            return true;
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Activity logging failed: ' . $e->getMessage());
+            return false;
+        }
     }
 }
