@@ -59,11 +59,26 @@ Route::middleware(['auth'])->group(function () {
     
     // Dashboard
     Route::get('/dashboard', function () {
+        $user = auth()->user();
+        
         $userCount = User::count();
-        $busCount = Bus::count();
-        $parkingCount = Parking::count();
         $cardCount = Card::count();
-        return view('dashboard', compact('userCount', 'busCount', 'parkingCount', 'cardCount'));
+
+        $busesQuery = Bus::query();
+        $parkingsQuery = Parking::query();
+
+        if ($user->hasRole('merchant')) {
+            $busesQuery->where('merchant_id', $user->id);
+            $parkingsQuery->where('merchant_id', $user->id);
+        }
+
+        $busCount = (clone $busesQuery)->count();
+        $parkingCount = (clone $parkingsQuery)->count();
+
+        $buses = $busesQuery->get(['id', 'name', 'bus_number', 'latitude', 'longitude']);
+        $parkings = $parkingsQuery->get(['id', 'name', 'location', 'latitude', 'longitude']);
+
+        return view('dashboard', compact('userCount', 'busCount', 'parkingCount', 'cardCount', 'buses', 'parkings'));
     })->name('dashboard');
 
     // Profile Management
@@ -112,6 +127,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/search/users', 'users')->name('search.users');
         Route::get('/search/merchants', 'merchants')->name('search.merchants');
         Route::get('/search/references', 'references')->name('search.references');
+        Route::get('/search/nearby', 'nearby')->name('search.nearby');
     });
 
     // Transaction Management

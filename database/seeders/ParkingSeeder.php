@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Parking;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class ParkingSeeder extends Seeder
 {
@@ -14,18 +13,26 @@ class ParkingSeeder extends Seeder
      */
     public function run(): void
     {
-        $merchants = User::whereHas('roles', function($q){
-            $q->where('slug', 'merchant');
-        })->get();
+        $merchants = User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get();
 
         if ($merchants->isEmpty()) return;
 
-        for ($i = 1; $i <= 20; $i++) {
+        $kathmanduParkings = [
+            ['name' => 'Civil Mall Parking', 'loc' => 'Sundhara, Kathmandu', 'lat' => 27.699926, 'lng' => 85.312157],
+            ['name' => 'Labim Mall Parking', 'loc' => 'Pulchowk, Lalitpur', 'lat' => 27.677568, 'lng' => 85.316824],
+            ['name' => 'Durbar Marg Parking', 'loc' => 'Durbar Marg, Kathmandu', 'lat' => 27.710787, 'lng' => 85.315939],
+            ['name' => 'Bhat-Bhateni Koteshwor', 'loc' => 'Koteshwor, Kathmandu', 'lat' => 27.674931, 'lng' => 85.347514],
+            ['name' => 'Basantapur Square', 'loc' => 'Basantapur, Kathmandu', 'lat' => 27.704193, 'lng' => 85.306540],
+        ];
+
+        foreach ($kathmanduParkings as $data) {
             Parking::create([
-                'name' => "Parking " . strtoupper(Str::random(5)),
-                'location' => "Location " . rand(1, 50),
-                'status' => rand(0, 1) ? 'opened' : 'closed',
+                'name' => $data['name'],
+                'location' => $data['loc'],
+                'status' => 'active',
                 'merchant_id' => $merchants->random()->id,
+                'latitude' => $data['lat'],
+                'longitude' => $data['lng'],
             ]);
         }
     }

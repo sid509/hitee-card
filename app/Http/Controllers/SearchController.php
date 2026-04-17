@@ -103,4 +103,42 @@ class SearchController extends Controller
 
         return response()->json(['results' => []]);
     }
+
+    /**
+     * Find nearby assets within 5km for a given lat/lng.
+     */
+    public function nearby(Request $request)
+    {
+        $lat = $request->get('lat');
+        $lng = $request->get('lng');
+        $radius = 5; // km
+
+        if (!$lat || !$lng) {
+            return response()->json(['error' => 'Coordinates required'], 400);
+        }
+
+        // Haversine formula
+        $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude)) * cos(radians(longitude) - radians($lng)) + sin(radians($lat)) * sin(radians(latitude))))";
+
+        $buses = Bus::select(['id', 'name', 'bus_number', 'latitude', 'longitude'])
+            ->selectRaw("$haversine AS distance")
+            ->having("distance", "<=", $radius)
+            ->orderBy("distance")
+            ->get();
+
+        $parkings = Parking::select(['id', 'name', 'location', 'latitude', 'longitude'])
+            ->selectRaw("$haversine AS distance")
+            ->having("distance", "<=", $radius)
+            ->orderBy("distance")
+            ->get();
+
+        return response()->json([
+            'buses' => $buses,
+            'parkings' => $parkings,
+            'counts' => [
+                'buses' => $buses->count(),
+                'parkings' => $parkings->count()
+            ]
+        ]);
+    }
 }

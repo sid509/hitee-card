@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bus extends Model
 {
-    protected $fillable = ['name', 'bus_number', 'hwid', 'status', 'merchant_id'];
+    protected $fillable = ['name', 'bus_number', 'hwid', 'status', 'merchant_id', 'latitude', 'longitude'];
 
     public function merchant()
     {

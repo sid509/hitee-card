@@ -2,6 +2,14 @@
 
 @section('title', 'Dashboard')
 
+@push('page-css')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<style>
+    #map { height: 400px; border-radius: 8px; border: 1px solid #dee2e6; }
+    .nearby-badge { position: absolute; top: 10px; right: 10px; z-index: 1000; }
+</style>
+@endpush
+
 @section('content')
 <div class="row">
     <div class="col-lg-8 mb-6 order-0">
@@ -26,7 +34,7 @@
                     </div>
                 </div>
             </div>
-        <div class="card-body border-top">
+            <div class="card-body border-top">
                 <h6 class="text-muted mb-4">Quick Shortcuts</h6>
                 <div class="row g-3">
                     @if(auth()->user()->hasRole('super-admin'))
@@ -50,7 +58,7 @@
                         </div>
                     @endif
 
-                    @if(auth()->user()->hasRole('super-admin', 'merchant'))
+                    @if(auth()->user()->hasRole('super-admin'))
                         <div class="col-md-3 col-6">
                             <a href="{{ route('buses.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-bus fs-3 mb-2 text-primary"></i>
@@ -61,6 +69,21 @@
                             <a href="{{ route('parkings.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-car fs-3 mb-2 text-primary"></i>
                                 <span class="small fw-medium">Add Parking</span>
+                            </a>
+                        </div>
+                    @endif
+
+                    @if(auth()->user()->hasRole('merchant'))
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('buses.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-bus fs-3 mb-2 text-primary"></i>
+                                <span class="small fw-medium">My Buses</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('parkings.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-car fs-3 mb-2 text-primary"></i>
+                                <span class="small fw-medium">My Parkings</span>
                             </a>
                         </div>
                     @endif
@@ -140,8 +163,21 @@
                                 <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-bus"></i></span>
                             </div>
                         </div>
-                        <p class="mb-1">Total Buses</p>
+                        <p class="mb-1">{{ auth()->user()->hasRole('merchant') ? 'My Buses' : 'Total Buses' }}</p>
                         <h4 class="card-title mb-3">{{ $busCount }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12 col-6 mb-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <span class="avatar-initial rounded bg-label-info"><i class="bx bx-car"></i></span>
+                            </div>
+                        </div>
+                        <p class="mb-1">{{ auth()->user()->hasRole('merchant') ? 'My Parkings' : 'Total Parkings' }}</p>
+                        <h4 class="card-title mb-3">{{ $parkingCount }}</h4>
                     </div>
                 </div>
             </div>
@@ -150,15 +186,164 @@
     </div>
 </div>
 
+<div class="row">
+    <!-- Map View for Admin and Merchant -->
+    @if(auth()->user()->hasRole('super-admin', 'merchant'))
+    <div class="col-12 mb-4">
+        <div class="card">
+            <h5 class="card-header">Fleet & Asset Locations</h5>
+            <div class="card-body">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Nearby for Customers -->
+    @if(auth()->user()->hasRole('customers'))
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Nearby Assets (5km)</h5>
+                <button id="refreshNearby" class="btn btn-sm btn-outline-primary"><i class="bx bx-refresh"></i> Refresh</button>
+            </div>
+            <div class="card-body">
+                <div id="nearby-status" class="alert alert-info py-2 mb-3">
+                    <i class="bx bx-loader-alt bx-spin me-2"></i> Detecting your location...
+                </div>
+                <div class="row" id="nearby-assets-container">
+                    <!-- Dynamic content -->
+                </div>
+                <div id="map" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+    @endif
+</div>
+
 @endsection
 
 @push('page-js')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <!-- Select2 CSS/JS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script type="module">
     $(function() {
+        const isCustomer = {{ auth()->user()->hasRole('customers') ? 'true' : 'false' }};
+        const buses = @json($buses);
+        const parkings = @json($parkings);
+        
+        // Initialize Map
+        const map = L.map('map').setView([27.7172, 85.3240], 13); // Default to KTM
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const busIcon = L.divIcon({
+            html: '<i class="bx bx-bus bg-primary text-white p-1 rounded-circle" style="font-size: 24px;"></i>',
+            className: 'custom-div-icon',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+
+        const parkingIcon = L.divIcon({
+            html: '<i class="bx bx-car bg-info text-white p-1 rounded-circle" style="font-size: 24px;"></i>',
+            className: 'custom-div-icon',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+
+        const markers = L.layerGroup().addTo(map);
+
+        function renderMarkers(busList, parkingList) {
+            markers.clearLayers();
+            const bounds = [];
+
+            busList.forEach(bus => {
+                if (bus.latitude && bus.longitude) {
+                    const marker = L.marker([bus.latitude, bus.longitude], {icon: busIcon})
+                        .bindPopup(`<strong>Bus: ${bus.name}</strong><br>No: ${bus.bus_number}`)
+                        .addTo(markers);
+                    bounds.push([bus.latitude, bus.longitude]);
+                }
+            });
+
+            parkingList.forEach(p => {
+                if (p.latitude && p.longitude) {
+                    const marker = L.marker([p.latitude, p.longitude], {icon: parkingIcon})
+                        .bindPopup(`<strong>Parking: ${p.name}</strong><br>${p.location}`)
+                        .addTo(markers);
+                    bounds.push([p.latitude, p.longitude]);
+                }
+            });
+
+            if (bounds.length > 0) {
+                map.fitBounds(bounds, {padding: [50, 50]});
+            }
+        }
+
+        // Render initial markers for Admin/Merchant
+        if (!isCustomer) {
+            renderMarkers(buses, parkings);
+        }
+
+        // Nearby Logic for Customers
+        if (isCustomer) {
+            function getNearbyAssets(lat, lng) {
+                $('#nearby-status').html('<i class="bx bx-loader-alt bx-spin me-2"></i> Fetching nearby assets...');
+                
+                $.get("{{ route('search.nearby') }}", { lat: lat, lng: lng }, function(data) {
+                    $('#nearby-status').html(`<i class="bx bx-check-circle me-2 text-success"></i> Found <strong>${data.counts.buses}</strong> buses and <strong>${data.counts.parkings}</strong> parkings within 5km.`);
+                    
+                    let html = '';
+                    // Summary Cards
+                    html += `
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-label-primary">
+                                <div class="card-body py-3 d-flex align-items-center">
+                                    <div class="avatar me-3"><span class="avatar-initial rounded bg-primary"><i class="bx bx-bus"></i></span></div>
+                                    <div><h5 class="mb-0">${data.counts.buses}</h5><span>Buses Nearby</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card bg-label-info">
+                                <div class="card-body py-3 d-flex align-items-center">
+                                    <div class="avatar me-3"><span class="avatar-initial rounded bg-info"><i class="bx bx-car"></i></span></div>
+                                    <div><h5 class="mb-0">${data.counts.parkings}</h5><span>Parkings Nearby</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    $('#nearby-assets-container').html(html);
+                    
+                    // Add User Marker
+                    L.marker([lat, lng]).bindPopup('Your Location').addTo(markers);
+                    renderMarkers(data.buses, data.parkings);
+                });
+            }
+
+            function detectLocation() {
+                if ("geolocation" in navigator) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        getNearbyAssets(position.coords.latitude, position.coords.longitude);
+                    }, function(error) {
+                        $('#nearby-status').attr('class', 'alert alert-warning py-2 mb-3')
+                            .html('<i class="bx bx-error me-2"></i> Location access denied. Showing central Kathmandu.');
+                        getNearbyAssets(27.7172, 85.3240); // Fallback to central KTM
+                    });
+                } else {
+                    getNearbyAssets(27.7172, 85.3240);
+                }
+            }
+
+            detectLocation();
+            $('#refreshNearby').on('click', detectLocation);
+        }
+
+        // Existing Select2 Logic
         $('#user_search_quick').select2({
             dropdownParent: $('#quickAddBalanceModal'),
             ajax: {
@@ -181,11 +366,6 @@
             minimumInputLength: 1,
             width: '100%'
         });
-
-        // Initialize Select2 for Merchant/Reference in case merchant uses dashboard to withdraw (already handled but good to have)
-        if ($('#merchant_search_withdraw').length) {
-            // ... already defined in modal but good for consistency
-        }
     });
 </script>
 <style>

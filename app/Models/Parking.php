@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Parking extends Model
 {
-    protected $fillable = ['name', 'location', 'status', 'merchant_id'];
+    protected $fillable = ['name', 'location', 'status', 'merchant_id', 'latitude', 'longitude'];
 
     public function merchant()
     {
