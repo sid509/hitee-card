@@ -3,7 +3,6 @@
 @section('title', 'Dashboard')
 
 @push('page-css')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <style>
     #map { height: 400px; border-radius: 8px; border: 1px solid #dee2e6; }
     .nearby-badge { position: absolute; top: 10px; right: 10px; z-index: 1000; }
