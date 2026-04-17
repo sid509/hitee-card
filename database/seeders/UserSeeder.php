@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
 
         // 1. Super Admin
         $admin = User::create([
-            'name' => 'Sudip Sharki',
+            'name' => 'Sudip Dahal',
             'email' => 'admin@hitee.ai',
             'password' => Hash::make('Admin@Hitee2026'),
             'status' => 'active',
@@ -53,9 +53,9 @@ class UserSeeder extends Seeder
 
         // 3. Customers (Familiar Nepali Names)
         $customers = [
-            'Aayushma Regmi', 'Bipul Chhetri', 'Deepak Raj Giri', 'Ishani Shrestha', 
-            'Milan Newar', 'Nabin K Bhattarai', 'Priyanka Karki', 'Rajesh Hamal', 
-            'Sandeep Lamichhane', 'Shrinkhala Khatiwada', 'Sushant KC', 'Ujjwal Thapa', 
+            'Aayushma Regmi', 'Bipul Chhetri', 'Deepak Raj Giri', 'Ishani Shrestha',
+            'Milan Newar', 'Nabin K Bhattarai', 'Priyanka Karki', 'Rajesh Hamal',
+            'Sandeep Lamichhane', 'Shrinkhala Khatiwada', 'Sushant KC', 'Ujjwal Thapa',
             'Anmol KC', 'Dayahang Rai', 'Keki Adhikari', 'Namrata Shrestha',
             'Pradeep Khadka', 'Saugat Malla', 'Swastima Khadka', 'Bipin Karki'
         ];
