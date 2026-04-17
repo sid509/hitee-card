@@ -172,7 +172,7 @@
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
-                                <span class="avatar-initial rounded bg-label-info"><i class="bx bx-garage"></i></span>
+                                <span class="avatar-initial rounded bg-label-info"><i class="bx bxs-parking"></i></span>
                             </div>
                         </div>
                         <p class="mb-1">{{ auth()->user()->hasRole('merchant') ? 'My Parkings' : 'Total Parkings' }}</p>
@@ -243,7 +243,7 @@
         });
 
         const parkingIcon = L.divIcon({
-            html: '<i class="bx bx-garage bg-info text-white p-1 rounded-circle" style="font-size: 24px;"></i>',
+            html: '<i class="bx bxs-parking bg-info text-white p-1 rounded-circle" style="font-size: 24px;"></i>',
             className: 'custom-div-icon',
             iconSize: [30, 30],
             iconAnchor: [15, 15]
@@ -285,7 +285,7 @@
                             $('#nearby-status').html(`<i class="bx bx-check-circle me-2 text-success"></i> Found <strong>${data.counts.buses}</strong> buses and <strong>${data.counts.parkings}</strong> parkings within 5km.`);
                             $('#nearby-assets-container').html(`
                                 <div class="col-md-6 mb-3"><div class="card bg-label-primary"><div class="card-body py-3 d-flex align-items-center"><div class="avatar me-3"><span class="avatar-initial rounded bg-primary"><i class="bx bx-bus"></i></span></div><div><h5 class="mb-0">${data.counts.buses}</h5><span>Buses Nearby</span></div></div></div></div>
-                                <div class="col-md-6 mb-3"><div class="card bg-label-info"><div class="card-body py-3 d-flex align-items-center"><div class="avatar me-3"><span class="avatar-initial rounded bg-info"><i class="bx bx-garage"></i></span></div><div><h5 class="mb-0">${data.counts.parkings}</h5><span>Parkings Nearby</span></div></div></div></div>
+                                <div class="col-md-6 mb-3"><div class="card bg-label-info"><div class="card-body py-3 d-flex align-items-center"><div class="avatar me-3"><span class="avatar-initial rounded bg-info"><i class="bx bxs-parking"></i></span></div><div><h5 class="mb-0">${data.counts.parkings}</h5><span>Parkings Nearby</span></div></div></div></div>
                             `);
                             L.marker([lat, lng]).bindPopup('Your Location').addTo(markers);
                             renderMarkers(data.buses, data.parkings);
