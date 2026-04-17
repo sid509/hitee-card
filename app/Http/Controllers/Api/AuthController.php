@@ -42,19 +42,13 @@ class AuthController extends Controller
             $user->roles()->attach($customerRole);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         logActivity('registration', 'New user registered via API', [], $user->id);
 
-        return apiResponse(true, 'User registered successfully', [
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], 201);
+        return apiResponse(true, 'User registered successfully. Please log in.', [], 201);
     }
 
     /**
-     * Login user and create token
+     * Login user and create tokens
      * 
      * @bodyParam email string required The email of the user. Example: admin@example.com
      * @bodyParam password string required The password of the user. Example: password
@@ -66,13 +60,51 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        
+        // Revoke old tokens
+        $user->tokens()->delete();
+
+        $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
+        $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
 
         logActivity('login', 'User logged in via API', [], $user->id);
 
         return apiResponse(true, 'Login successful', [
-            'user' => $user,
-            'access_token' => $token,
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email
+            ]
+        ]);
+    }
+
+    /**
+     * Refresh tokens
+     * 
+     * @authenticated
+     */
+    public function refresh(Request $request)
+    {
+        $user = $request->user();
+        $currentToken = $user->currentAccessToken();
+
+        // Check if the current token has the refresh ability
+        if (!$currentToken->can('refresh')) {
+            return apiResponse(false, 'Invalid token type for refresh', '', 403);
+        }
+
+        // Revoke all current tokens for security on refresh
+        $user->tokens()->delete();
+
+        $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
+        $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
+
+        return apiResponse(true, 'Tokens refreshed successfully', [
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
             'token_type' => 'Bearer',
         ]);
     }
@@ -114,14 +146,23 @@ class AuthController extends Controller
                 }
             }
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+            // Revoke old tokens
+            $user->tokens()->delete();
+
+            $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
+            $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
 
             logActivity('login', 'User logged in via social login (' . $provider . ')', [], $user->id);
 
             return apiResponse(true, 'Social login successful', [
-                'user' => $user,
-                'access_token' => $token,
+                'access_token' => $accessToken,
+                'refresh_token' => $refreshToken,
                 'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -130,14 +171,14 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user (Revoke token)
+     * Logout user (Revoke tokens)
      * 
      * @authenticated
      */
     public function logout(Request $request)
     {
         logActivity('logout', 'User logged out via API');
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->tokens()->delete();
 
         return apiResponse(true, 'Logged out successfully');
     }

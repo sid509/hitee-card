@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SearchController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +17,7 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
     // Authenticated Auth Routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', 'logout');
+        Route::post('/refresh', 'refresh');
     });
 });
 
@@ -22,7 +25,11 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
  * Protected User Routes
  */
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return apiResponse(true, 'User profile fetched', $request->user());
-    });
+    Route::get('/profile', [ProfileController::class, 'show']);
 });
+
+/**
+ * Public Data Routes
+ */
+Route::get('/nearby/buses', [SearchController::class, 'nearbyBuses']);
+Route::get('/nearby/parkings', [SearchController::class, 'nearbyParkings']);
