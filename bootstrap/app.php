@@ -28,4 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 return apiResponse(false, 'Unauthenticated', '', 401);
             }
         });
+
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
+            if ($request->is('api/*')) {
+                return apiResponse(false, $e->validator->errors()->first(), $e->errors(), 422);
+            }
+        });
     })->create();

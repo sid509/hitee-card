@@ -27,8 +27,10 @@ class BaseRequest extends FormRequest
         // If the request expects a JSON response (API), return our uniform API response
         if ($this->expectsJson()) {
             $errors = $validator->errors();
+            $firstError = $errors->first(); // Get the first validation error message
+
             throw new HttpResponseException(
-                apiResponse(false, 'Validation Error', $errors->toArray(), 422)
+                apiResponse(false, $firstError, $errors->toArray(), 422)
             );
         }
 

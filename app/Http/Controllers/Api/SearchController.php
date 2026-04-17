@@ -12,19 +12,18 @@ class SearchController extends Controller
     /**
      * Find nearby buses within a radius.
      * 
-     * Expects headers: 
-     * - X-User-Lat: Latitude
-     * - X-User-Lon: Longitude
-     * - X-Search-Radius: Radius in km (optional, defaults to 5)
+     * @queryParam lat required The latitude. Example: 27.7172
+     * @queryParam lon required The longitude. Example: 85.3240
+     * @queryParam radius integer The search radius in km. Defaults to 5. Example: 5
      */
     public function nearbyBuses(Request $request)
     {
-        $lat = $request->header('X-User-Lat');
-        $lng = $request->header('X-User-Lon') ?? $request->header('X-User-Lng');
-        $radius = $request->header('X-Search-Radius', 5);
+        $lat = $request->get('lat');
+        $lng = $request->get('lon') ?? $request->get('lng');
+        $radius = $request->get('radius', 5);
 
         if (!$lat || !$lng) {
-            return apiResponse(false, 'Latitude (X-User-Lat) and Longitude (X-User-Lon) headers are required', '', 400);
+            return apiResponse(false, 'Latitude (lat) and Longitude (lon) are required', '', 400);
         }
 
         $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude)) * cos(radians(longitude) - radians($lng)) + sin(radians($lat)) * sin(radians(latitude))))";
@@ -41,19 +40,18 @@ class SearchController extends Controller
     /**
      * Find nearby parkings within a radius.
      * 
-     * Expects headers: 
-     * - X-User-Lat: Latitude
-     * - X-User-Lon: Longitude
-     * - X-Search-Radius: Radius in km (optional, defaults to 5)
+     * @queryParam lat required The latitude. Example: 27.7172
+     * @queryParam lon required The longitude. Example: 85.3240
+     * @queryParam radius integer The search radius in km. Defaults to 5. Example: 5
      */
     public function nearbyParkings(Request $request)
     {
-        $lat = $request->header('X-User-Lat');
-        $lng = $request->header('X-User-Lon') ?? $request->header('X-User-Lng');
-        $radius = $request->header('X-Search-Radius', 5);
+        $lat = $request->get('lat');
+        $lng = $request->get('lon') ?? $request->get('lng');
+        $radius = $request->get('radius', 5);
 
         if (!$lat || !$lng) {
-            return apiResponse(false, 'Latitude (X-User-Lat) and Longitude (X-User-Lon) headers are required', '', 400);
+            return apiResponse(false, 'Latitude (lat) and Longitude (lon) are required', '', 400);
         }
 
         $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude)) * cos(radians(longitude) - radians($lng)) + sin(radians($lat)) * sin(radians(latitude))))";
