@@ -9,10 +9,9 @@
     <div class="navbar-nav-right d-flex align-items-center justify-content-end" id="navbar-collapse">
         <!-- Search -->
         <div class="navbar-nav align-items-center me-auto">
-            <div class="nav-item d-flex align-items-center">
+            <div class="nav-item d-flex align-items-center cursor-pointer" id="spotlight-trigger">
                 <i class="bx bx-search bx-md"></i>
-                <input type="text" class="form-control border-0 shadow-none ps-1 ps-sm-2 d-md-block d-none"
-                    placeholder="{{ __('messages.search') }}..." aria-label="Search..." />
+                <span class="text-muted ps-2 d-md-block d-none">Search (Cmd+K)</span>
             </div>
         </div>
         <!-- /Search -->

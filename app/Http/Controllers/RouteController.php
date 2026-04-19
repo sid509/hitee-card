@@ -81,7 +81,7 @@ class RouteController extends Controller
 
     public function show(Route $route)
     {
-        $route->load('stops');
+        $route->load(['stops', 'buses.merchant', 'merchant']);
         return view('modules.routes.show', compact('route'));
     }
 

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Card;
 use App\Models\User;
+use App\Models\Tap;
+use App\Models\Ride;
 use App\Http\Requests\StoreCardRequest;
 use App\Http\Requests\UpdateCardRequest;
 use Illuminate\Http\Request;
@@ -48,6 +50,9 @@ class CardController extends Controller
                         $btnTitle = $isActive ? 'Deactivate' : 'Activate';
 
                         $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-card-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
+
+                        // View Button
+                        $actions .= '<a href="'.route('cards.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
 
                         // Edit Button
                         $actions .= '<a href="'.route('cards.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
@@ -108,6 +113,17 @@ class CardController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+    public function show(Card $card)
+    {
+        if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) abort(403);
+        
+        $card->load(['user', 'taps.reference', 'rides.reference']);
+        $recentTaps = Tap::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
+        $recentRides = Ride::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
+
+        return view('modules.cards.show', compact('card', 'recentTaps', 'recentRides'));
+    }
+
     public function create()
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);

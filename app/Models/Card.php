@@ -16,6 +16,16 @@ class Card extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function taps()
+    {
+        return $this->hasMany(Tap::class);
+    }
+
+    public function rides()
+    {
+        return $this->hasMany(Ride::class);
+    }
+
     public function hasOngoingRide()
     {
         return Ride::where('card_id', $this->id)->where('status', 'ongoing')->exists();

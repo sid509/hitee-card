@@ -154,6 +154,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Search
     Route::controller(SearchController::class)->group(function () {
+        Route::get('/search/global', 'global')->name('search.global');
         Route::get('/search/users', 'users')->name('search.users');
         Route::get('/search/merchants', 'merchants')->name('search.merchants');
         Route::get('/search/references', 'references')->name('search.references');

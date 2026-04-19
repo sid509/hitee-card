@@ -8,38 +8,19 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>@yield('title') | Hitee</title>
+    <title>@yield('title') | Hitee Platform</title>
 
-    <meta name="description" content="Hitee Solutions & Tap Tap Card" />
+    <meta name="description" content="Hitee Card Platform" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}" />
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <!-- Core JS -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js" defer></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js" defer></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js" defer></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-
-    @vite(['resources/scss/app.scss', 'resources/js/app.js'])
-
-    <!-- DataTables CSS -->
-    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
-    <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet" />
-
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
@@ -48,38 +29,17 @@
 
     @stack('page-css')
     <style>
-        /* Ensure SweetAlert2 is always on top */
-        .swal2-container {
-            z-index: 99999 !important;
-        }
-        /* Solid Alerts */
-        .alert-solid-success {
-            background-color: #71dd37 !important;
-            border-color: #71dd37 !important;
-            color: #fff !important;
-        }
-        .alert-solid-danger {
-            background-color: #ff3e1d !important;
-            border-color: #ff3e1d !important;
-            color: #fff !important;
-        }
-        .alert-solid-success .btn-close, .alert-solid-danger .btn-close {
-            filter: brightness(0) invert(1);
-        }
-        .alert-solid-success .alert-icon i, .alert-solid-danger .alert-icon i {
-            color: #fff !important;
-        }
+        .cursor-pointer { cursor: pointer; }
+        .hover-light:hover { background-color: rgba(67, 89, 113, 0.04); }
+        .dark-style .hover-light:hover { background-color: rgba(255, 255, 255, 0.04); }
+        .swal2-container { z-index: 9999 !important; }
+        .border-dashed { border-style: dashed !important; }
     </style>
+
+    @vite(['resources/scss/app.scss', 'resources/js/app.js'])
 </head>
 
 <body>
-    @if(auth()->user()->isImpersonated())
-    <div class="alert alert-warning alert-dismissible mb-0 text-center rounded-0" role="alert">
-        You are currently impersonating <strong>{{ auth()->user()->name }}</strong>.
-        <a href="{{ route('impersonate.leave') }}" class="alert-link ms-2">Stop Impersonating</a>
-    </div>
-    @endif
-
     <!-- Layout wrapper -->
     <div class="layout-wrapper layout-content-navbar">
         <div class="layout-container">
@@ -87,7 +47,7 @@
             @include('layouts.partials.sidebar')
             <!-- / Menu -->
 
-            <!-- Layout container -->
+            <!-- Layout page -->
             <div class="layout-page">
                 <!-- Navbar -->
                 @include('layouts.partials.header')
@@ -97,9 +57,6 @@
                 <div class="content-wrapper">
                     <!-- Content -->
                     <div class="container-xxl flex-grow-1 container-p-y">
-                        <!-- Alert Container -->
-                        <div id="alert-container"></div>
-
                         @yield('content')
                     </div>
                     <!-- / Content -->
@@ -121,124 +78,178 @@
     <!-- / Layout wrapper -->
 
     @stack('modals')
-    @stack('page-js')
 
-    <!-- Support Modal -->
-    <div class="modal fade" id="supportModal" tabindex="-1" aria-hidden="true">
+    <!-- Spotlight Search Modal -->
+    <div class="modal fade" id="spotlightModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="spotlight-input-group">
+                    <input type="text" id="spotlight-input" placeholder="Type to search users, buses, routes..." autocomplete="off">
+                </div>
+                <div class="spotlight-results" id="spotlight-results">
+                    <!-- Results will be injected here -->
+                    <div class="text-center py-5 text-muted">
+                        <i class="bx bx-search-alt fs-1 mb-2"></i>
+                        <p>Search for anything...</p>
+                    </div>
+                </div>
+                <div class="spotlight-footer">
+                    <span><kbd>↑↓</kbd> to navigate</span>
+                    <span><kbd>Enter</kbd> to select</span>
+                    <span><kbd>Esc</kbd> to close</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Request Modal (Floating for users) -->
+    @if(auth()->user() && !auth()->user()->hasRole('super-admin'))
+    <div class="modal fade" id="quickSupportModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Support Request</h5>
+                    <h5 class="modal-title">Need Help?</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="supportForm">
+                <form id="quickSupportForm">
                     @csrf
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">From</label>
-                            <input type="text" class="form-control" value="{{ auth()->user()->name }} ({{ auth()->user()->email }})" disabled readonly>
+                            <label class="form-label">Subject</label>
+                            <input type="text" name="subject" class="form-control" placeholder="What's the issue?" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Message</label>
-                            <textarea name="message" class="form-control" rows="4" placeholder="How can we help you?" required></textarea>
+                            <textarea name="message" class="form-control" rows="4" placeholder="Describe your problem in detail..." required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary" id="btnSendSupport">Send Message</button>
+                        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" id="btnSendSupport" class="btn btn-primary">Send Message</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+    @endif
 
+    <!-- Scripts -->
+    @vite(['resources/js/app.js'])
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    @stack('page-js')
+
+    <!-- Global Helpers -->
     <script type="module">
+        window.showAlert = function(message, icon = 'success', title = 'Success') {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: icon,
+                customClass: {
+                    confirmButton: 'btn btn-primary'
+                },
+                buttonsStyling: false
+            });
+        };
+
+        window.showToast = function(message, title = 'Info', type = 'info') {
+            // Simple logic for Bootstrap Toast or just alert
+            showAlert(message, type, title);
+        };
+
+        window.showConfirm = function(title, text, confirmButtonText = 'Yes, do it!') {
+            return Swal.fire({
+                title: title,
+                text: text,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: confirmButtonText,
+                customClass: {
+                    confirmButton: 'btn btn-primary me-3',
+                    cancelButton: 'btn btn-label-secondary'
+                },
+                buttonsStyling: false
+            });
+        };
+
         $(function() {
-            // Global Alert Helper (Using solid success and danger classes)
-            window.showToast = function(message, title = '', type = 'success') {
-                const isError = type === 'error' || type === 'danger';
-                const alertClass = isError ? 'alert-solid-danger' : 'alert-solid-success';
-                const icon = isError ? 'bx-error-circle' : 'bx-check-circle';
-                
-                const alertHtml = `
-                    <div class="alert ${alertClass} d-flex align-items-center flex-wrap gap-1 alert-dismissible fade show" role="alert">
-                        <span class="alert-icon rounded-circle">
-                            <i class="bx ${icon} icon-sm"></i>
-                        </span>
-                        <div class="ms-1">
-                            ${title ? '<strong>' + title + ': </strong>' : ''}
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                `;
-                
-                const $alert = $(alertHtml);
-                $('#alert-container').html($alert);
-                
-                // Auto-dismiss after 8 seconds
-                setTimeout(() => {
-                    $alert.fadeOut(500, function() {
-                        $(this).remove();
-                    });
-                }, 8000);
-
-                // Smooth scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-
-            // Global Swal Helper
-            window.showAlert = function(message, type = 'success', title = '') {
-                Swal.fire({
-                    title: title || (type.charAt(0).toUpperCase() + type.slice(1)),
-                    text: message,
-                    icon: type,
-                    confirmButtonText: 'OK',
-                    customClass: {
-                        confirmButton: 'btn btn-primary'
-                    },
-                    buttonsStyling: false
-                });
-            }
-
-            // Global Confirmation Helper
-            window.showConfirm = function(title, text, confirmBtnText = 'Yes, do it!', type = 'warning') {
-                return Swal.fire({
-                    title: title,
-                    text: text,
-                    icon: type,
-                    showCancelButton: true,
-                    confirmButtonText: confirmBtnText,
-                    cancelButtonText: 'Cancel',
-                    customClass: {
-                        confirmButton: 'btn btn-primary me-3',
-                        cancelButton: 'btn btn-label-secondary'
-                    },
-                    buttonsStyling: false
-                });
-            }
-
-            const supportForm = $('#supportForm');
             const btnSend = $('#btnSendSupport');
+            const supportForm = $('#quickSupportForm');
 
-            // Session Flash Messages
-            @if(session('success'))
-                showToast("{{ session('success') }}", 'Success', 'success');
-            @endif
+            // Spotlight Logic
+            const modalEl = document.getElementById('spotlightModal');
+            if (modalEl) {
+                const spotlightModal = new bootstrap.Modal(modalEl);
+                const input = $('#spotlight-input');
+                const results = $('#spotlight-results');
+                let debounceTimer;
 
-            @if(session('error'))
-                showAlert("{{ session('error') }}", 'error');
-            @endif
+                // Trigger on click
+                $('#spotlight-trigger').on('click', () => spotlightModal.show());
 
-            @if(session('status'))
-                showToast("{{ session('status') }}", 'Status', 'info');
-            @endif
+                // Trigger on Keyboard Shortcut (Cmd+K or Ctrl+K)
+                $(document).on('keydown', function(e) {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                        e.preventDefault();
+                        spotlightModal.show();
+                    }
+                });
+
+                // Focus input when modal opens
+                modalEl.addEventListener('shown.bs.modal', () => input.focus());
+                
+                // Clear on hide
+                modalEl.addEventListener('hidden.bs.modal', () => {
+                    input.val('');
+                    results.html('<div class="text-center py-5 text-muted"><i class="bx bx-search-alt fs-1 mb-2"></i><p>Search for anything...</p></div>');
+                });
+
+                // Handle typing
+                input.on('input', function() {
+                    clearTimeout(debounceTimer);
+                    const q = $(this).val();
+
+                    if (q.length < 2) {
+                        results.html('<div class="text-center py-5 text-muted"><i class="bx bx-search-alt fs-1 mb-2"></i><p>Search for anything...</p></div>');
+                        return;
+                    }
+
+                    results.html('<div class="text-center py-5"><span class="spinner-border text-primary"></span></div>');
+
+                    debounceTimer = setTimeout(() => {
+                        $.get("{{ route('search.global') }}", { q: q }, function(data) {
+                            if (Object.keys(data).length === 0) {
+                                results.html('<div class="text-center py-5 text-muted"><i class="bx bx-confused fs-1 mb-2"></i><p>No results found for "' + q + '"</p></div>');
+                                return;
+                            }
+
+                            let html = '';
+                            for (const category in data) {
+                                html += `<div class="category-header">${category}</div>`;
+                                data[category].forEach(item => {
+                                    html += `
+                                        <a href="${item.url}" class="result-item">
+                                            <div class="result-icon"><i class="bx ${item.icon}"></i></div>
+                                            <div class="result-meta">
+                                                <span class="result-title">${item.title}</span>
+                                                <span class="result-subtitle">${item.subtitle}</span>
+                                            </div>
+                                            <i class="bx bx-chevron-right text-muted"></i>
+                                        </a>
+                                    `;
+                                });
+                            }
+                            results.html(html);
+                        });
+                    }, 300);
+                });
+            }
 
             // Global delete confirmation
             $(document).on('click', '.delete-btn', function(e) {
                 e.preventDefault();
                 const form = $(this).closest('form');
-                
+
                 showConfirm('Are you sure?', 'You won\'t be able to revert this!', 'Yes, delete it!')
                     .then((result) => {
                         if (result.isConfirmed) {
@@ -249,7 +260,7 @@
 
             supportForm.on('submit', function(e) {
                 e.preventDefault();
-                
+
                 btnSend.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Sending...');
 
                 $.ajax({
@@ -257,26 +268,8 @@
                     method: "POST",
                     data: $(this).serialize(),
                     success: function(response) {
-                        // Close modal safely
-                        try {
-                            const modalEl = document.getElementById('supportModal');
-                            // Method 1: BS5 API
-                            const modalInstance = window.bootstrap.Modal.getInstance(modalEl);
-                            if (modalInstance) {
-                                modalInstance.hide();
-                            } else {
-                                // Method 2: Click close button as fallback
-                                $(modalEl).find('[data-bs-dismiss="modal"]').click();
-                            }
-                        } catch (err) {
-                            console.error('Modal close error:', err);
-                            // Method 3: Manual jQuery hide if all else fails
-                            $('#supportModal').modal('hide');
-                        }
-                        
-                        // Reset form
                         supportForm[0].reset();
-                        
+                        $('#quickSupportModal').modal('hide');
                         // Show success message with delay
                         setTimeout(() => {
                             showAlert(response.message || 'Support request sent successfully');

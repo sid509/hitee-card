@@ -2,15 +2,116 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Route;
 use App\Models\RouteStop;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
+use App\Models\Route as RouteModel;
+use App\Models\Card;
 use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
+    /**
+     * Optimized Global Search (Spotlight Style)
+     */
+    public function global(Request $request)
+    {
+        $q = $request->get('q');
+        if (!$q || strlen($q) < 2) return response()->json([]);
+
+        $user = auth()->user();
+        $results = [];
+
+        // 1. Search Users (Admin Only)
+        if ($user->hasRole('super-admin')) {
+            $users = User::where(function($query) use ($q) {
+                    $query->where('name', 'LIKE', "%$q%")
+                          ->orWhere('email', 'LIKE', "%$q%");
+                })
+                ->limit(5)->get();
+            
+            if ($users->count() > 0) {
+                $results['Users'] = $users->map(fn($u) => [
+                    'title' => $u->name,
+                    'subtitle' => $u->email,
+                    'url' => route('users.show', $u->id),
+                    'icon' => 'bx-user'
+                ]);
+            }
+        }
+
+        // 2. Search Buses
+        $busesQuery = Bus::where(function($query) use ($q) {
+            $query->where('name', 'LIKE', "%$q%")
+                  ->orWhere('bus_number', 'LIKE', "%$q%")
+                  ->orWhere('hwid', 'LIKE', "%$q%");
+        });
+
+        if ($user->hasRole('merchant')) {
+            $busesQuery->where('merchant_id', $user->id);
+        }
+
+        $buses = $busesQuery->limit(5)->get();
+        if ($buses->count() > 0) {
+            $results['Buses'] = $buses->map(fn($b) => [
+                'title' => $b->bus_number,
+                'subtitle' => $b->name,
+                'url' => route('buses.show', $b->id),
+                'icon' => 'bx-bus'
+            ]);
+        }
+
+        // 3. Search Parkings
+        $parkingsQuery = Parking::where(function($query) use ($q) {
+            $query->where('name', 'LIKE', "%$q%")
+                  ->orWhere('location', 'LIKE', "%$q%");
+        });
+
+        if ($user->hasRole('merchant')) {
+            $parkingsQuery->where('merchant_id', $user->id);
+        }
+
+        $parkings = $parkingsQuery->limit(5)->get();
+        if ($parkings->count() > 0) {
+            $results['Parkings'] = $parkings->map(fn($p) => [
+                'title' => $p->name,
+                'subtitle' => $p->location,
+                'url' => route('parkings.show', $p->id),
+                'icon' => 'bx-map-pin'
+            ]);
+        }
+
+        // 4. Search Routes
+        $routes = RouteModel::where('name', 'LIKE', "%$q%")->limit(5)->get();
+        if ($routes->count() > 0) {
+            $results['Routes'] = $routes->map(fn($r) => [
+                'title' => $r->name,
+                'subtitle' => 'Transit Route',
+                'url' => route('routes.show', $r->id),
+                'icon' => 'bx-git-commit'
+            ]);
+        }
+
+        // 5. Search Cards (Admin Only)
+        if ($user->hasRole('super-admin')) {
+            $cards = Card::where('card_number', 'LIKE', "%$q%")
+                ->orWhere('hwid', 'LIKE', "%$q%")
+                ->limit(5)->get();
+
+            if ($cards->count() > 0) {
+                $results['Cards'] = $cards->map(fn($c) => [
+                    'title' => $c->card_number,
+                    'subtitle' => 'Hardware ID: ' . $c->hwid,
+                    'url' => route('cards.show', $c->id),
+                    'icon' => 'bx-credit-card'
+                ]);
+            }
+        }
+
+        return response()->json($results);
+    }
+
     /**
      * Search users for Select2 AJAX.
      */
@@ -136,7 +237,7 @@ class SearchController extends Controller
 
         if (!$from || !$to) return response()->json(['buses' => []]);
 
-        $routes = Route::whereHas('stops', function($q) use ($from) {
+        $routes = RouteModel::whereHas('stops', function($q) use ($from) {
             $q->where('stop_name', $from);
         })->whereHas('stops', function($q) use ($to) {
             $q->where('stop_name', $to);
