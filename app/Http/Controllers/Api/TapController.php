@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 class TapController extends Controller
 {
     /**
-     * Handle Tap In / Tap Out via API.
+     * Unified Tap Handler (Intelligently detects IN/OUT)
      * 
      * Body: lat, lon, card_number, hw_id
      */
@@ -31,47 +31,45 @@ class TapController extends Controller
             'hw_id' => 'required|string'
         ]);
 
-        $card = Card::where('card_number', $request->card_number)->firstOrFail();
-        
-        // Detect asset (Bus or Parking)
-        $asset = Bus::where('hwid', $request->hw_id)->first();
-        if (!$asset) {
-            // Check if it's a parking HWID (assuming parking has HWID or similar)
-            // For now let's assume hw_id is enough to find either
-            $asset = Parking::where('id', $request->hw_id)->first(); // Fallback to ID for demo
-        }
+        $card = Card::where('card_number', $request->card_number)->with('user')->firstOrFail();
+        $asset = $this->resolveAsset($request->hw_id);
 
-        if (!$asset) {
-            return apiResponse(false, 'Scanner (Asset) not found', '', 404);
-        }
+        if (!$asset) return apiResponse(false, 'Scanner (Asset) not found', '', 404);
 
         $user = $card->user;
-        if (!$user) return apiResponse(false, 'Card not assigned', '', 400);
-        if ($card->status !== 'active') return apiResponse(false, 'Card inactive', '', 403);
+        if (!$user) return apiResponse(false, 'Card is not assigned to a user', '', 400);
+        if ($card->status !== 'active') return apiResponse(false, 'Card is blocked or inactive', '', 403);
 
-        // Check for an ongoing ride for this card
+        // Check for an ongoing journey for this card on ANY asset
         $ongoingRide = Ride::where('card_id', $card->id)
             ->where('status', 'ongoing')
             ->first();
 
         return DB::transaction(function() use ($request, $user, $card, $asset, $ongoingRide) {
             if ($ongoingRide) {
+                // If already has an ongoing journey -> TAP OUT
                 return $this->handleTapOut($request, $ongoingRide, $asset);
             } else {
+                // No ongoing journey -> TAP IN
                 return $this->handleTapIn($request, $user, $card, $asset);
             }
         });
     }
 
+    /**
+     * Internal Logic: Process a Tap In event
+     */
     private function handleTapIn($request, $user, $card, $asset)
     {
+        // Check minimum wallet balance to start journey
         if ($user->balance() < 20) {
-            return apiResponse(false, 'Insufficient balance (Min Rs. 20)', '', 402);
+            return apiResponse(false, 'Insufficient balance (Min Rs. 20 required)', '', 402);
         }
 
-        // Normalize Location (Geofencing)
+        // Normalize Location (find nearest stop name)
         $location = $this->resolveLocation($request->lat, $request->lon, $asset);
 
+        // 1. Record Raw Tap
         $tap = Tap::create([
             'user_id' => $user->id,
             'card_id' => $card->id,
@@ -85,6 +83,7 @@ class TapController extends Controller
             'longitude' => $request->lon
         ]);
 
+        // 2. Create Reconciled Ride
         $ride = Ride::create([
             'user_id' => $user->id,
             'card_id' => $card->id,
@@ -95,19 +94,24 @@ class TapController extends Controller
             'status' => 'ongoing'
         ]);
 
-        logActivity('tap_in', "Tapped in at {$location['name']}", [
-            'ride_id' => $ride->id,
-            'asset' => $asset->name
-        ], $user->id);
+        logActivity('tap_in', "Tapped in at {$location['name']} on {$asset->name}", ['ride_id' => $ride->id], $user->id);
 
-        return apiResponse(true, "Tap In at {$location['name']}", ['type' => 'in']);
+        return apiResponse(true, "Tap In successful at {$location['name']}", [
+            'type' => 'in',
+            'ride_id' => $ride->id,
+            'location' => $location['name']
+        ]);
     }
 
+    /**
+     * Internal Logic: Process a Tap Out event
+     */
     private function handleTapOut($request, $ride, $currentAsset)
     {
         $user = $ride->user;
         $location = $this->resolveLocation($request->lat, $request->lon, $currentAsset);
 
+        // 1. Record Raw Tap
         $tapOut = Tap::create([
             'user_id' => $user->id,
             'card_id' => $ride->card_id,
@@ -121,25 +125,25 @@ class TapController extends Controller
             'longitude' => $request->lon
         ]);
 
-        // Fare Logic
-        $fareAmount = 20.00; // Default
+        // 2. Calculate Fare based on Asset Type
+        $fareAmount = 20.00; // Minimum default
         if ($ride->reference_type === Bus::class) {
             $fareAmount = $this->calculateBusFare($ride->tapIn, $tapOut, $ride->reference_id);
         } else {
             $fareAmount = $this->calculateParkingFare($ride->tapIn, $tapOut, $ride->reference_id);
         }
 
-        // Transaction Reconcillation
+        // 3. Financial Reconciliation (Transaction & Merchant Income)
         if ($fareAmount > 0) {
             $balanceOut = BalanceOut::create([
                 'user_id' => $user->id,
                 'merchant_id' => $ride->merchant_id,
                 'amount' => $fareAmount,
                 'type' => $ride->reference_type === Bus::class ? 'fare_deduction' : 'parking',
-                'remarks' => "Ride #{$ride->id} completed at {$location['name']}",
+                'remarks' => "Journey #{$ride->id} completed. From {$ride->tapIn->resolved_location_name} to {$location['name']}",
                 'reference_id' => $ride->reference_id,
                 'reference_type' => $ride->reference_type,
-                'created_by' => 1
+                'created_by' => 1 // System
             ]);
 
             MerchantIncome::create([
@@ -152,28 +156,40 @@ class TapController extends Controller
             ]);
         }
 
+        // 4. Update Reconciled Ride
         $ride->update([
             'tap_out_id' => $tapOut->id,
             'fare_amount' => $fareAmount,
             'status' => 'completed'
         ]);
 
-        logActivity('ride_completed', "Journey finished. Paid Rs. {$fareAmount}", [
+        logActivity('ride_completed', "Ride finished. Paid Rs. {$fareAmount}", [
             'ride_id' => $ride->id,
-            'from' => $ride->tapIn->resolved_location_name,
-            'to' => $location['name']
+            'fare' => $fareAmount,
+            'start' => $ride->tapIn->resolved_location_name,
+            'end' => $location['name']
         ], $user->id);
 
-        return apiResponse(true, "Tap Out at {$location['name']}. Fare: Rs. {$fareAmount}", ['type' => 'out', 'fare' => $fareAmount]);
+        return apiResponse(true, "Tap Out successful at {$location['name']}. Fare: Rs. {$fareAmount}", [
+            'type' => 'out',
+            'fare' => $fareAmount,
+            'new_balance' => $user->balance()
+        ]);
+    }
+
+    private function resolveAsset($hwId)
+    {
+        // Try to find as a Bus first, then as a Parking lot ID
+        return Bus::where('hwid', $hwId)->first() ?? Parking::where('id', $hwId)->first();
     }
 
     private function resolveLocation($lat, $lon, $asset)
     {
-        // Geo-fencing: find nearest stop within 150m (0.15km)
-        $threshold = 0.15; 
+        $threshold = 0.15; // 150 meters
         $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude)) * cos(radians(longitude) - radians($lon)) + sin(radians($lat)) * sin(radians(latitude))))";
 
         if ($asset instanceof Bus) {
+            // Find nearest stop on the bus route
             $stop = RouteStop::where('route_id', $asset->route_id)
                 ->select('*')
                 ->selectRaw("$haversine AS distance")
@@ -183,13 +199,14 @@ class TapController extends Controller
             
             return $stop ? ['id' => $stop->id, 'name' => $stop->stop_name] : ['id' => null, 'name' => 'Moving (GPS)'];
         } else {
-            // For Parking, the asset itself is the location
+            // Parking lot is fixed location
             return ['id' => $asset->id, 'name' => $asset->name];
         }
     }
 
     private function calculateBusFare($tapIn, $tapOut, $busId)
     {
+        // If same stop or location not resolved, return minimum fare
         if (!$tapIn->stop_id || !$tapOut->stop_id || $tapIn->stop_id == $tapOut->stop_id) return 15.00;
         
         $bus = Bus::find($busId);
@@ -204,7 +221,8 @@ class TapController extends Controller
     private function calculateParkingFare($tapIn, $tapOut, $parkingId)
     {
         $parking = Parking::find($parkingId);
-        $durationHours = ceil($tapIn->created_at->diffInMinutes($tapOut->created_at) / 60);
+        // Minimum 1 hour
+        $durationHours = max(1, ceil($tapIn->created_at->diffInMinutes($tapOut->created_at) / 60));
         
         if ($durationHours <= 1) return $parking->first_hour_fee;
         return $parking->first_hour_fee + (($durationHours - 1) * $parking->onwards_hour_fee);

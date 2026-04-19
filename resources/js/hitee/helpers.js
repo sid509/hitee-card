@@ -725,6 +725,10 @@ const Helpers = {
   // ---
   // Init Password Toggle
   initPasswordToggle() {
+    // Check if we've already attached the global listener
+    if (window._passwordToggleAttached) return;
+    window._passwordToggleAttached = true;
+
     // Use event delegation on document to catch clicks on any password toggle
     document.addEventListener('click', function(e) {
       // Find the toggle button (span with class .input-group-text inside .form-password-toggle)

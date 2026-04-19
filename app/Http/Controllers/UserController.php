@@ -20,9 +20,14 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = User::with('roles')->select(['id', 'name', 'email', 'created_at']);
+            $data = User::with('roles')->select(['id', 'name', 'email', 'status', 'created_at']);
             return DataTables::of($data)
+
                 ->addIndexColumn()
+                ->addColumn('checkbox', function($row){
+                    if ($row->id === auth()->id()) return '';
+                    return '<input type="checkbox" class="form-check-input row-checkbox" value="'.$row->id.'">';
+                })
                 ->addColumn('role_names', function($row){
                     return $row->roles->map(function($role){
                         return '<span class="badge bg-label-primary">'.$role->name.'</span>';
@@ -38,6 +43,17 @@ class UserController extends Controller
                 })
                 ->addColumn('action', function($row){
                     $actions = '';
+
+                    // Toggle Status Button
+                    if (auth()->user()->hasRole('super-admin') && $row->id !== auth()->id()) {
+                        $isActive = $row->status === 'active';
+                        $btnClass = $isActive ? 'btn-success' : 'btn-secondary';
+                        $btnIcon = $isActive ? 'bx-user-check' : 'bx-user-x';
+                        $btnTitle = $isActive ? 'Deactivate Account' : 'Activate Account';
+                        
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-user-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
+                    }
+
                     // Edit Button
                     $actions .= '<a href="'.route('users.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
                     // View Button
@@ -51,7 +67,7 @@ class UserController extends Controller
 
                     // Impersonate Button for super-admins
                     if (auth()->user()->canImpersonate() && $row->id !== auth()->id()) {
-                        $actions .= '<a href="'.route('impersonate', $row->id).'" class="btn btn-icon btn-sm btn-warning me-1" title="Impersonate"><i class="bx bx-user-check"></i></a>';
+                        $actions .= '<a href="'.route('impersonate', $row->id).'" class="btn btn-icon btn-sm btn-warning me-1" title="Impersonate Account"><i class="bx bx-log-in-circle"></i></a>';
                     }
 
                     // Delete Button
@@ -64,12 +80,35 @@ class UserController extends Controller
                                 </form>';
                     return $actions;
                 })
-                ->rawColumns(['action', 'role_names', 'balance'])
+                ->rawColumns(['action', 'role_names', 'balance', 'checkbox'])
                 ->make(true);
         }
 
         return view('modules.users.index', [
             'merchants' => User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get()
+        ]);
+    }
+
+    /**
+     * Bulk toggle user status
+     */
+    public function bulkToggleStatus(Request $request)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:users,id',
+            'status' => 'required|in:active,inactive'
+        ]);
+
+        $ids = array_filter($request->ids, fn($id) => $id != auth()->id());
+        
+        User::whereIn('id', $ids)->update(['status' => $request->status]);
+
+        return response()->json([
+            'status' => true,
+            'message' => count($ids) . ' users updated to ' . $request->status . '.'
         ]);
     }
 
@@ -155,5 +194,30 @@ class UserController extends Controller
 
         $user->delete();
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Toggle user status (Super Admin only)
+     */
+    public function toggleStatus(User $user)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        if ($user->id === auth()->id()) {
+            return response()->json(['status' => false, 'message' => 'You cannot disable your own account.']);
+        }
+
+        $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+        $user->update(['status' => $newStatus]);
+
+        logActivity('user_status_toggle', "User {$user->email} status changed to {$newStatus}", [
+            'target_user_id' => $user->id,
+            'new_status' => $newStatus
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => "User account is now {$newStatus}.",
+            'new_status' => $newStatus
+        ]);
     }
 }

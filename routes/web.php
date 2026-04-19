@@ -99,12 +99,16 @@ Route::middleware(['auth'])->group(function () {
 
     // Administration (Super Admin Only)
     Route::middleware(['role:super-admin'])->group(function () {
+        Route::post('/users/bulk-toggle-status', [UserController::class, 'bulkToggleStatus'])->name('users.bulk-toggle-status');
+        Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::resource('users', UserController::class);
         Route::resource('roles', RoleController::class);
         Route::resource('permissions', PermissionController::class);
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
         Route::post('/activity-logs/sync', [ActivityLogController::class, 'sync'])->name('activity-logs.sync');
         Route::resource('parking-attributes', ParkingAttributeController::class);
+        Route::post('/cards/bulk-toggle-status', [CardController::class, 'bulkToggleStatus'])->name('cards.bulk-toggle-status');
+        Route::post('/cards/{card}/toggle-status', [CardController::class, 'toggleStatus'])->name('cards.toggle-status');
         Route::get('/rides', [RideController::class, 'index'])->name('rides.index');
         Route::get('/tap-ledger', [RideController::class, 'tapLedger'])->name('rides.tap-ledger');
         
@@ -139,6 +143,7 @@ Route::middleware(['auth'])->group(function () {
     // Business Logic Resources
     Route::get('/route-finder', [RouteFinderController::class, 'index'])->name('route-finder.index');
     Route::get('/my-rides', [RideController::class, 'myRides'])->name('rides.my-rides');
+    Route::post('/rides/simulate-tap', [RideController::class, 'simulateTap'])->name('rides.simulate-tap');
     Route::resource('buses', BusController::class);
     Route::resource('parkings', ParkingController::class);
     Route::resource('cards', CardController::class);

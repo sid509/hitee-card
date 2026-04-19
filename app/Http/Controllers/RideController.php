@@ -195,4 +195,46 @@ class RideController extends Controller
 
         return view('modules.rides.my_rides');
     }
+
+    /**
+     * Simulate a tap for testing via Web UI.
+     */
+    public function simulateTap(Request $request)
+    {
+        $user = auth()->user();
+        $card = $user->activeCard;
+
+        if (!$card) {
+            return response()->json(['status' => false, 'message' => 'You do not have an active card.']);
+        }
+
+        // Forward to API controller logic
+        $tapApi = new \App\Http\Controllers\Api\TapController();
+        
+        $ongoingRide = Ride::where('card_id', $card->id)->where('status', 'ongoing')->first();
+
+        // Prepare simulation data
+        $simData = [
+            'card_number' => $card->card_number,
+            'lat' => 27.7172,
+            'lon' => 85.3240,
+        ];
+
+        if ($ongoingRide) {
+            // Use same asset for tap out
+            $simData['hw_id'] = $ongoingRide->reference_type === \App\Models\Bus::class 
+                ? \App\Models\Bus::find($ongoingRide->reference_id)->hwid 
+                : $ongoingRide->reference_id;
+        } else {
+            // Pick a random bus for tap in
+            $bus = \App\Models\Bus::inRandomOrder()->first();
+            if (!$bus) return response()->json(['status' => false, 'message' => 'No buses available for simulation.']);
+            $simData['hw_id'] = $bus->hwid;
+        }
+
+        $request->merge($simData);
+        
+        $response = $ongoingRide ? $tapApi->tapOut($request) : $tapApi->tapIn($request);
+        return $response;
+    }
 }

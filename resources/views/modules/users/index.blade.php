@@ -11,25 +11,41 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Users List</h5>
-        <a href="{{ route('users.create') }}" class="btn btn-primary">
-            <i class="bx bx-plus me-1"></i> Add User
-        </a>
+        <div class="d-flex gap-2">
+            @if(auth()->user()->hasRole('super-admin'))
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button" id="bulkActions" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bx bx-check-square me-1"></i> Bulk Actions
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="bulkActions">
+                    <li><a class="dropdown-item bulk-status-change" href="javascript:void(0);" data-status="active">Activate Selected</a></li>
+                    <li><a class="dropdown-item bulk-status-change" href="javascript:void(0);" data-status="inactive">Deactivate Selected</a></li>
+                </ul>
+            </div>
+            @endif
+            <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm">
+                <i class="bx bx-plus me-1"></i> Add User
+            </a>
+        </div>
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
             <table class="table table-hover data-table w-100">
                 <thead>
                     <tr>
+                        <th width="10" class="text-start"><input type="checkbox" class="form-check-input" id="select-all"></th>
                         <th>ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Roles</th>
                         <th>Balance</th>
+                        <th>Status</th>
                         <th>Created At</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
             </table>
+
         </div>
     </div>
 </div>
@@ -155,14 +171,98 @@
             responsive: true,
             ajax: "{{ route('users.index') }}",
             columns: [
+                {data: 'checkbox', name: 'checkbox', orderable: false, searchable: false},
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'name', name: 'name'},
                 {data: 'email', name: 'email'},
-                {data: 'role_names', name: 'role_names', orderable: false, searchable: false},
+                {data: 'role_names', name: 'role_names', orderable: false},
                 {data: 'balance', name: 'balance', orderable: false, searchable: false},
+                {data: 'status', name: 'status', render: function(data) {
+                    let classMap = { active: 'bg-label-success', inactive: 'bg-label-secondary' };
+                    return `<span class="badge ${classMap[data] || 'bg-label-info'}">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
+                }},
                 {data: 'created_at', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
+        });
+
+        // Select All Checkbox
+        $('#select-all').on('click', function() {
+            $('.row-checkbox').prop('checked', this.checked);
+        });
+
+        // Bulk Status Change
+        $(document).on('click', '.bulk-status-change', function() {
+            const status = $(this).data('status');
+            const ids = $('.row-checkbox:checked').map(function() { return $(this).val(); }).get();
+
+            if (ids.length === 0) {
+                showAlert('Please select at least one user.', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: `You want to change status of ${ids.length} users to ${status}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, change it!',
+                customClass: {
+                    confirmButton: 'btn btn-primary me-3',
+                    cancelButton: 'btn btn-label-secondary'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.value) {
+                    $.ajax({
+                        url: "{{ route('users.bulk-toggle-status') }}",
+                        method: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                            ids: ids,
+                            status: status
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                showToast(response.message, 'Success', 'success');
+                                table.ajax.reload(null, false);
+                                $('#select-all').prop('checked', false);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+
+        // Toggle User Status
+        $(document).on('click', '.toggle-user-status', function() {
+            const id = $(this).data('id');
+            const btn = $(this);
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+            $.ajax({
+                url: `/users/${id}/toggle-status`,
+                method: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    if (response.status) {
+                        showToast(response.message, 'Success', 'success');
+                        table.ajax.reload(null, false); // Reload without resetting pagination
+                    } else {
+                        showAlert(response.message, 'error');
+                    }
+                },
+                error: function() {
+                    showAlert('Failed to update user status.', 'error');
+                },
+                complete: function() {
+                    btn.prop('disabled', false);
+                    // The icon/color will be updated by table.ajax.reload()
+                }
+            });
         });
 
         // Add Balance Button

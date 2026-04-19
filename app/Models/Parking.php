@@ -4,8 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Parking extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['name', 'location', 'status', 'merchant_id', 'latitude', 'longitude', 'first_hour_fee', 'onwards_hour_fee'];
 
     public function merchant()

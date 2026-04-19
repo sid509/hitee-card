@@ -65,70 +65,83 @@ class TapSeeder extends Seeder
                         'updated_at' => $date,
                     ]);
 
-                    // 2. Tap Out (usually 30-120 mins later)
-                    $outDate = (clone $date)->addMinutes(rand(15, 120));
-                    $endStop = null;
-                    if ($isBus && $startStop) {
-                        // Find a stop further down the route
-                        $endStop = RouteStop::where('route_id', $asset->route_id)
-                            ->where('order', '>', $startStop->order)
-                            ->orderBy('order')
-                            ->first() ?? $startStop;
+                    // 2. Tap Out (randomly leave some ongoing)
+                    $isOngoing = rand(1, 10) > 8; // 20% chance to be ongoing
+
+                    if ($isOngoing) {
+                         Ride::create([
+                            'user_id' => $user->id,
+                            'card_id' => $card->id,
+                            'merchant_id' => $asset->merchant_id,
+                            'reference_id' => $asset->id,
+                            'reference_type' => get_class($asset),
+                            'tap_in_id' => $tapIn->id,
+                            'status' => 'ongoing',
+                            'created_at' => $date,
+                        ]);
+                    } else {
+                        $outDate = (clone $date)->addMinutes(rand(15, 120));
+                        $endStop = null;
+                        if ($isBus && $startStop) {
+                            $endStop = RouteStop::where('route_id', $asset->route_id)
+                                ->where('order', '>', $startStop->order)
+                                ->orderBy('order')
+                                ->first() ?? $startStop;
+                        }
+
+                        $tapOut = Tap::create([
+                            'user_id' => $user->id,
+                            'card_id' => $card->id,
+                            'merchant_id' => $asset->merchant_id,
+                            'reference_id' => $asset->id,
+                            'reference_type' => get_class($asset),
+                            'type' => 'out',
+                            'stop_id' => $endStop?->id,
+                            'resolved_location_name' => $endStop?->stop_name ?? $asset->name,
+                            'latitude' => $endStop?->latitude ?? $asset->latitude,
+                            'longitude' => $endStop?->longitude ?? $asset->longitude,
+                            'created_at' => $outDate,
+                            'updated_at' => $outDate,
+                        ]);
+
+                        $fare = $isBus ? rand(15, 45) : rand(20, 100);
+                        $ride = Ride::create([
+                            'user_id' => $user->id,
+                            'card_id' => $card->id,
+                            'merchant_id' => $asset->merchant_id,
+                            'reference_id' => $asset->id,
+                            'reference_type' => get_class($asset),
+                            'tap_in_id' => $tapIn->id,
+                            'tap_out_id' => $tapOut->id,
+                            'fare_amount' => $fare,
+                            'status' => 'completed',
+                            'created_at' => $date,
+                            'updated_at' => $outDate,
+                        ]);
+
+                        // Transaction record
+                        $balanceOut = BalanceOut::create([
+                            'user_id' => $user->id,
+                            'merchant_id' => $asset->merchant_id,
+                            'amount' => $fare,
+                            'type' => $isBus ? 'fare_deduction' : 'parking',
+                            'remarks' => "Ride #{$ride->id} completed",
+                            'reference_id' => $asset->id,
+                            'reference_type' => get_class($asset),
+                            'created_by' => 1,
+                            'created_at' => $outDate,
+                        ]);
+
+                        MerchantIncome::create([
+                            'merchant_id' => $asset->merchant_id,
+                            'balance_out_id' => $balanceOut->id,
+                            'reference_id' => $asset->id,
+                            'reference_type' => get_class($asset),
+                            'amount' => $fare,
+                            'type' => $isBus ? 'fare' : 'parking',
+                            'created_at' => $outDate,
+                        ]);
                     }
-
-                    $tapOut = Tap::create([
-                        'user_id' => $user->id,
-                        'card_id' => $card->id,
-                        'merchant_id' => $asset->merchant_id,
-                        'reference_id' => $asset->id,
-                        'reference_type' => get_class($asset),
-                        'type' => 'out',
-                        'stop_id' => $endStop?->id,
-                        'resolved_location_name' => $endStop?->stop_name ?? $asset->name,
-                        'latitude' => $endStop?->latitude ?? $asset->latitude,
-                        'longitude' => $endStop?->longitude ?? $asset->longitude,
-                        'created_at' => $outDate,
-                        'updated_at' => $outDate,
-                    ]);
-
-                    // 3. Reconciled Ride
-                    $fare = $isBus ? rand(15, 45) : rand(20, 100);
-                    $ride = Ride::create([
-                        'user_id' => $user->id,
-                        'card_id' => $card->id,
-                        'merchant_id' => $asset->merchant_id,
-                        'reference_id' => $asset->id,
-                        'reference_type' => get_class($asset),
-                        'tap_in_id' => $tapIn->id,
-                        'tap_out_id' => $tapOut->id,
-                        'fare_amount' => $fare,
-                        'status' => 'completed',
-                        'created_at' => $date,
-                        'updated_at' => $outDate,
-                    ]);
-
-                    // 4. Transaction record
-                    $balanceOut = BalanceOut::create([
-                        'user_id' => $user->id,
-                        'merchant_id' => $asset->merchant_id,
-                        'amount' => $fare,
-                        'type' => $isBus ? 'fare_deduction' : 'parking',
-                        'remarks' => "Ride #{$ride->id} completed",
-                        'reference_id' => $asset->id,
-                        'reference_type' => get_class($asset),
-                        'created_by' => 1,
-                        'created_at' => $outDate,
-                    ]);
-
-                    MerchantIncome::create([
-                        'merchant_id' => $asset->merchant_id,
-                        'balance_out_id' => $balanceOut->id,
-                        'reference_id' => $asset->id,
-                        'reference_type' => get_class($asset),
-                        'amount' => $fare,
-                        'type' => $isBus ? 'fare' : 'parking',
-                        'created_at' => $outDate,
-                    ]);
                 });
             }
         }

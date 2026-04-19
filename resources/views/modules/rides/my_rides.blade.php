@@ -92,38 +92,24 @@
             const btn = $(this);
             btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Processing...');
 
-            // Mock Data for Simulation
-            // We'll pick a random active bus for simulation purposes
-            const mockData = {
-                lat: 27.7172,
-                lon: 85.3240,
-                card_number: "{{ auth()->user()->activeCard->card_number ?? '' }}",
-                hw_id: 'HW-DEMO-001' // We should ideally fetch a real HWID from a bus
-            };
-
-            if (!mockData.card_number) {
-                showAlert('You do not have an active card to simulate a tap.', 'error');
-                btn.prop('disabled', false).html('<i class="bx bx-radio-circle-marked me-1"></i> Tap My Card');
-                return;
-            }
-
             $.ajax({
-                url: "/api/tap",
+                url: "{{ route('rides.simulate-tap') }}",
                 method: "POST",
-                headers: {
-                    'Authorization': 'Bearer ' + "{{ session('api_token') ?? '' }}" // This assumes we handle API tokens for web simulation
+                data: {
+                    _token: "{{ csrf_token() }}"
                 },
-                data: mockData,
                 success: function(res) {
-                    if (res.status) {
-                        showToast(res.message, 'Success', 'success');
+                    // res is now a Laravel JSON response from controller
+                    const data = res.original || res;
+                    if (data.status) {
+                        showToast(data.message, 'Success', 'success');
                         table.ajax.reload();
                     } else {
-                        showAlert(res.message, 'warning');
+                        showAlert(data.message, 'warning');
                     }
                 },
                 error: function(xhr) {
-                    const msg = xhr.responseJSON?.message || 'Tap Simulation failed. Ensure you have an active card.';
+                    const msg = xhr.responseJSON?.message || 'Tap Simulation failed.';
                     showAlert(msg, 'error');
                 },
                 complete: function() {

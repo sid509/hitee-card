@@ -28,15 +28,27 @@ class CardController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('is_active_badge', function($row){
-                    return $row->is_currently_active 
-                        ? '<span class="badge bg-label-success">Active</span>' 
-                        : '<span class="badge bg-label-secondary">Inactive</span>';
+                ->addColumn('checkbox', function($row){
+                    return '<input type="checkbox" class="form-check-input row-checkbox" value="'.$row->id.'">';
+                })
+                ->addColumn('usage_badge', function($row){
+                    $isTraveling = $row->hasOngoingRide();
+                    return $isTraveling 
+                        ? '<span class="badge bg-label-warning"><i class="bx bx-run me-1"></i> Traveling</span>' 
+                        : '<span class="badge bg-label-secondary">Idle</span>';
                 })
                 ->addColumn('action', function($row){
                     $actions = '';
                     // Super Admin actions
                     if (auth()->user()->hasRole('super-admin')) {
+                        // Toggle Status Button
+                        $isActive = $row->status === 'active';
+                        $btnClass = $isActive ? 'btn-success' : 'btn-secondary';
+                        $btnIcon = $isActive ? 'bx-check-circle' : 'bx-block';
+                        $btnTitle = $isActive ? 'Deactivate' : 'Activate';
+
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-card-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
+
                         // Edit Button
                         $actions .= '<a href="'.route('cards.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
                         // Delete Button
@@ -45,7 +57,8 @@ class CardController extends Controller
                                         '.method_field('DELETE').'
                                         <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete"><i class="bx bx-trash"></i></button>
                                     </form>';
-                    } elseif (auth()->user()->hasRole('customers')) {
+                    }
+ elseif (auth()->user()->hasRole('customers')) {
                         // Customer action
                         $canEnable = !$row->is_currently_active || $row->status !== 'active';
                         $canDisable = $row->is_currently_active && $row->status === 'active';
@@ -60,17 +73,36 @@ class CardController extends Controller
                                             data-can-upgrade="'.($canUpgrade ? '1' : '0').'">
                                             Request Change
                                          </button>';
-                        } else {
-                            $actions .= '<span class="text-muted small">No actions available</span>';
                         }
                     }
                     return $actions;
                 })
-                ->rawColumns(['action', 'is_active_badge'])
+                ->rawColumns(['action', 'usage_badge', 'checkbox'])
                 ->make(true);
         }
 
         return view('modules.cards.index');
+    }
+
+    /**
+     * Bulk toggle card status
+     */
+    public function bulkToggleStatus(Request $request)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:cards,id',
+            'status' => 'required|in:active,inactive'
+        ]);
+
+        Card::whereIn('id', $request->ids)->update(['status' => $request->status]);
+
+        return response()->json([
+            'status' => true,
+            'message' => count($request->ids) . ' cards updated to ' . $request->status . '.'
+        ]);
     }
 
     /**
@@ -141,6 +173,28 @@ class CardController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
         $card->delete();
         return redirect()->route('cards.index')->with('success', 'Card deleted successfully.');
+    }
+
+    /**
+     * Toggle card status (Super Admin only)
+     */
+    public function toggleStatus(Card $card)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+
+        $newStatus = $card->status === 'active' ? 'inactive' : 'active';
+        $card->update(['status' => $newStatus]);
+
+        logActivity('card_status_toggle', "Card {$card->card_number} status changed to {$newStatus}", [
+            'card_id' => $card->id,
+            'new_status' => $newStatus
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => "Card is now {$newStatus}.",
+            'new_status' => $newStatus
+        ]);
     }
 
     /**

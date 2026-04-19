@@ -4,8 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Bus extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['name', 'bus_number', 'hwid', 'status', 'merchant_id', 'latitude', 'longitude', 'route_id', 'active_fare_id'];
 
     public function merchant()

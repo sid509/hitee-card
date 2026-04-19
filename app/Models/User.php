@@ -9,10 +9,12 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Lab404\Impersonate\Models\Impersonate;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, Impersonate, HasApiTokens;
+    use HasFactory, Notifiable, Impersonate, HasApiTokens, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
