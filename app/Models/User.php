@@ -33,7 +33,7 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute()
     {
-        return $this->getFirstMediaUrl('avatar', asset('assets/img/avatars/1.png'));
+        return $this->getFirstMediaUrl('avatar', asset('assets/img/no_image.png'));
     }
 
     /**

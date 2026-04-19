@@ -29,7 +29,7 @@ trait HasMedia
     public function getFirstMediaUrl($collection = 'default', $default = null)
     {
         $media = $this->media()->where('collection_name', $collection)->first();
-        return $media ? $media->url : ($default ?? asset('assets/img/avatars/1.png'));
+        return $media ? $media->url : ($default ?? asset('assets/img/no_image.png'));
     }
 
     public function clearMediaCollection($collection = 'default')

@@ -15,7 +15,7 @@ class Bus extends Model
 
     public function getFeaturedImageUrlAttribute()
     {
-        return $this->getFirstMediaUrl('featured', asset('assets/img/avatars/1.png'));
+        return $this->getFirstMediaUrl('featured', asset('assets/img/no_image.png'));
     }
 
     public function merchant()
