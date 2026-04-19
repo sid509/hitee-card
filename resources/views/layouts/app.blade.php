@@ -84,13 +84,13 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="spotlight-input-group">
-                    <input type="text" id="spotlight-input" placeholder="Type to search users, buses, routes..." autocomplete="off">
+                    <input type="text" id="spotlight-input" placeholder="{{ __('messages.type_to_search') }}" autocomplete="off">
                 </div>
                 <div class="spotlight-results" id="spotlight-results">
                     <!-- Results will be injected here -->
                     <div class="text-center py-5 text-muted">
                         <i class="bx bx-search-alt fs-1 mb-2"></i>
-                        <p>Search for anything...</p>
+                        <p>{{ __('messages.search') }}...</p>
                     </div>
                 </div>
                 <div class="spotlight-footer">
@@ -115,17 +115,17 @@
                     @csrf
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label">Subject</label>
-                            <input type="text" name="subject" class="form-control" placeholder="What's the issue?" required>
+                            <label class="form-label">{{ __('messages.subject') }}</label>
+                            <input type="text" name="subject" class="form-control" placeholder="{{ __('messages.subject') }}?" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Message</label>
-                            <textarea name="message" class="form-control" rows="4" placeholder="Describe your problem in detail..." required></textarea>
+                            <label class="form-label">{{ __('messages.message') }}</label>
+                            <textarea name="message" class="form-control" rows="4" placeholder="{{ __('messages.message') }}..." required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" id="btnSendSupport" class="btn btn-primary">Send Message</button>
+                        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">{{ __('messages.close') }}</button>
+                        <button type="submit" id="btnSendSupport" class="btn btn-primary">{{ __('messages.send') }}</button>
                     </div>
                 </form>
             </div>

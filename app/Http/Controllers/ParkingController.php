@@ -35,7 +35,7 @@ class ParkingController extends Controller
                 })
                 ->editColumn('status', function($row) {
                     $class = $row->status === 'opened' ? 'bg-label-success' : 'bg-label-secondary';
-                    return '<span class="badge ' . $class . '">' . ucfirst($row->status) . '</span>';
+                    return '<span class="badge ' . $class . '">' . __('messages.' . $row->status) . '</span>';
                 })
                 ->addColumn('action', function($row){
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant');

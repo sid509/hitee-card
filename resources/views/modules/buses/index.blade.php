@@ -4,15 +4,15 @@
 
 @section('content')
 <h4 class="py-3 mb-4">
-    <span class="text-muted fw-light">Management /</span> Buses
+    <span class="text-muted fw-light">{{ __('messages.fleet_management') }} /</span> {{ __('messages.buses') }}
 </h4>
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Buses List</h5>
+        <h5 class="mb-0">{{ __('messages.buses') }} {{ __('messages.list') }}</h5>
         @if(auth()->user()->hasRole('super-admin'))
         <a href="{{ route('buses.create') }}" class="btn btn-primary">
-            <i class="bx bx-plus me-1"></i> Add Bus
+            <i class="bx bx-plus me-1"></i> {{ __('messages.add') }} {{ __('messages.buses') }}
         </a>
         @endif
     </div>
@@ -21,13 +21,13 @@
             <table class="table table-hover data-table w-100">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Bus Number</th>
-                        <th>Merchant</th>
-                        <th>Route</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th>{{ __('messages.id') }}</th>
+                        <th>{{ __('messages.name') }}</th>
+                        <th>{{ __('messages.number') }}</th>
+                        <th>{{ __('messages.merchant') }}</th>
+                        <th>{{ __('messages.routes') }}</th>
+                        <th>{{ __('messages.status') }}</th>
+                        <th>{{ __('messages.actions') }}</th>
                     </tr>
                 </thead>
             </table>

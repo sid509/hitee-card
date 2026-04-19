@@ -11,7 +11,7 @@
         <div class="navbar-nav align-items-center me-auto">
             <div class="nav-item d-flex align-items-center cursor-pointer" id="spotlight-trigger">
                 <i class="bx bx-search bx-md"></i>
-                <span class="text-muted ps-2 d-md-block d-none">Search (Cmd+K)</span>
+                <span class="text-muted ps-2 d-md-block d-none">{{ __('messages.search') }} (Cmd+K)</span>
             </div>
         </div>
         <!-- /Search -->
@@ -30,7 +30,7 @@
                     </li>
                     <li>
                         <a class="dropdown-item {{ app()->getLocale() == 'ne' ? 'active' : '' }}" href="{{ route('lang.switch', 'ne') }}" data-language="ne" data-text-direction="ltr">
-                            <span>Nepali</span>
+                            <span>नेपाली</span>
                         </a>
                     </li>
                 </ul>
@@ -64,7 +64,7 @@
                                 </div>
                                 <div class="flex-grow-1">
                                     <h6 class="mb-0">{{ auth()->user()->name ?? 'John Doe' }}</h6>
-                                    <small class="text-body-secondary">Admin</small>
+                                    <small class="text-body-secondary">{{ auth()->user()->roles->first()->name ?? 'User' }}</small>
                                 </div>
                             </div>
                         </a>
@@ -74,7 +74,7 @@
                     </li>
                     <li>
                         <a class="dropdown-item" href="{{ route('profile.show') }}">
-                            <i class="bx bx-user bx-md me-3"></i><span>My Profile</span>
+                            <i class="bx bx-user bx-md me-3"></i><span>{{ __('messages.profile') }}</span>
                         </a>
                     </li>
                     <li>
@@ -84,7 +84,7 @@
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="dropdown-item">
-                                <i class="bx bx-power-off bx-md me-3"></i><span>Log Out</span>
+                                <i class="bx bx-power-off bx-md me-3"></i><span>{{ __('messages.logout') }}</span>
                             </button>
                         </form>
                     </li>

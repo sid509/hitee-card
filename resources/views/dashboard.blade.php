@@ -22,7 +22,7 @@
                         </p>
 
                         <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ route('profile.show') }}" class="btn btn-sm btn-primary">View Profile</a>
+                            <a href="{{ route('profile.show') }}" class="btn btn-sm btn-primary">{{ __('messages.view') }} {{ __('messages.profile') }}</a>
                         </div>
                     </div>
                 </div>
@@ -40,7 +40,7 @@
                         <div class="col-md-3 col-6">
                             <a href="{{ route('users.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-user-plus fs-3 mb-2 text-primary"></i>
-                                <span class="small fw-medium">Add User</span>
+                                <span class="small fw-medium">{{ __('messages.add') }} {{ __('messages.users') }}</span>
                             </a>
                         </div>
                         <div class="col-md-3 col-6">
@@ -52,7 +52,7 @@
                         <div class="col-md-3 col-6">
                             <a href="{{ route('cards.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-credit-card fs-3 mb-2 text-warning"></i>
-                                <span class="small fw-medium">Issue Card</span>
+                                <span class="small fw-medium">Issue {{ __('messages.cards') }}</span>
                             </a>
                         </div>
                     @endif
@@ -61,13 +61,13 @@
                         <div class="col-md-3 col-6">
                             <a href="{{ route('buses.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-bus fs-3 mb-2 text-primary"></i>
-                                <span class="small fw-medium">Add Bus</span>
+                                <span class="small fw-medium">{{ __('messages.add') }} {{ __('messages.buses') }}</span>
                             </a>
                         </div>
                         <div class="col-md-3 col-6">
                             <a href="{{ route('parkings.create') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-car fs-3 mb-2 text-primary"></i>
-                                <span class="small fw-medium">Add Parking</span>
+                                <span class="small fw-medium">{{ __('messages.add') }} {{ __('messages.parkings') }}</span>
                             </a>
                         </div>
                     @endif
@@ -76,13 +76,13 @@
                         <div class="col-md-3 col-6">
                             <a href="{{ route('buses.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-bus fs-3 mb-2 text-primary"></i>
-                                <span class="small fw-medium">My Buses</span>
+                                <span class="small fw-medium">My {{ __('messages.buses') }}</span>
                             </a>
                         </div>
                         <div class="col-md-3 col-6">
                             <a href="{{ route('parkings.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-car fs-3 mb-2 text-primary"></i>
-                                <span class="small fw-medium">My Parkings</span>
+                                <span class="small fw-medium">My {{ __('messages.parkings') }}</span>
                             </a>
                         </div>
                     @endif
@@ -97,13 +97,13 @@
                         <div class="col-md-3 col-6">
                             <a href="{{ route('transactions.logs') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-list-ul fs-3 mb-2 text-info"></i>
-                                <span class="small fw-medium">Transaction Logs</span>
+                                <span class="small fw-medium">{{ __('messages.transactions') }} Logs</span>
                             </a>
                         </div>
                         <div class="col-md-3 col-6">
                             <a href="{{ route('cards.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-credit-card fs-3 mb-2 text-warning"></i>
-                                <span class="small fw-medium">My Cards</span>
+                                <span class="small fw-medium">My {{ __('messages.cards') }}</span>
                             </a>
                         </div>
                     @endif
@@ -129,7 +129,7 @@
                                 <a href="{{ route('transactions.logs') }}" class="btn btn-sm btn-outline-light">History</a>
                             @elseif(auth()->user()->hasRole('merchant'))
                                 <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#withdrawModal">Withdraw</button>
-                                <a href="{{ route('merchant.income') }}" class="btn btn-sm btn-outline-light">Earnings</a>
+                                <a href="{{ route('merchant.income') }}" class="btn btn-sm btn-outline-light">{{ __('messages.earnings') }}</a>
                             @else
                                 <a href="{{ route('transactions.logs') }}" class="btn btn-sm btn-outline-light">History</a>
                             @endif
@@ -147,7 +147,7 @@
                             </div>
                             <div class="card-info">
                                 <h6 class="mb-0">{{ $userCount }}</h6>
-                                <small class="text-muted">Users</small>
+                                <small class="text-muted">{{ __('messages.users') }}</small>
                             </div>
                         </div>
                     </div>
@@ -162,7 +162,7 @@
                             </div>
                             <div class="card-info">
                                 <h6 class="mb-0">{{ $cardCount }}</h6>
-                                <small class="text-muted">Cards</small>
+                                <small class="text-muted">{{ __('messages.cards') }}</small>
                             </div>
                         </div>
                     </div>
@@ -210,7 +210,7 @@
                             </div>
                             <div class="card-info">
                                 <h6 class="mb-0">{{ $busCount }}</h6>
-                                <small class="text-muted">{{ auth()->user()->hasRole('merchant') ? 'Buses' : 'Fleet' }}</small>
+                                <small class="text-muted">{{ auth()->user()->hasRole('merchant') ? __('messages.buses') : 'Fleet' }}</small>
                             </div>
                         </div>
                     </div>
@@ -225,7 +225,7 @@
                             </div>
                             <div class="card-info">
                                 <h6 class="mb-0">{{ $parkingCount }}</h6>
-                                <small class="text-muted">Parkings</small>
+                                <small class="text-muted">{{ __('messages.parkings') }}</small>
                             </div>
                         </div>
                     </div>
@@ -257,7 +257,7 @@
                 <div class="avatar avatar-lg mb-3">
                     <span class="avatar-initial rounded bg-primary"><i class="bx bx-map-pin fs-2"></i></span>
                 </div>
-                <h5>Smart Route Finder</h5>
+                <h5>Smart {{ __('messages.route_finder') }}</h5>
                 <p>Plan your journey, find direct buses, or get smart connecting route suggestions across the city.</p>
                 <a href="{{ route('route-finder.index') }}" class="btn btn-primary mt-2">
                     <i class="bx bx-search-alt me-1"></i> Start Planning

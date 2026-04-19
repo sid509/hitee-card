@@ -31,7 +31,7 @@ class BusController extends Controller
                 ->addColumn('route_name', fn($row) => $row->route->name ?? 'N/A')
                 ->editColumn('status', function($row) {
                     $class = $row->status === 'active' ? 'bg-label-success' : 'bg-label-secondary';
-                    return '<span class="badge ' . $class . '">' . ucfirst($row->status) . '</span>';
+                    return '<span class="badge ' . $class . '">' . __('messages.' . $row->status) . '</span>';
                 })
                 ->addColumn('action', function($row){
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant');
