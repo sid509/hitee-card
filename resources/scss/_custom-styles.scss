@@ -132,23 +132,23 @@ table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::befor
 
     .table:not(.table-dark) {
         color: var(--bs-table-color);
-        border-color: var(--bs-table-border-color);
+        border-color: #5e6266 !important;
 
         thead, tbody, tfoot, tr, td, th {
-            border-color: var(--bs-table-border-color);
+            border-color: #5e6266 !important;
         }
 
         th {
             background-color: #1a1a1a;
-            border-bottom: 1px solid var(--bs-table-border-color);
+            border-bottom: 1px solid #5e6266 !important;
         }
     }
 
     .table > :not(caption) > * > * {
         background-color: var(--bs-table-bg);
         color: var(--bs-table-color);
-        border-color: var(--bs-table-border-color);
-    }
+        border-color: #5e6266 !important;
+    }    }
 
     .dataTables_wrapper {
         .dataTables_length, .dataTables_filter, .dataTables_info, .dataTables_processing, .dataTables_paginate {
