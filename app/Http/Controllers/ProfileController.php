@@ -33,6 +33,34 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user avatar.
+     */
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        $user = auth()->user();
+
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
+                \Storage::disk('public')->delete($user->avatar);
+            }
+
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $user->update(['avatar' => $path]);
+
+            logActivity('avatar_update', 'User updated profile avatar');
+
+            return back()->with('success', 'Avatar updated successfully.');
+        }
+
+        return back()->with('error', 'No avatar file selected.');
+    }
+
+    /**
      * Update the user password.
      * 
      * Uses UpdatePasswordRequest for validation.

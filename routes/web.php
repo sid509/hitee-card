@@ -94,6 +94,7 @@ Route::middleware(['auth'])->group(function () {
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/profile', 'show')->name('profile.show');
         Route::put('/profile', 'update')->name('profile.update');
+        Route::put('/profile/avatar', 'updateAvatar')->name('profile.update-avatar');
         Route::put('/profile/password', 'password')->name('profile.password');
     });
 

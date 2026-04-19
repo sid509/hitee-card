@@ -24,9 +24,18 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'avatar',
         'password',
         'status',
     ];
+
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar) {
+            return asset('storage/' . $this->avatar);
+        }
+        return asset('assets/img/avatars/1.png');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
