@@ -19,11 +19,13 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
-            BusSeeder::class,
-            CardSeeder::class,
-            ParkingSeeder::class,
             RouteFareSeeder::class,
+            BusSeeder::class,
+            ParkingSeeder::class,
+            ParkingAttributeSeeder::class,
+            CardSeeder::class,
             BalanceSeeder::class,
+            TapSeeder::class,
         ]);
     }
 }
