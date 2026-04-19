@@ -6,10 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Traits\HasMedia;
+
 class Parking extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasMedia;
     protected $fillable = ['name', 'location', 'status', 'merchant_id', 'latitude', 'longitude', 'first_hour_fee', 'onwards_hour_fee'];
+
+    public function getFeaturedImageUrlAttribute()
+    {
+        return $this->getFirstMediaUrl('featured', asset('assets/img/avatars/1.png'));
+    }
 
     public function merchant()
     {

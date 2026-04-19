@@ -11,10 +11,12 @@ use Lab404\Impersonate\Models\Impersonate;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Traits\HasMedia;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, Impersonate, HasApiTokens, SoftDeletes;
+    use HasFactory, Notifiable, Impersonate, HasApiTokens, SoftDeletes, HasMedia;
 
     /**
      * The attributes that are mass assignable.
@@ -31,10 +33,7 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute()
     {
-        if ($this->avatar) {
-            return asset('storage/' . $this->avatar);
-        }
-        return asset('assets/img/avatars/1.png');
+        return $this->getFirstMediaUrl('avatar', asset('assets/img/avatars/1.png'));
     }
 
     /**

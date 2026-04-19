@@ -67,6 +67,28 @@
     @error('attributes') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 
+<div class="mb-3">
+    <label class="form-label" for="featured_image">Featured Image</label>
+    @if($parking->featured_image_url)
+        <div class="mb-2">
+            <img src="{{ $parking->featured_image_url }}" alt="Featured" class="rounded" style="width: 100px; height: 100px; object-fit: cover;">
+        </div>
+    @endif
+    <input type="file" class="form-control @error('featured_image') is-invalid @enderror" id="featured_image" name="featured_image" accept="image/*" />
+    @error('featured_image') <div class="invalid-feedback">{{ $message }}</div> @enderror
+</div>
+
+<div class="mb-3">
+    <label class="form-label" for="gallery_images">Gallery Images</label>
+    <div class="d-flex flex-wrap gap-2 mb-2">
+        @foreach($parking->media()->where('collection_name', 'gallery')->get() as $image)
+            <img src="{{ $image->url }}" alt="Gallery" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+        @endforeach
+    </div>
+    <input type="file" class="form-control @error('gallery_images') is-invalid @enderror" id="gallery_images" name="gallery_images[]" multiple accept="image/*" />
+    @error('gallery_images') <div class="invalid-feedback">{{ $message }}</div> @enderror
+</div>
+
 <div class="mt-4">
     <button type="submit" class="btn btn-primary me-2">Save Parking</button>
     <a href="{{ route('parkings.index') }}" class="btn btn-outline-secondary">Cancel</a>

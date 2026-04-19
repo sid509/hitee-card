@@ -30,6 +30,12 @@ class ParkingController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->editColumn('name', function($row) {
+                    return '<div class="d-flex align-items-center">
+                                <img src="' . $row->featured_image_url . '" alt="Parking" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                <span>' . $row->name . '</span>
+                            </div>';
+                })
                 ->editColumn('first_hour_fee', function($row) {
                     return 'Rs. ' . number_format($row->first_hour_fee, 2);
                 })
@@ -71,7 +77,7 @@ class ParkingController extends Controller
                     }
                     return $actions;
                 })
-                ->rawColumns(['status', 'action'])
+                ->rawColumns(['name', 'status', 'action'])
                 ->make(true);
         }
 
@@ -126,10 +132,22 @@ class ParkingController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
         DB::transaction(function() use ($request) {
-            $parking = Parking::create($request->all());
+            $parking = Parking::create($request->validated());
             
             if ($request->has('attributes')) {
                 $parking->attributes()->sync($request->input('attributes'));
+            }
+
+            // Handle Featured Image
+            if ($request->hasFile('featured_image')) {
+                $parking->addMedia($request->file('featured_image'), 'featured');
+            }
+
+            // Handle Gallery Images
+            if ($request->hasFile('gallery_images')) {
+                foreach ($request->file('gallery_images') as $file) {
+                    $parking->addMedia($file, 'gallery');
+                }
             }
         });
 
@@ -182,5 +200,8 @@ class ParkingController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
         $parking->delete();
         return redirect()->route('parkings.index')->with('success', 'Parking deleted successfully.');
+    }
+}
+->with('success', 'Parking deleted successfully.');
     }
 }

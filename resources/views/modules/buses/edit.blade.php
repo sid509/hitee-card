@@ -14,7 +14,7 @@
                 <h5 class="mb-0">Edit Bus: {{ $bus->bus_number }}</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('buses.update', $bus->id) }}" method="POST">
+                <form action="{{ route('buses.update', $bus->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     @include('modules.buses.main-form')

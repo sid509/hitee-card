@@ -67,7 +67,28 @@
             </div>
 
             <!-- Income Card -->
-            <div class="card bg-success text-white">
+            <!-- Gallery Card -->
+            @php $gallery = $parking->media()->where('collection_name', 'gallery')->get(); @endphp
+            @if($gallery->count() > 0)
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Gallery</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        @foreach($gallery as $image)
+                        <div class="col-4">
+                            <a href="{{ $image->url }}" target="_blank">
+                                <img src="{{ $image->url }}" alt="Gallery" class="img-fluid rounded shadow-sm" style="height: 80px; width: 100%; object-fit: cover;">
+                            </a>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <div class="card bg-success text-white mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>

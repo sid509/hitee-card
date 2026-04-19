@@ -14,7 +14,7 @@
                 <h5 class="mb-0">Add New Parking</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('parkings.store') }}" method="POST">
+                <form action="{{ route('parkings.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @include('modules.parkings.main-form')
                 </form>

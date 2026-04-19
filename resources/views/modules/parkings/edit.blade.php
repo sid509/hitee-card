@@ -14,7 +14,7 @@
                 <h5 class="mb-0">Edit Parking: {{ $parking->name }}</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('parkings.update', $parking->id) }}" method="POST">
+                <form action="{{ route('parkings.update', $parking->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     @include('modules.parkings.main-form')

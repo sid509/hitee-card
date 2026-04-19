@@ -17,6 +17,8 @@ class UpdateParkingRequest extends BaseRequest
             'onwards_hour_fee' => 'required|numeric|min:0',
             'attributes' => 'nullable|array',
             'attributes.*' => 'exists:parking_attributes,id',
+            'featured_image' => 'nullable|image|max:2048',
+            'gallery_images.*' => 'nullable|image|max:2048',
         ];
 
         if (auth()->user()->hasRole('super-admin')) {

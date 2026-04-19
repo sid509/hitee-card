@@ -28,6 +28,12 @@ class BusController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->editColumn('name', function($row) {
+                    return '<div class="d-flex align-items-center">
+                                <img src="' . $row->featured_image_url . '" alt="Bus" class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                <span>' . $row->name . '</span>
+                            </div>';
+                })
                 ->addColumn('route_name', fn($row) => $row->route->name ?? 'N/A')
                 ->editColumn('status', function($row) {
                     $class = $row->status === 'active' ? 'bg-label-success' : 'bg-label-secondary';
@@ -67,7 +73,7 @@ class BusController extends Controller
                     }
                     return $actions;
                 })
-                ->rawColumns(['status', 'action'])
+                ->rawColumns(['name', 'status', 'action'])
                 ->make(true);
         }
 
@@ -122,7 +128,19 @@ class BusController extends Controller
         // Only super-admins can store buses
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
-        Bus::create($request->all());
+        $bus = Bus::create($request->validated());
+
+        // Handle Featured Image
+        if ($request->hasFile('featured_image')) {
+            $bus->addMedia($request->file('featured_image'), 'featured');
+        }
+
+        // Handle Gallery Images
+        if ($request->hasFile('gallery_images')) {
+            foreach ($request->file('gallery_images') as $file) {
+                $bus->addMedia($file, 'gallery');
+            }
+        }
 
         return redirect()->route('buses.index')->with('success', 'Bus created successfully.');
     }
@@ -163,6 +181,19 @@ class BusController extends Controller
         }
 
         $bus->update($data);
+
+        // Handle Featured Image
+        if ($request->hasFile('featured_image')) {
+            $bus->clearMediaCollection('featured');
+            $bus->addMedia($request->file('featured_image'), 'featured');
+        }
+
+        // Handle Gallery Images
+        if ($request->hasFile('gallery_images')) {
+            foreach ($request->file('gallery_images') as $file) {
+                $bus->addMedia($file, 'gallery');
+            }
+        }
 
         return redirect()->route('buses.index')->with('success', 'Bus updated successfully.');
     }

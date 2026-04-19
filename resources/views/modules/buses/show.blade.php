@@ -16,7 +16,7 @@
                 <div class="card-body">
                     <div class="text-center mb-4">
                         <div class="avatar avatar-xl m-auto mb-3">
-                            <span class="avatar-initial rounded-circle bg-label-primary"><i class="bx bx-bus bx-lg"></i></span>
+                            <img src="{{ $bus->featured_image_url }}" alt="Bus" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                         </div>
                         <h5>{{ $bus->name }}</h5>
                         <span class="badge {{ $bus->status === 'active' ? 'bg-label-success' : 'bg-label-secondary' }}">{{ __('messages.' . $bus->status) }}</span>
@@ -59,6 +59,27 @@
                     <button class="btn btn-sm btn-outline-primary mt-3 w-100" data-bs-toggle="modal" data-bs-target="#viewFareMatrixModal">
                         <i class="bx bx-table me-1"></i> View Pricing Matrix
                     </button>
+                </div>
+            </div>
+            @endif
+
+            <!-- Gallery Card -->
+            @php $gallery = $bus->media()->where('collection_name', 'gallery')->get(); @endphp
+            @if($gallery->count() > 0)
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Gallery</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        @foreach($gallery as $image)
+                        <div class="col-4">
+                            <a href="{{ $image->url }}" target="_blank">
+                                <img src="{{ $image->url }}" alt="Gallery" class="img-fluid rounded shadow-sm" style="height: 80px; width: 100%; object-fit: cover;">
+                            </a>
+                        </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
             @endif
@@ -240,6 +261,31 @@
             serverSide: true,
             responsive: true,
             ajax: {
+                url: "{{ route('merchant.income') }}",
+                data: function(d) {
+                    d.reference_id = "{{ $bus->id }}";
+                    d.reference_type = "App\\Models\\Bus";
+                }
+            },
+            columns: [
+                {data: 'created_at', name: 'created_at'},
+                {data: 'customer', name: 'customer'},
+                {data: 'amount', name: 'amount'},
+            ],
+            order: [[0, 'desc']]
+        });
+        @endif
+
+        window.focusStop = function(lat, lng, name) {
+            map.setView([lat, lng], 16);
+            L.popup().setLatLng([lat, lng]).setContent(`<strong>${name}</strong>`).openOn(map);
+            // Smooth scroll to map
+            document.getElementById('bus-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+    });
+</script>
+@endpush
+jax: {
                 url: "{{ route('merchant.income') }}",
                 data: function(d) {
                     d.reference_id = "{{ $bus->id }}";

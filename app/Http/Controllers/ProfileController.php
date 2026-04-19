@@ -44,13 +44,15 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if exists
-            if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
-                \Storage::disk('public')->delete($user->avatar);
-            }
+            $file = $request->file('avatar');
+            $extension = $file->getClientOriginalExtension();
+            $customName = 'avatar_profile_' . now()->format('Ymd_His') . '.' . $extension;
 
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $user->update(['avatar' => $path]);
+            // Clear old avatar collection
+            $user->clearMediaCollection('avatar');
+            
+            // Add new media
+            $user->addMedia($file, 'avatar', $customName);
 
             logActivity('avatar_update', 'User updated profile avatar');
 

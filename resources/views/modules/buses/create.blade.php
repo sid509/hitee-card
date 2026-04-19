@@ -14,7 +14,7 @@
                 <h5 class="mb-0">Add New Bus</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('buses.store') }}" method="POST">
+                <form action="{{ route('buses.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @include('modules.buses.main-form')
                 </form>
