@@ -19,7 +19,7 @@
                             <span class="avatar-initial rounded-circle bg-label-info"><i class="bx bxs-parking bx-lg"></i></span>
                         </div>
                         <h5>{{ $parking->name }}</h5>
-                        <span class="badge bg-label-success">{{ strtoupper($parking->status) }}</span>
+                        <span class="badge {{ $parking->status === 'opened' ? 'bg-label-success' : 'bg-label-secondary' }}">{{ strtoupper($parking->status) }}</span>
                     </div>
                     <div class="info-container">
                         <ul class="list-unstyled">

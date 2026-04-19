@@ -33,6 +33,10 @@ class ParkingController extends Controller
                 ->editColumn('first_hour_fee', function($row) {
                     return 'Rs. ' . number_format($row->first_hour_fee, 2);
                 })
+                ->editColumn('status', function($row) {
+                    $class = $row->status === 'opened' ? 'bg-label-success' : 'bg-label-secondary';
+                    return '<span class="badge ' . $class . '">' . ucfirst($row->status) . '</span>';
+                })
                 ->addColumn('action', function($row){
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant');
                     $canDelete = auth()->user()->hasRole('super-admin');
@@ -40,6 +44,19 @@ class ParkingController extends Controller
                     $actions = '';
                     // View Button
                     $actions .= '<a href="'.route('parkings.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
+
+                    // Toggle Status
+                    if ($canEdit) {
+                        $icon = $row->status === 'opened' ? 'bx-lock-alt' : 'bx-lock-open-alt';
+                        $btnClass = $row->status === 'opened' ? 'btn-warning' : 'btn-success';
+                        $title = $row->status === 'opened' ? 'Close Parking' : 'Open Parking';
+                        
+                        $actions .= '<form action="'.route('parkings.toggle-status', $row->id).'" method="POST" style="display:inline-block">
+                                        '.csrf_field().'
+                                        <button type="submit" class="btn btn-icon btn-sm '.$btnClass.' me-1" title="'.$title.'"><i class="bx '.$icon.'"></i></button>
+                                    </form>';
+                    }
+
                     // Edit Button
                     if ($canEdit) {
                         $actions .= '<a href="'.route('parkings.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
@@ -54,11 +71,25 @@ class ParkingController extends Controller
                     }
                     return $actions;
                 })
-                ->rawColumns(['action'])
+                ->rawColumns(['status', 'action'])
                 ->make(true);
         }
 
         return view('modules.parkings.index');
+    }
+
+    /**
+     * Toggle the status of the parking.
+     */
+    public function toggleStatus(Parking $parking)
+    {
+        if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
+        if (!auth()->user()->hasRole('super-admin', 'merchant')) abort(403);
+
+        $parking->status = $parking->status === 'opened' ? 'closed' : 'opened';
+        $parking->save();
+
+        return redirect()->back()->with('success', 'Parking status updated successfully.');
     }
 
     /**

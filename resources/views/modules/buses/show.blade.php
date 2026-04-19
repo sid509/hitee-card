@@ -19,7 +19,7 @@
                             <span class="avatar-initial rounded-circle bg-label-primary"><i class="bx bx-bus bx-lg"></i></span>
                         </div>
                         <h5>{{ $bus->name }}</h5>
-                        <span class="badge bg-label-success">{{ strtoupper($bus->status) }}</span>
+                        <span class="badge {{ $bus->status === 'active' ? 'bg-label-success' : 'bg-label-secondary' }}">{{ strtoupper($bus->status) }}</span>
                     </div>
                     <div class="info-container">
                         <ul class="list-unstyled">

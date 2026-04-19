@@ -29,10 +29,12 @@ class ParkingSeeder extends Seeder
             Parking::create([
                 'name' => $data['name'],
                 'location' => $data['loc'],
-                'status' => 'active',
+                'status' => 'opened',
                 'merchant_id' => $merchants->random()->id,
                 'latitude' => $data['lat'],
                 'longitude' => $data['lng'],
+                'first_hour_fee' => rand(20, 50),
+                'onwards_hour_fee' => rand(10, 30),
             ]);
         }
     }

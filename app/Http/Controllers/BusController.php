@@ -29,6 +29,10 @@ class BusController extends Controller
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('route_name', fn($row) => $row->route->name ?? 'N/A')
+                ->editColumn('status', function($row) {
+                    $class = $row->status === 'active' ? 'bg-label-success' : 'bg-label-secondary';
+                    return '<span class="badge ' . $class . '">' . ucfirst($row->status) . '</span>';
+                })
                 ->addColumn('action', function($row){
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant');
                     $canDelete = auth()->user()->hasRole('super-admin');
@@ -36,6 +40,19 @@ class BusController extends Controller
                     $actions = '';
                     // View Button
                     $actions .= '<a href="'.route('buses.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
+                    
+                    // Toggle Status
+                    if ($canEdit) {
+                        $icon = $row->status === 'active' ? 'bx-block' : 'bx-check-circle';
+                        $btnClass = $row->status === 'active' ? 'btn-warning' : 'btn-success';
+                        $title = $row->status === 'active' ? 'Deactivate' : 'Activate';
+                        
+                        $actions .= '<form action="'.route('buses.toggle-status', $row->id).'" method="POST" style="display:inline-block">
+                                        '.csrf_field().'
+                                        <button type="submit" class="btn btn-icon btn-sm '.$btnClass.' me-1" title="'.$title.'"><i class="bx '.$icon.'"></i></button>
+                                    </form>';
+                    }
+
                     // Edit Button
                     if ($canEdit) {
                         $actions .= '<a href="'.route('buses.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
@@ -50,11 +67,25 @@ class BusController extends Controller
                     }
                     return $actions;
                 })
-                ->rawColumns(['action'])
+                ->rawColumns(['status', 'action'])
                 ->make(true);
         }
 
         return view('modules.buses.index');
+    }
+
+    /**
+     * Toggle the status of the bus.
+     */
+    public function toggleStatus(Bus $bus)
+    {
+        if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
+        if (!auth()->user()->hasRole('super-admin', 'merchant')) abort(403);
+
+        $bus->status = $bus->status === 'active' ? 'inactive' : 'active';
+        $bus->save();
+
+        return redirect()->back()->with('success', 'Bus status updated successfully.');
     }
 
     /**

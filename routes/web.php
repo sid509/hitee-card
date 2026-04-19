@@ -144,7 +144,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/route-finder', [RouteFinderController::class, 'index'])->name('route-finder.index');
     Route::get('/my-rides', [RideController::class, 'myRides'])->name('rides.my-rides');
     Route::post('/rides/simulate-tap', [RideController::class, 'simulateTap'])->name('rides.simulate-tap');
+    Route::post('/buses/{bus}/toggle-status', [BusController::class, 'toggleStatus'])->name('buses.toggle-status');
     Route::resource('buses', BusController::class);
+    Route::post('/parkings/{parking}/toggle-status', [ParkingController::class, 'toggleStatus'])->name('parkings.toggle-status');
     Route::resource('parkings', ParkingController::class);
     Route::resource('cards', CardController::class);
     Route::post('/cards/{card}/request-change', [CardController::class, 'requestChange'])->name('cards.request-change');
