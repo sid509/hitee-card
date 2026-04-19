@@ -29,7 +29,7 @@ trait HasMedia
 
         // Process Image with Intervention
         $manager = new ImageManager(new Driver());
-        $image = $manager->read($file);
+        $image = $manager->decode($file);
 
         // Define dimensions based on collection
         if ($collection === 'avatar') {
@@ -41,7 +41,7 @@ trait HasMedia
             $image->scale(width: 1200);
         }
 
-        $encoded = $image->toPng();
+        $encoded = $image->encodeUsingFileExtension('png')->toString();
         
         Storage::disk('public')->put($path, $encoded);
 

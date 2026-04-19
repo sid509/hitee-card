@@ -180,12 +180,25 @@ class ParkingController extends Controller
         if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
         
         DB::transaction(function() use ($request, $parking) {
-            $parking->update($request->all());
+            $parking->update($request->validated());
             
             if ($request->has('attributes')) {
                 $parking->attributes()->sync($request->input('attributes'));
             } else {
                 $parking->attributes()->detach();
+            }
+
+            // Handle Featured Image
+            if ($request->hasFile('featured_image')) {
+                $parking->clearMediaCollection('featured');
+                $parking->addMedia($request->file('featured_image'), 'featured');
+            }
+
+            // Handle Gallery Images
+            if ($request->hasFile('gallery_images')) {
+                foreach ($request->file('gallery_images') as $file) {
+                    $parking->addMedia($file, 'gallery');
+                }
             }
         });
 
@@ -200,8 +213,5 @@ class ParkingController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
         $parking->delete();
         return redirect()->route('parkings.index')->with('success', 'Parking deleted successfully.');
-    }
-}
-->with('success', 'Parking deleted successfully.');
     }
 }
