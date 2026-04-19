@@ -35,8 +35,8 @@
                     <tr>
                         <th width="10" class="text-start"><input type="checkbox" class="form-check-input" id="select-all"></th>
                         <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
+                        <th>User Details</th>
+                        <th>Card Details</th>
                         <th>Roles</th>
                         <th>Balance</th>
                         <th>Status</th>
@@ -45,7 +45,6 @@
                     </tr>
                 </thead>
             </table>
-
         </div>
     </div>
 </div>
@@ -170,20 +169,35 @@
             serverSide: true,
             responsive: true,
             ajax: "{{ route('users.index') }}",
+            columnDefs: [
+                {
+                    targets: 0,
+                    orderable: false,
+                    searchable: false
+                }
+            ],
             columns: [
                 {data: 'checkbox', name: 'checkbox', orderable: false, searchable: false},
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'name', name: 'name'},
-                {data: 'email', name: 'email'},
-                {data: 'role_names', name: 'role_names', orderable: false},
+                {data: 'user_info', name: 'name'},
+                {data: 'card_info', name: 'card_info', orderable: false, searchable: false},
+                {data: 'role_icons', name: 'role_icons', orderable: false},
                 {data: 'balance', name: 'balance', orderable: false, searchable: false},
                 {data: 'status', name: 'status', render: function(data) {
+                    if (!data) return '-';
                     let classMap = { active: 'bg-label-success', inactive: 'bg-label-secondary' };
                     return `<span class="badge ${classMap[data] || 'bg-label-info'}">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
                 }},
                 {data: 'created_at', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
-            ]
+            ],
+            drawCallback: function() {
+                // Initialize tooltips after table draws
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
         });
 
         // Select All Checkbox

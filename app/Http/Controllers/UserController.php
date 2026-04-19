@@ -20,17 +20,34 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = User::with('roles')->select(['id', 'name', 'email', 'status', 'created_at']);
+            $data = User::with(['roles', 'activeCard'])->select(['id', 'name', 'email', 'status', 'created_at']);
             return DataTables::of($data)
-
                 ->addIndexColumn()
                 ->addColumn('checkbox', function($row){
                     if ($row->id === auth()->id()) return '';
                     return '<input type="checkbox" class="form-check-input row-checkbox" value="'.$row->id.'">';
                 })
-                ->addColumn('role_names', function($row){
+                ->addColumn('user_info', function($row){
+                    return '<div>
+                                <span class="fw-medium">'.$row->name.'</span><br>
+                                <small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$row->email.'</small>
+                            </div>';
+                })
+                ->addColumn('card_info', function($row){
+                    if (!$row->activeCard) return '<span class="text-muted small">No Active Card</span>';
+                    return '<div>
+                                <span class="fw-medium">'.$row->activeCard->card_number.'</span><br>
+                                <small class="text-muted" style="font-size: 0.75rem; font-style: italic;">HW: '.$row->activeCard->hwid.'</small>
+                            </div>';
+                })
+                ->addColumn('role_icons', function($row){
                     return $row->roles->map(function($role){
-                        return '<span class="badge bg-label-primary">'.$role->name.'</span>';
+                        $icon = 'bx-user';
+                        $color = 'primary';
+                        if ($role->slug === 'super-admin') { $icon = 'bx-shield-quarter'; $color = 'danger'; }
+                        elseif ($role->slug === 'merchant') { $icon = 'bx-store-alt'; $color = 'info'; }
+                        
+                        return '<span class="badge badge-center rounded-pill bg-label-'.$color.'" data-bs-toggle="tooltip" data-bs-placement="top" title="'.$role->name.'"><i class="bx '.$icon.'"></i></span>';
                     })->implode(' ');
                 })
                 ->addColumn('balance', function($row){
@@ -42,7 +59,7 @@ class UserController extends Controller
                     return formatDate($row->created_at);
                 })
                 ->addColumn('action', function($row){
-                    $actions = '';
+                    $actions = '<div class="d-flex">';
 
                     // Toggle Status Button
                     if (auth()->user()->hasRole('super-admin') && $row->id !== auth()->id()) {
@@ -56,6 +73,7 @@ class UserController extends Controller
 
                     // Edit Button
                     $actions .= '<a href="'.route('users.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
+                    
                     // View Button
                     $actions .= '<a href="'.route('users.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     
@@ -71,16 +89,18 @@ class UserController extends Controller
                     }
 
                     // Delete Button
-                    $actions .= '<form action="'.route('users.destroy', $row->id).'" method="POST" style="display:inline-block">
-                                    '.csrf_field().'
-                                    '.method_field('DELETE').'
-                                    <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete">
-                                        <i class="bx bx-trash"></i>
-                                    </button>
-                                </form>';
+                    if ($row->id !== auth()->id()) {
+                        $actions .= '<form action="'.route('users.destroy', $row->id).'" method="POST" style="display:inline-block">
+                                        '.csrf_field().'
+                                        '.method_field('DELETE').'
+                                        <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete"><i class="bx bx-trash"></i></button>
+                                    </form>';
+                    }
+
+                    $actions .= '</div>';
                     return $actions;
                 })
-                ->rawColumns(['action', 'role_names', 'balance', 'checkbox'])
+                ->rawColumns(['action', 'role_icons', 'balance', 'checkbox', 'user_info', 'card_info'])
                 ->make(true);
         }
 

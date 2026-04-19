@@ -118,6 +118,13 @@
                     d.status = $('#filter_status').val();
                 }
             },
+            columnDefs: [
+                {
+                    targets: 0,
+                    orderable: false,
+                    searchable: false
+                }
+            ],
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'user_card', name: 'user.name'},

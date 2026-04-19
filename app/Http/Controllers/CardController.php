@@ -34,7 +34,7 @@ class CardController extends Controller
                 ->addColumn('usage_badge', function($row){
                     $isTraveling = $row->hasOngoingRide();
                     return $isTraveling 
-                        ? '<span class="badge bg-label-warning"><i class="bx bx-run me-1"></i> Traveling</span>' 
+                        ? '<span class="badge bg-label-warning">In Use</span>' 
                         : '<span class="badge bg-label-secondary">Idle</span>';
                 })
                 ->addColumn('action', function($row){
