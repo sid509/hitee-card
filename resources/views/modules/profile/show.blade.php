@@ -61,25 +61,26 @@
                         <div class="mb-3 col-md-6 form-password-toggle">
                             <label class="form-label" for="password">New Password</label>
                             <div class="input-group input-group-merge">
-                                <input class="form-control @error('password') is-invalid @enderror" type="password" name="password" id="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+                                <input class="form-control @error('password') is-invalid @enderror" type="password"
+                                    id="password" name="password"
+                                    placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
                                 <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
-                                @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                @error('password')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
                             </div>
                         </div>
+
                         <div class="mb-3 col-md-6 form-password-toggle">
                             <label class="form-label" for="password_confirmation">Confirm New Password</label>
                             <div class="input-group input-group-merge">
-                                <input class="form-control" type="password" name="password_confirmation" id="password_confirmation" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+                                <input class="form-control" type="password" name="password_confirmation"
+                                    id="password_confirmation"
+                                    placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
                                 <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-2">
-                        <button type="submit" class="btn btn-primary me-2">Update Password</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+
 </div>
 @endsection

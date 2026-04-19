@@ -31,6 +31,7 @@ class FareController extends Controller
                     $actions = '<a href="'.route('fares.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     
                     if (auth()->user()->hasRole('super-admin')) {
+                        $actions .= '<a href="'.route('fares.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
                         if ($row->status == 'proposed') {
                             $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 approve-fare" data-id="'.$row->id.'" title="Approve"><i class="bx bx-check"></i></button>';
                         }
@@ -91,6 +92,29 @@ class FareController extends Controller
         return redirect()->route('fares.index')->with('success', 'Fare proposal submitted successfully.');
     }
 
+    public function edit(Fare $fare)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $fare->load(['route.stops', 'matrices']);
+        $routes = Route::all();
+        return view('modules.fares.edit', compact('fare', 'routes'));
+    }
+
+    public function update(Request $request, Fare $fare)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $fare->update([
+            'name' => $request->name,
+        ]);
+
+        return redirect()->route('fares.index')->with('success', 'Fare details updated successfully.');
+    }
+
     public function show(Fare $fare)
     {
         $fare->load(['route.stops', 'matrices']);
@@ -127,6 +151,39 @@ class FareController extends Controller
     public function getMatrixForm(Request $request)
     {
         $route = Route::with('stops')->findOrFail($request->route_id);
-        return view('modules.fares._matrix_form', compact('route'))->render();
+        $fare = $request->filled('fare_id') ? Fare::with('matrices')->find($request->fare_id) : null;
+        return view('modules.fares._matrix_form', compact('route', 'fare'))->render();
+    }
+
+    /**
+     * Update a single cell in the fare matrix (Inline Edit).
+     */
+    public function updateMatrixCell(Request $request)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+
+        $request->validate([
+            'fare_id' => 'required|exists:fares,id',
+            'from_stop_id' => 'required|exists:route_stops,id',
+            'to_stop_id' => 'required|exists:route_stops,id',
+            'amount' => 'nullable|numeric|min:0',
+        ]);
+
+        $matrix = FareMatrix::updateOrCreate(
+            [
+                'fare_id' => $request->fare_id,
+                'from_stop_id' => $request->from_stop_id,
+                'to_stop_id' => $request->to_stop_id,
+            ],
+            [
+                'amount' => $request->amount ?? 0,
+            ]
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Saved',
+            'amount' => number_format($matrix->amount, 2)
+        ]);
     }
 }

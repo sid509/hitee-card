@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Parking;
 use App\Models\User;
+use App\Models\ParkingAttribute;
 use App\Http\Requests\StoreParkingRequest;
 use App\Http\Requests\UpdateParkingRequest;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\DB;
 
 class ParkingController extends Controller
 {
@@ -28,6 +30,9 @@ class ParkingController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->editColumn('first_hour_fee', function($row) {
+                    return 'Rs. ' . number_format($row->first_hour_fee, 2);
+                })
                 ->addColumn('action', function($row){
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant');
                     $canDelete = auth()->user()->hasRole('super-admin');
@@ -64,6 +69,7 @@ class ParkingController extends Controller
         // Merchant can only view their own
         if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
         
+        $parking->load(['attributes', 'merchant']);
         return view('modules.parkings.show', compact('parking'));
     }
 
@@ -75,7 +81,8 @@ class ParkingController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
         $parking = new Parking();
         $merchants = User::whereHas('roles', function($q){ $q->where('slug', 'merchant'); })->get();
-        return view('modules.parkings.create', compact('parking', 'merchants'));
+        $allAttributes = ParkingAttribute::all();
+        return view('modules.parkings.create', compact('parking', 'merchants', 'allAttributes'));
     }
 
     /**
@@ -87,7 +94,13 @@ class ParkingController extends Controller
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
-        Parking::create($request->all());
+        DB::transaction(function() use ($request) {
+            $parking = Parking::create($request->all());
+            
+            if ($request->has('attributes')) {
+                $parking->attributes()->sync($request->input('attributes'));
+            }
+        });
 
         return redirect()->route('parkings.index')->with('success', 'Parking created successfully.');
     }
@@ -102,7 +115,10 @@ class ParkingController extends Controller
         if (!auth()->user()->hasRole('super-admin', 'merchant')) abort(403);
         
         $merchants = User::whereHas('roles', function($q){ $q->where('slug', 'merchant'); })->get();
-        return view('modules.parkings.edit', compact('parking', 'merchants'));
+        $allAttributes = ParkingAttribute::all();
+        $parking->load('attributes');
+        
+        return view('modules.parkings.edit', compact('parking', 'merchants', 'allAttributes'));
     }
 
     /**
@@ -114,7 +130,15 @@ class ParkingController extends Controller
     {
         if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
         
-        $parking->update($request->all());
+        DB::transaction(function() use ($request, $parking) {
+            $parking->update($request->all());
+            
+            if ($request->has('attributes')) {
+                $parking->attributes()->sync($request->input('attributes'));
+            } else {
+                $parking->attributes()->detach();
+            }
+        });
 
         return redirect()->route('parkings.index')->with('success', 'Parking updated successfully.');
     }

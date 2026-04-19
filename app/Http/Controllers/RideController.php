@@ -1,0 +1,198 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Ride;
+use App\Models\Tap;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
+
+class RideController extends Controller
+{
+    /**
+     * Display all reconciled rides (Admin/Merchant).
+     */
+    public function index(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = Ride::with(['user', 'card', 'reference', 'merchant', 'tapIn', 'tapOut'])->latest();
+
+            // Filters
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
+            if ($request->filled('merchant_id')) {
+                $query->where('merchant_id', $request->merchant_id);
+            }
+            if ($request->filled('asset_type')) {
+                $type = $request->asset_type == 'bus' ? 'App\Models\Bus' : 'App\Models\Parking';
+                $query->where('reference_type', $type);
+            }
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if (auth()->user()->hasRole('merchant')) {
+                $query->where('merchant_id', auth()->id());
+            }
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->editColumn('status', function($row) {
+                    $class = $row->status == 'completed' ? 'success' : ($row->status == 'ongoing' ? 'primary' : 'danger');
+                    return '<span class="badge bg-label-'.$class.'">'.ucfirst($row->status).'</span>';
+                })
+                ->addColumn('user_card', function($row) {
+                    $userName = $row->user ? $row->user->name : 'N/A';
+                    $cardNo = $row->card ? $row->card->card_number : 'No Card';
+                    return '<div><span class="fw-medium">'.$userName.'</span><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$cardNo.'</small></div>';
+                })
+                ->addColumn('asset_info', function($row) {
+                    if (!$row->reference) return 'N/A';
+                    $name = $row->reference_type == 'App\Models\Bus' ? ($row->reference->bus_number ?? $row->reference->name) : $row->reference->name;
+                    $type = $row->reference_type == 'App\Models\Bus' ? 'Bus' : 'Parking';
+                    $route = $row->reference_type == 'App\Models\Bus' ? 'buses.show' : 'parkings.show';
+                    $link = route($route, $row->reference_id);
+                    return '<div><a href="'.$link.'" class="fw-medium">'.$name.'</a><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$type.'</small></div>';
+                })
+                ->editColumn('fare_amount', function($row) {
+                    return 'Rs. ' . number_format($row->fare_amount, 2);
+                })
+                ->addColumn('tap_in_time', function($row) {
+                    return $row->tapIn ? $row->tapIn->created_at->format('Y-m-d H:i') : '-';
+                })
+                ->addColumn('tap_out_time', function($row) {
+                    return $row->tapOut ? $row->tapOut->created_at->format('Y-m-d H:i') : '-';
+                })
+                ->addColumn('action', function($row) {
+                    if (!$row->tapIn) return '';
+                    return '<button class="btn btn-icon btn-sm btn-info view-ride-map" 
+                                data-start-lat="'.$row->tapIn->latitude.'" 
+                                data-start-lon="'.$row->tapIn->longitude.'"
+                                data-start-name="'.($row->tapIn->resolved_location_name ?? 'Unknown').'"
+                                data-end-lat="'.($row->tapOut ? $row->tapOut->latitude : '').'"
+                                data-end-lon="'.($row->tapOut ? $row->tapOut->longitude : '').'"
+                                data-end-name="'.($row->tapOut ? $row->tapOut->resolved_location_name : 'Journey Ongoing').'">
+                                <i class="bx bx-map"></i>
+                            </button>';
+                })
+                ->rawColumns(['status', 'action', 'asset_info', 'user_card'])
+                ->make(true);
+        }
+
+        $merchants = User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get();
+        return view('modules.rides.index', compact('merchants'));
+    }
+
+    /**
+     * Display raw tap ledger (Admin/Merchant).
+     */
+    public function tapLedger(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = Tap::with(['user', 'card', 'reference'])->latest();
+
+            // Filters
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
+            if ($request->filled('merchant_id')) {
+                $query->where('merchant_id', $request->merchant_id);
+            }
+            if ($request->filled('asset_type')) {
+                $type = $request->asset_type == 'bus' ? 'App\Models\Bus' : 'App\Models\Parking';
+                $query->where('reference_type', $type);
+            }
+            if ($request->filled('type')) {
+                $query->where('type', $request->type);
+            }
+
+            if (auth()->user()->hasRole('merchant')) {
+                $query->where('merchant_id', auth()->id());
+            }
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->editColumn('type', function($row) {
+                    $class = $row->type == 'in' ? 'success' : 'danger';
+                    return '<span class="badge bg-'.$class.'">TAP '.strtoupper($row->type).'</span>';
+                })
+                ->addColumn('user_card', function($row) {
+                    $userName = $row->user ? $row->user->name : 'System';
+                    $cardNo = $row->card ? $row->card->card_number : 'N/A';
+                    return '<div><span class="fw-medium">'.$userName.'</span><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$cardNo.'</small></div>';
+                })
+                ->addColumn('asset_info', function($row) {
+                    if (!$row->reference) return 'N/A';
+                    $name = $row->reference_type == 'App\Models\Bus' ? ($row->reference->bus_number ?? $row->reference->name) : $row->reference->name;
+                    $type = $row->reference_type == 'App\Models\Bus' ? 'Bus' : 'Parking';
+                    $route = $row->reference_type == 'App\Models\Bus' ? 'buses.show' : 'parkings.show';
+                    $link = route($route, $row->reference_id);
+                    return '<div><a href="'.$link.'" class="fw-medium">'.$name.'</a><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$type.'</small></div>';
+                })
+                ->editColumn('created_at', function($row) {
+                    return $row->created_at->format('Y-m-d H:i:s');
+                })
+                ->addColumn('action', function($row) {
+                    return '<button class="btn btn-icon btn-sm btn-primary view-tap-map" 
+                                data-lat="'.$row->latitude.'" 
+                                data-lon="'.$row->longitude.'" 
+                                data-name="'.($row->resolved_location_name ?? 'Current Location').'">
+                                <i class="bx bx-map-alt"></i>
+                            </button>';
+                })
+                ->rawColumns(['action', 'type', 'asset_info', 'user_card'])
+                ->make(true);
+        }
+
+        $merchants = User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get();
+        return view('modules.rides.taps', compact('merchants'));
+    }
+
+    /**
+     * User's own ride history.
+     */
+    public function myRides(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = Ride::with(['reference', 'merchant', 'tapIn', 'tapOut'])
+                ->where('user_id', auth()->id())
+                ->latest();
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->editColumn('status', function($row) {
+                    $class = $row->status == 'completed' ? 'success' : 'primary';
+                    return '<span class="badge bg-label-'.$class.'">'.ucfirst($row->status).'</span>';
+                })
+                ->addColumn('asset_info', function($row) {
+                    if (!$row->reference) return 'N/A';
+                    $name = $row->reference_type == 'App\Models\Bus' ? ($row->reference->bus_number ?? $row->reference->name) : $row->reference->name;
+                    $type = $row->reference_type == 'App\Models\Bus' ? 'Bus' : 'Parking';
+                    $route = $row->reference_type == 'App\Models\Bus' ? 'buses.show' : 'parkings.show';
+                    $link = route($route, $row->reference_id);
+                    return '<div><a href="'.$link.'" class="fw-medium">'.$name.'</a><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$type.'</small></div>';
+                })
+                ->editColumn('fare_amount', function($row) {
+                    return 'Rs. ' . number_format($row->fare_amount, 2);
+                })
+                ->addColumn('action', function($row) {
+                    if (!$row->tapIn) return '';
+                    return '<button class="btn btn-icon btn-sm btn-info view-ride-map" 
+                                data-start-lat="'.$row->tapIn->latitude.'" 
+                                data-start-lon="'.$row->tapIn->longitude.'"
+                                data-start-name="'.($row->tapIn->resolved_location_name ?? 'Unknown').'"
+                                data-end-lat="'.($row->tapOut ? $row->tapOut->latitude : '').'"
+                                data-end-lon="'.($row->tapOut ? $row->tapOut->longitude : '').'"
+                                data-end-name="'.($row->tapOut ? $row->tapOut->resolved_location_name : 'Journey Ongoing').'">
+                                <i class="bx bx-map"></i>
+                            </button>';
+                })
+                ->rawColumns(['action', 'status', 'asset_info'])
+                ->make(true);
+        }
+
+        return view('modules.rides.my_rides');
+    }
+}

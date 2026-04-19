@@ -19,6 +19,8 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\BalanceController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\RouteFinderController;
+use App\Http\Controllers\ParkingAttributeController;
+use App\Http\Controllers\RideController;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -47,14 +49,12 @@ Route::controller(RegisterController::class)->group(function () {
 });
 
 // Forgot Password Routes
-Route::get('/forgot-password', function () {
-    return view('auth.forgot-password');
-})->name('password.request');
-
-Route::post('/forgot-password', function () {
-    // Placeholder for actual logic
-    return back()->with('status', 'We have emailed your password reset link!');
-})->name('password.email');
+Route::controller(\App\Http\Controllers\Auth\ForgotPasswordController::class)->group(function () {
+    Route::get('/forgot-password', 'showLinkRequestForm')->name('password.request');
+    Route::post('/forgot-password', 'sendResetLinkEmail')->name('password.email');
+    Route::get('/reset-password/{token}', 'showResetForm')->name('password.reset');
+    Route::post('/reset-password', 'reset')->name('password.update');
+});
 
 // Utility Routes
 Route::get('/lang/{lang}', [LangController::class, 'switch'])->name('lang.switch');
@@ -104,6 +104,9 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('permissions', PermissionController::class);
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
         Route::post('/activity-logs/sync', [ActivityLogController::class, 'sync'])->name('activity-logs.sync');
+        Route::resource('parking-attributes', ParkingAttributeController::class);
+        Route::get('/rides', [RideController::class, 'index'])->name('rides.index');
+        Route::get('/tap-ledger', [RideController::class, 'tapLedger'])->name('rides.tap-ledger');
         
         // Support Management
         Route::controller(SupportController::class)->group(function () {
@@ -127,13 +130,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Route & Fare Management
     Route::resource('routes', RouteController::class);
-    Route::resource('fares', FareController::class)->except(['edit', 'update', 'destroy']);
-    Route::post('/fares/{fare}/approve', [FareController::class, 'approve'])->name('fares.approve');
+    Route::post('/fares/update-matrix-cell', [FareController::class, 'updateMatrixCell'])->name('fares.update-matrix-cell');
     Route::post('/fares/assign-bus', [FareController::class, 'assignBus'])->name('fares.assign-bus');
     Route::get('/fares/matrix-form', [FareController::class, 'getMatrixForm'])->name('fares.matrix-form');
+    Route::resource('fares', FareController::class)->except(['destroy']);
+    Route::post('/fares/{fare}/approve', [FareController::class, 'approve'])->name('fares.approve');
 
     // Business Logic Resources
     Route::get('/route-finder', [RouteFinderController::class, 'index'])->name('route-finder.index');
+    Route::get('/my-rides', [RideController::class, 'myRides'])->name('rides.my-rides');
     Route::resource('buses', BusController::class);
     Route::resource('parkings', ParkingController::class);
     Route::resource('cards', CardController::class);

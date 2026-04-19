@@ -61,6 +61,27 @@
                 <div class="text-truncate">Activity Logs</div>
             </a>
         </li>
+        <li class="menu-item {{ request()->routeIs('parking-attributes.*') ? 'active' : '' }}">
+            <a href="{{ route('parking-attributes.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-list-check"></i>
+                <div class="text-truncate">Parking Attributes</div>
+            </a>
+        </li>
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Journey Ledger</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('rides.index') ? 'active' : '' }}">
+            <a href="{{ route('rides.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-git-commit"></i>
+                <div class="text-truncate">Rides Ledger</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('rides.tap-ledger') ? 'active' : '' }}">
+            <a href="{{ route('rides.tap-ledger') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-fingerprint"></i>
+                <div class="text-truncate">Raw Taps</div>
+            </a>
+        </li>
         @endif
 
         @if(auth()->user()->hasRole('super-admin', 'merchant'))
@@ -113,6 +134,12 @@
             <a href="{{ route('route-finder.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-map-pin"></i>
                 <div class="text-truncate">Route Finder</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('rides.my-rides') ? 'active' : '' }}">
+            <a href="{{ route('rides.my-rides') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-trip"></i>
+                <div class="text-truncate">My Rides</div>
             </a>
         </li>
         <li class="menu-item {{ request()->routeIs('cards.*') ? 'active' : '' }}">

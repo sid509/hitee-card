@@ -31,7 +31,37 @@
                                 <span class="fw-medium me-2">Merchant:</span>
                                 <span>{{ $parking->merchant->name ?? 'N/A' }}</span>
                             </li>
+                            <li class="mb-3">
+                                <span class="fw-medium me-2 text-primary">First Hour Fee:</span>
+                                <span class="fw-bold">Rs. {{ number_format($parking->first_hour_fee, 2) }}</span>
+                            </li>
+                            <li class="mb-3">
+                                <span class="fw-medium me-2 text-primary">Onwards Fee:</span>
+                                <span class="fw-bold">Rs. {{ number_format($parking->onwards_hour_fee, 2) }} /hr</span>
+                            </li>
                         </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header pb-2">
+                    <h6 class="mb-0">Facilities & Attributes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        @forelse($parking->attributes as $attr)
+                            <div class="d-flex align-items-center bg-label-primary px-3 py-2 rounded">
+                                @if($attr->icon)
+                                    <img src="{{ asset('storage/' . $attr->icon) }}" alt="{{ $attr->name }}" height="20" width="20" class="me-2">
+                                @else
+                                    <i class="bx bx-check-circle me-2"></i>
+                                @endif
+                                <span class="fw-medium small">{{ $attr->name }}</span>
+                            </div>
+                        @empty
+                            <span class="text-muted small">No specific attributes listed.</span>
+                        @endforelse
                     </div>
                 </div>
             </div>

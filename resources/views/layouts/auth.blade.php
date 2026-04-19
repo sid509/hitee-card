@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
     class="layout-wide customizer-hide {{ $theme === 'dark' ? 'dark-style' : 'light-style' }}" 
     dir="ltr"
-    data-theme="theme-default" 
+    data-theme="{{ $theme === 'dark' ? 'theme-dark' : 'theme-default' }}" 
     data-assets-path="{{ asset('assets') }}/" 
     data-template="hitee-vertical-menu-template">
 
@@ -21,6 +21,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
+    @stack('page-css')
 </head>
 
 <body>
@@ -31,6 +32,7 @@
             </div>
         </div>
     </div>
+    @stack('page-js')
 </body>
 
 </html>

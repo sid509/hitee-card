@@ -511,25 +511,19 @@ class Menu {
   }
 
   manageScroll() {
-    const { PerfectScrollbar } = window
-    const menuInner = document.querySelector('.menu-inner')
+    const { PerfectScrollbar } = window;
+    const menuInner = document.querySelector('.menu-inner');
 
-    if (window.innerWidth < window.Helpers.LAYOUT_BREAKPOINT) {
-      if (this._scrollbar !== null) {
-        // window.Helpers.menuPsScroll.destroy()
-        this._scrollbar.destroy()
-        this._scrollbar = null
-      }
-      menuInner.classList.add('overflow-auto')
-    } else {
-      if (this._scrollbar === null) {
-        const menuScroll = new PerfectScrollbar(document.querySelector('.menu-inner'), {
-          suppressScrollX: true,
-          wheelPropagation: false
-        })
-        this._scrollbar = menuScroll
-      }
-      menuInner.classList.remove('overflow-auto')
+    if (this._scrollbar === null && menuInner) {
+      const menuScroll = new PerfectScrollbar(menuInner, {
+        suppressScrollX: true,
+        wheelPropagation: false
+      });
+      this._scrollbar = menuScroll;
+    }
+    
+    if (menuInner) {
+      menuInner.classList.remove('overflow-auto');
     }
   }
 

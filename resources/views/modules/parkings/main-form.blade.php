@@ -36,7 +36,51 @@
     @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label" for="first_hour_fee">First Hour Fee (Rs.)</label>
+            <input type="number" step="0.01" class="form-control @error('first_hour_fee') is-invalid @enderror" 
+                id="first_hour_fee" name="first_hour_fee" value="{{ old('first_hour_fee', $parking->first_hour_fee) }}" required />
+            @error('first_hour_fee') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label" for="onwards_hour_fee">Onwards Hour Fee (Rs./hr)</label>
+            <input type="number" step="0.01" class="form-control @error('onwards_hour_fee') is-invalid @enderror" 
+                id="onwards_hour_fee" name="onwards_hour_fee" value="{{ old('onwards_hour_fee', $parking->onwards_hour_fee) }}" required />
+            @error('onwards_hour_fee') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+    </div>
+</div>
+
+<div class="mb-3">
+    <label class="form-label" for="attributes">Facilities & Attributes</label>
+    <select name="attributes[]" id="attributes" class="form-select select2 @error('attributes') is-invalid @enderror" multiple>
+        @foreach($allAttributes as $attribute)
+            <option value="{{ $attribute->id }}" {{ (is_array(old('attributes')) && in_array($attribute->id, old('attributes'))) || ($parking->attributes->contains($attribute->id)) ? 'selected' : '' }}>
+                {{ $attribute->name }}
+            </option>
+        @endforeach
+    </select>
+    @error('attributes') <div class="invalid-feedback">{{ $message }}</div> @enderror
+</div>
+
 <div class="mt-4">
     <button type="submit" class="btn btn-primary me-2">Save Parking</button>
     <a href="{{ route('parkings.index') }}" class="btn btn-outline-secondary">Cancel</a>
 </div>
+
+@push('page-js')
+<script type="module">
+    $(function() {
+        if ($('.select2').length) {
+            $('.select2').select2({
+                placeholder: 'Select Facilities',
+                width: '100%'
+            });
+        }
+    });
+</script>
+@endpush

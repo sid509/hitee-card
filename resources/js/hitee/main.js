@@ -6,14 +6,13 @@
 
 let menu,
   animate;
+
 document.addEventListener('DOMContentLoaded', function () {
   // class for ios specific styles
   if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
     document.body.classList.add('ios');
   }
-});
 
-(function () {
   // Initialize menu
   //-----------------
 
@@ -77,6 +76,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Initialize PerfectScrollbar
+  // ---------------------------
+  // Check if PerfectScrollbar is already initialized by the Menu class
+  if (typeof PerfectScrollbar !== 'undefined' && menuInnerContainer.length > 0 && !menuInnerContainer[0].classList.contains('ps')) {
+    new PerfectScrollbar(menuInnerContainer[0], {
+      wheelPropagation: false,
+      suppressScrollX: true
+    });
+  }
+
   // Init helpers & misc
   // --------------------
 
@@ -96,33 +105,28 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   const accordionTriggerList = [].slice.call(document.querySelectorAll('.accordion'));
-  const accordionList = accordionTriggerList.map(function (accordionTriggerEl) {
+  accordionTriggerList.map(function (accordionTriggerEl) {
     accordionTriggerEl.addEventListener('show.bs.collapse', accordionActiveFunction);
     accordionTriggerEl.addEventListener('hide.bs.collapse', accordionActiveFunction);
   });
 
   // Auto update layout based on screen size
-  window.Helpers.setAutoUpdate(true);
+  if (window.Helpers) {
+    window.Helpers.setAutoUpdate(true);
 
-  // Toggle Password Visibility
-  window.Helpers.initPasswordToggle();
+    // Toggle Password Visibility
+    window.Helpers.initPasswordToggle();
 
-  // Speech To Text
-  window.Helpers.initSpeechToText();
+    // Speech To Text
+    window.Helpers.initSpeechToText();
 
-  // Manage menu expanded/collapsed with templateCustomizer & local storage
-  //------------------------------------------------------------------
-
-  // If current layout is horizontal OR current window screen is small (overlay menu) than return from here
-  if (window.Helpers.isSmallScreen()) {
-    return;
-  }
-
-  // If current layout is vertical and current window screen is > small
-
-  // Auto update menu collapsed/expanded based on the themeConfig
+    // If current layout is vertical and current window screen is > small
+    if (!window.Helpers.isSmallScreen()) {
       window.Helpers.setCollapsed(true, false);
-})();
+    }
+  }
+});
+
 // Utils
 function isMacOS() {
   return /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);

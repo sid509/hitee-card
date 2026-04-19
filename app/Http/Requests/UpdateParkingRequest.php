@@ -13,6 +13,10 @@ class UpdateParkingRequest extends BaseRequest
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
             'status' => 'required|in:opened,closed',
+            'first_hour_fee' => 'required|numeric|min:0',
+            'onwards_hour_fee' => 'required|numeric|min:0',
+            'attributes' => 'nullable|array',
+            'attributes.*' => 'exists:parking_attributes,id',
         ];
 
         if (auth()->user()->hasRole('super-admin')) {

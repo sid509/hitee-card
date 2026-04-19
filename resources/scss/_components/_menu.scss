@@ -327,8 +327,9 @@
 // ******************************************************************************
 
 .menu-vertical {
-  // overflow: hidden;
+  overflow: hidden;
   flex-direction: column;
+  block-size: 100%;
 
   // menu expand collapse animation
   &:not(.menu-no-animation) {

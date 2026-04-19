@@ -17,6 +17,12 @@
         <h4 class="mb-1">Forgot Password? 🔒</h4>
         <p class="mb-6">Enter your email and we'll send you instructions to reset your password</p>
 
+        @if (session('status'))
+        <div class="alert alert-success" role="alert">
+            {{ session('status') }}
+        </div>
+        @endif
+
         <form id="formAuthentication" class="mb-6" action="{{ route('password.email') }}" method="POST">
             @csrf
             <div class="mb-6">
