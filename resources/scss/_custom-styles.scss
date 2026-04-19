@@ -400,8 +400,7 @@ table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::befor
 }
 
 .menu-inner-shadow {
-    inset-block-start: 4.75rem !important;
-    z-index: 2 !important;
+    display: none !important;
 }
 
 .menu-item .menu-link {
