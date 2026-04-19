@@ -285,28 +285,3 @@
     });
 </script>
 @endpush
-jax: {
-                url: "{{ route('merchant.income') }}",
-                data: function(d) {
-                    d.reference_id = "{{ $bus->id }}";
-                    d.reference_type = "App\\Models\\Bus";
-                }
-            },
-            columns: [
-                {data: 'created_at', name: 'created_at'},
-                {data: 'customer', name: 'customer'},
-                {data: 'amount', name: 'amount'},
-            ],
-            order: [[0, 'desc']]
-        });
-        @endif
-
-        window.focusStop = function(lat, lng, name) {
-            map.setView([lat, lng], 16);
-            L.popup().setLatLng([lat, lng]).setContent(`<strong>${name}</strong>`).openOn(map);
-            // Smooth scroll to map
-            document.getElementById('bus-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        };
-    });
-</script>
-@endpush
