@@ -100,6 +100,12 @@
                             </div>
                         </div>
                     </div>
-
+                    <div class="mt-2">
+                        <button type="submit" class="btn btn-primary me-2">Update Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
