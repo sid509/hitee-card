@@ -185,7 +185,6 @@ class TapController extends Controller
 
     private function resolveLocation($lat, $lon, $asset)
     {
-        $threshold = 0.15; // 150 meters
         $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude)) * cos(radians(longitude) - radians($lon)) + sin(radians($lat)) * sin(radians(latitude))))";
 
         if ($asset instanceof Bus) {
@@ -193,11 +192,19 @@ class TapController extends Controller
             $stop = RouteStop::where('route_id', $asset->route_id)
                 ->select('*')
                 ->selectRaw("$haversine AS distance")
-                ->having("distance", "<=", $threshold)
                 ->orderBy('distance')
                 ->first();
             
-            return $stop ? ['id' => $stop->id, 'name' => $stop->stop_name] : ['id' => null, 'name' => 'Moving (GPS)'];
+            if (!$stop) return ['id' => null, 'name' => "GPS: $lat, $lon"];
+
+            // Show name of the nearest stop
+            $name = $stop->stop_name;
+            // If more than 500m away, prefix with "Near"
+            if ($stop->distance > 0.5) {
+                $name = "Near " . $name;
+            }
+            
+            return ['id' => $stop->id, 'name' => $name];
         } else {
             // Parking lot is fixed location
             return ['id' => $asset->id, 'name' => $asset->name];

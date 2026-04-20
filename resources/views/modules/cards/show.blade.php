@@ -8,6 +8,14 @@
         <h4 class="mb-0">
             <span class="text-muted fw-light">Card /</span> {{ $card->card_number }}
         </h4>
+        <div class="d-flex gap-2">
+            @if(auth()->user()->hasRole('super-admin'))
+                <a href="{{ route('cards.edit', $card->id) }}" class="btn btn-primary">
+                    <i class="bx bx-edit-alt me-1"></i> Edit Card
+                </a>
+            @endif
+            <a href="{{ route('cards.index') }}" class="btn btn-secondary">Back to List</a>
+        </div>
     </div>
 
     <div class="row">
@@ -82,7 +90,7 @@
                                 <tbody>
                                     @forelse($recentRides as $ride)
                                         <tr>
-                                            <td>{{ $ride->created_at->format('M d, H:i') }}</td>
+                                            <td>{{ formatDate($ride->created_at) }}</td>
                                             <td>
                                                 <span class="fw-medium">{{ $ride->reference->bus_number ?? $ride->reference->name }}</span><br>
                                                 <small class="text-muted">{{ $ride->reference_type === 'App\Models\Bus' ? 'Bus' : 'Parking' }}</small>
@@ -113,7 +121,7 @@
                                 <tbody>
                                     @forelse($recentTaps as $tap)
                                         <tr>
-                                            <td>{{ $tap->created_at->format('M d, H:i:s') }}</td>
+                                            <td>{{ formatDate($tap->created_at) }}</td>
                                             <td><span class="badge bg-{{ $tap->type === 'in' ? 'success' : 'danger' }}">TAP {{ strtoupper($tap->type) }}</span></td>
                                             <td>{{ $tap->resolved_location_name }}</td>
                                             <td>
@@ -165,7 +173,8 @@
             const lon = $(this).data('lon');
             const name = $(this).data('name');
 
-            $('#tapMapModal').modal('show');
+            const mapModal = new bootstrap.Modal(document.getElementById('tapMapModal'));
+            mapModal.show();
 
             setTimeout(() => {
                 if (!tapMap) {

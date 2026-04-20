@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\LangController;
+use App\Http\Controllers\StopController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
@@ -65,11 +66,11 @@ Route::get('/theme/toggle', [ThemeController::class, 'toggle'])->name('theme.tog
  * Authenticated Routes
  */
 Route::middleware(['auth'])->group(function () {
-    
+
     // Dashboard
     Route::get('/dashboard', function () {
         $user = auth()->user();
-        
+
         $userCount = User::count();
         $cardCount = Card::count();
         $transactionCount = BalanceIn::count() + BalanceOut::count();
@@ -109,12 +110,13 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('roles', RoleController::class);
         Route::resource('permissions', PermissionController::class);
+        Route::resource('stops', StopController::class);
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
         Route::post('/activity-logs/sync', [ActivityLogController::class, 'sync'])->name('activity-logs.sync');
         Route::resource('parking-attributes', ParkingAttributeController::class);
         Route::post('/cards/bulk-toggle-status', [CardController::class, 'bulkToggleStatus'])->name('cards.bulk-toggle-status');
         Route::post('/cards/{card}/toggle-status', [CardController::class, 'toggleStatus'])->name('cards.toggle-status');
-        
+
         // Support Management
         Route::controller(SupportController::class)->group(function () {
             Route::get('/supports', 'index')->name('supports.index');
@@ -146,7 +148,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/fares/update-matrix-cell', [FareController::class, 'updateMatrixCell'])->name('fares.update-matrix-cell');
     Route::post('/fares/assign-bus', [FareController::class, 'assignBus'])->name('fares.assign-bus');
     Route::get('/fares/matrix-form', [FareController::class, 'getMatrixForm'])->name('fares.matrix-form');
-    Route::resource('fares', FareController::class)->except(['destroy']);
+    Route::resource('fares', FareController::class);
     Route::post('/fares/{fare}/approve', [FareController::class, 'approve'])->name('fares.approve');
 
     // Business Logic Resources

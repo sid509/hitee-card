@@ -44,8 +44,9 @@
                     <option value="out">Tap OUT</option>
                 </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-2 d-flex align-items-end gap-2">
                 <button type="button" id="btnFilter" class="btn btn-primary w-100"><i class="bx bx-filter-alt me-1"></i> Filter</button>
+                <button type="button" id="btnClearFilter" class="btn btn-outline-secondary w-100"><i class="bx bx-refresh me-1"></i> Clear</button>
             </div>
         </form>
     </div>
@@ -132,6 +133,12 @@
         });
 
         $('#btnFilter').click(function() {
+            table.draw();
+        });
+
+        $('#btnClearFilter').click(function() {
+            $('#filterForm')[0].reset();
+            $('.select2-users, .select2-basic').val(null).trigger('change');
             table.draw();
         });
 

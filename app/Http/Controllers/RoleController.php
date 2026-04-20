@@ -108,9 +108,14 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         // Safety check for system roles
-        if (in_array($role->slug, ['super-admin', 'merchant', 'customers'])) {
+        if (in_array($role->slug, ['super-admin', 'merchant', 'customers', 'staff'])) {
             return redirect()->route('roles.index')->with('error', 'Cannot delete system roles.');
         }
+
+        if ($role->users()->exists()) {
+            return redirect()->route('roles.index')->with('error', 'Cannot delete role because it is assigned to one or more users.');
+        }
+
         $role->delete();
         return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');
     }

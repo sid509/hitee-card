@@ -9,8 +9,16 @@ class ThemeController extends Controller
 {
     public function toggle()
     {
-        $currentTheme = Session::get('theme', 'light');
-        $newTheme = $currentTheme === 'light' ? 'dark' : 'light';
+        $currentTheme = Session::get('theme', 'system');
+        
+        if ($currentTheme === 'system') {
+            $newTheme = 'light';
+        } elseif ($currentTheme === 'light') {
+            $newTheme = 'dark';
+        } else {
+            $newTheme = 'system';
+        }
+
         Session::put('theme', $newTheme);
         return redirect()->back();
     }

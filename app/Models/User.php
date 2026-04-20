@@ -88,12 +88,12 @@ class User extends Authenticatable
 
     public function merchantRoutes()
     {
-        return $this->hasMany(Route::class, 'merchant_id');
+        return $this->belongsToMany(Route::class, 'merchant_route', 'merchant_id', 'route_id')->withTimestamps();
     }
 
-    public function merchantFares()
+    public function fares()
     {
-        return $this->hasMany(Fare::class, 'merchant_id');
+        return $this->belongsToMany(Fare::class, 'fare_merchant', 'merchant_id', 'fare_id')->withTimestamps();
     }
 
     public function merchantBalance()

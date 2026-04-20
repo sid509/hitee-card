@@ -2,7 +2,8 @@
     <div class="app-brand demo py-3">
         <a href="{{ route('dashboard') }}" class="app-brand-link">
             <span class="app-brand-logo demo">
-                <img src="{{ asset('assets/img/hitee/' . ($theme === 'dark' ? 'logo_white.png' : 'logo.png')) }}" alt="Hitee Logo" height="34">
+                <img src="{{ asset('assets/img/hitee/logo_white.png') }}" alt="Hitee Logo" height="34" class="logo-dark-version">
+                <img src="{{ asset('assets/img/hitee/logo.png') }}" alt="Hitee Logo" height="34" class="logo-light-version">
             </span>
         </a>
 
@@ -40,6 +41,12 @@
             <a href="{{ route('permissions.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-key"></i>
                 <div class="text-truncate">{{ __('messages.permissions') }}</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('stops.*') ? 'active' : '' }}">
+            <a href="{{ route('stops.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-map-pin"></i>
+                <div class="text-truncate">Stops</div>
             </a>
         </li>
         <li class="menu-item {{ request()->routeIs('supports.*') ? 'active' : '' }}">

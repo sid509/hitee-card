@@ -28,7 +28,6 @@
                     <tr>
                         <th>ID</th>
                         <th>Asset Details</th>
-                        <th>Merchant</th>
                         <th>Status</th>
                         <th>Tap In</th>
                         <th>Tap Out</th>
@@ -78,10 +77,9 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'asset_info', name: 'asset.name'},
-                {data: 'merchant.name', name: 'merchant.name', defaultContent: 'N/A'},
                 {data: 'status', name: 'status'},
-                {data: 'tap_in.created_at', name: 'tap_in.created_at', defaultContent: '-'},
-                {data: 'tap_out.created_at', name: 'tap_out.created_at', defaultContent: '---'},
+                {data: 'tap_in_time', name: 'tap_in_time', defaultContent: '-'},
+                {data: 'tap_out_time', name: 'tap_out_time', defaultContent: '---'},
                 {data: 'fare_amount', name: 'fare_amount'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ],
@@ -132,7 +130,8 @@
             $('#ride-start-loc').text(sName);
             $('#ride-end-loc').text(eName);
             
-            $('#rideMapModal').modal('show');
+            const mapModal = new bootstrap.Modal(document.getElementById('rideMapModal'));
+            mapModal.show();
 
             setTimeout(() => {
                 if (!rideMap) {
@@ -148,8 +147,31 @@
                 
                 if (eLat) {
                     endMarker = L.marker([eLat, eLon]).addTo(rideMap).bindPopup('End: ' + eName);
-                    polyline = L.polyline([[sLat, sLon], [eLat, eLon]], {color: 'blue'}).addTo(rideMap);
-                    rideMap.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+                    
+                    // Fetch road-following path from OSRM
+                    fetch(`https://router.project-osrm.org/route/v1/driving/${sLon},${sLat};${eLon},${eLat}?overview=full&geometries=geojson`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.routes && data.routes.length > 0) {
+                                const coordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                                polyline = L.polyline(coordinates, {
+                                    color: '#696cff',
+                                    weight: 5,
+                                    opacity: 0.7,
+                                    lineJoin: 'round'
+                                }).addTo(rideMap);
+                                rideMap.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+                            } else {
+                                // Fallback to straight line if OSRM fails
+                                polyline = L.polyline([[sLat, sLon], [eLat, eLon]], {color: 'blue', dashArray: '5, 10'}).addTo(rideMap);
+                                rideMap.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+                            }
+                        })
+                        .catch(err => {
+                            console.error('OSRM Error:', err);
+                            polyline = L.polyline([[sLat, sLon], [eLat, eLon]], {color: 'blue', dashArray: '5, 10'}).addTo(rideMap);
+                            rideMap.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+                        });
                 } else {
                     rideMap.setView([sLat, sLon], 15);
                 }

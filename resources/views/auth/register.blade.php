@@ -9,7 +9,8 @@
         <div class="app-brand justify-content-center mb-6">
             <a href="{{ url('/') }}" class="app-brand-link gap-2">
                 <span class="app-brand-logo demo">
-                    <img src="{{ asset('assets/img/hitee/' . ($theme === 'dark' ? 'logo_big_white.png' : 'logo_big.png')) }}" alt="Hitee Logo" height="60">
+                    <img src="{{ asset('assets/img/hitee/logo_big_white.png') }}" alt="Hitee Logo" height="60" class="logo-dark-version">
+                    <img src="{{ asset('assets/img/hitee/logo_big.png') }}" alt="Hitee Logo" height="60" class="logo-light-version">
                 </span>
             </a>
         </div>

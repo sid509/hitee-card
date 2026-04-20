@@ -44,8 +44,9 @@
                     <option value="completed">Completed</option>
                 </select>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-2 d-flex align-items-end gap-2">
                 <button type="button" id="btnFilter" class="btn btn-primary w-100"><i class="bx bx-filter-alt me-1"></i> Filter</button>
+                <button type="button" id="btnClearFilter" class="btn btn-outline-secondary w-100"><i class="bx bx-refresh me-1"></i> Clear</button>
             </div>
         </form>
     </div>
@@ -129,8 +130,8 @@
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'user_card', name: 'user.name'},
                 {data: 'asset_info', name: 'asset.name'},
-                {data: 'tap_in_time', name: 'tap_in_time'},
-                {data: 'tap_out_time', name: 'tap_out_time'},
+                {data: 'tap_in_time', name: 'tap_in_time', defaultContent: '-'},
+                {data: 'tap_out_time', name: 'tap_out_time', defaultContent: '---'},
                 {data: 'fare_amount', name: 'fare_amount'},
                 {data: 'status', name: 'status'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
@@ -139,6 +140,12 @@
         });
 
         $('#btnFilter').click(function() {
+            table.draw();
+        });
+
+        $('#btnClearFilter').click(function() {
+            $('#filterForm')[0].reset();
+            $('.select2-users, .select2-basic').val(null).trigger('change');
             table.draw();
         });
 
@@ -192,8 +199,31 @@
                 
                 if (eLat) {
                     endMarker = L.marker([eLat, eLon]).addTo(rideMap).bindPopup('End: ' + eName);
-                    polyline = L.polyline([[sLat, sLon], [eLat, eLon]], {color: 'blue'}).addTo(rideMap);
-                    rideMap.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+                    
+                    // Fetch road-following path from OSRM
+                    fetch(`https://router.project-osrm.org/route/v1/driving/${sLon},${sLat};${eLon},${eLat}?overview=full&geometries=geojson`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.routes && data.routes.length > 0) {
+                                const coordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                                polyline = L.polyline(coordinates, {
+                                    color: '#696cff',
+                                    weight: 5,
+                                    opacity: 0.7,
+                                    lineJoin: 'round'
+                                }).addTo(rideMap);
+                                rideMap.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+                            } else {
+                                // Fallback to straight line if OSRM fails
+                                polyline = L.polyline([[sLat, sLon], [eLat, eLon]], {color: 'blue', dashArray: '5, 10'}).addTo(rideMap);
+                                rideMap.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+                            }
+                        })
+                        .catch(err => {
+                            console.error('OSRM Error:', err);
+                            polyline = L.polyline([[sLat, sLon], [eLat, eLon]], {color: 'blue', dashArray: '5, 10'}).addTo(rideMap);
+                            rideMap.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+                        });
                 } else {
                     rideMap.setView([sLat, sLon], 15);
                 }

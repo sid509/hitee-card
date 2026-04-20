@@ -15,14 +15,14 @@ class CardController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * 
+     *
      * Handles DataTable AJAX requests and initial page load.
      */
     public function index(Request $request)
     {
         if ($request->ajax()) {
             $query = Card::with('user');
-            
+
             // Limit to own cards if customer
             if (auth()->user()->hasRole('customers')) {
                 $query->where('user_id', auth()->id());
@@ -35,8 +35,8 @@ class CardController extends Controller
                 })
                 ->addColumn('usage_badge', function($row){
                     $isTraveling = $row->hasOngoingRide();
-                    return $isTraveling 
-                        ? '<span class="badge bg-label-warning">In Use</span>' 
+                    return $isTraveling
+                        ? '<span class="badge bg-label-warning">In Use</span>'
                         : '<span class="badge bg-label-secondary">Idle</span>';
                 })
                 ->addColumn('action', function($row){
@@ -49,10 +49,11 @@ class CardController extends Controller
                         $btnIcon = $isActive ? 'bx-check-circle' : 'bx-block';
                         $btnTitle = $isActive ? 'Deactivate' : 'Activate';
 
-                        $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-card-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
-
                         // View Button
                         $actions .= '<a href="'.route('cards.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
+
+
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-card-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
 
                         // Edit Button
                         $actions .= '<a href="'.route('cards.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
@@ -70,8 +71,8 @@ class CardController extends Controller
                         $canUpgrade = $row->status === 'active' && $row->is_currently_active;
 
                         if ($canEnable || $canDisable || $canUpgrade) {
-                            $actions .= '<button class="btn btn-sm btn-outline-primary btn-request-change" 
-                                            data-id="'.$row->id.'" 
+                            $actions .= '<button class="btn btn-sm btn-outline-primary btn-request-change"
+                                            data-id="'.$row->id.'"
                                             data-card-number="'.$row->card_number.'"
                                             data-can-enable="'.($canEnable ? '1' : '0').'"
                                             data-can-disable="'.($canDisable ? '1' : '0').'"
@@ -95,7 +96,7 @@ class CardController extends Controller
     public function bulkToggleStatus(Request $request)
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
-        
+
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:cards,id',
@@ -116,7 +117,7 @@ class CardController extends Controller
     public function show(Card $card)
     {
         if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) abort(403);
-        
+
         $card->load(['user', 'taps.reference', 'rides.reference']);
         $recentTaps = Tap::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
         $recentRides = Ride::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
@@ -134,7 +135,7 @@ class CardController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * 
+     *
      * Uses StoreCardRequest for validation.
      */
     public function store(StoreCardRequest $request)
@@ -164,7 +165,7 @@ class CardController extends Controller
 
     /**
      * Update the specified resource in storage.
-     * 
+     *
      * Uses UpdateCardRequest for validation.
      */
     public function update(UpdateCardRequest $request, Card $card)
@@ -187,6 +188,11 @@ class CardController extends Controller
     public function destroy(Card $card)
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
+        
+        if ($card->rides()->exists() || $card->taps()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete card because it has usage history.');
+        }
+
         $card->delete();
         return redirect()->route('cards.index')->with('success', 'Card deleted successfully.');
     }
@@ -230,7 +236,7 @@ class CardController extends Controller
         if ($request->type === 'upgrade') $typeLabel = 'Card Upgrade';
         elseif ($request->type === 'enable') $typeLabel = 'Card Activation';
         elseif ($request->type === 'disable') $typeLabel = 'Card Deactivation';
-        
+
         \App\Models\SupportRequest::create([
             'user_id' => auth()->id(),
             'subject' => "Card Change Request: {$typeLabel}",

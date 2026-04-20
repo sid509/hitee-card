@@ -19,11 +19,11 @@
             <table class="table table-hover data-table w-100">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th style="width: 30px;">#</th>
                         <th>Staff Details</th>
                         <th>Assignments</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th class="text-center" style="width: 100px;">Status</th>
+                        <th class="text-center" style="width: 120px;">Actions</th>
                     </tr>
                 </thead>
             </table>
@@ -32,23 +32,23 @@
 </div>
 @endsection
 
-@push('scripts')
-<script type="text/javascript">
-  $(function () {
+@push('page-js')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
     var table = $('.data-table').DataTable({
         processing: true,
         serverSide: true,
         ajax: "{{ route('staff.index') }}",
         columns: [
-            {data: 'id', name: 'id'},
+            {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, width: '30px'},
             {data: 'staff_info', name: 'name'},
-            {data: 'assignments', name: 'assignments', orderable: false, searchable: false},
-            {data: 'status', name: 'status', render: function(data) {
+            {data: 'assignments', name: 'assignments', orderable: false, searchable: false, className: 'text-center'},
+            {data: 'status', name: 'status', className: 'text-center', render: function(data) {
                 if (!data) return '-';
                 let classMap = { active: 'bg-label-success', inactive: 'bg-label-secondary' };
                 return `<span class="badge ${classMap[data] || 'bg-label-info'}">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
             }},
-            {data: 'action', name: 'action', orderable: false, searchable: false},
+            {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center'},
         ],
         drawCallback: function() {
             // Initialize tooltips

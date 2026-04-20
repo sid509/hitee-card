@@ -31,8 +31,8 @@
                         </div>
                         @if(auth()->user()->hasRole('super-admin'))
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Merchant</label>
-                            <select name="merchant_id" class="form-select select2-ajax-merchant" required></select>
+                            <label class="form-label">Merchants</label>
+                            <select name="merchant_ids[]" class="form-select select2-ajax-merchant" multiple required></select>
                         </div>
                         @endif
                     </div>
@@ -90,6 +90,43 @@
                 width: '100%'
             });
         }
+
+        // Fare Matrix Inline Edit (Event Delegation)
+        $('#matrix-form-wrapper').on('change', '.matrix-inline-edit', function() {
+            const input = $(this);
+            const fareId = input.data('fare-id');
+            const fromId = input.data('from-id');
+            const toId = input.data('to-id');
+            const amount = input.val();
+
+            // This AJAX inline edit only works for existing fares, not on creation
+            if (!fareId) return; 
+
+            input.addClass('border-primary');
+
+            $.ajax({
+                url: "{{ route('fares.update-matrix-cell') }}",
+                method: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    fare_id: fareId,
+                    from_stop_id: fromId,
+                    to_stop_id: toId,
+                    amount: amount
+                },
+                success: function(res) {
+                    if (res.status) {
+                        input.removeClass('border-primary').addClass('border-success');
+                        setTimeout(() => input.removeClass('border-success'), 1500);
+                        showToast('Price Updated', 'Success', 'success');
+                    }
+                },
+                error: function() {
+                    input.removeClass('border-primary').addClass('border-danger');
+                    showAlert('Failed to update price. Please try again.', 'error');
+                }
+            });
+        });
     });
 </script>
 @endpush

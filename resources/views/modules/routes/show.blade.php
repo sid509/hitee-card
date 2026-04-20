@@ -8,11 +8,14 @@
         <h4 class="mb-0">
             <span class="text-muted fw-light">Route /</span> {{ $route->name }}
         </h4>
-        @if(auth()->user()->hasRole('super-admin', 'merchant'))
-            <a href="{{ route('routes.edit', $route->id) }}" class="btn btn-primary">
-                <i class="bx bx-edit-alt me-1"></i> Edit Route
-            </a>
-        @endif
+        <div class="d-flex gap-2">
+            @if(auth()->user()->hasRole('super-admin', 'merchant'))
+                <a href="{{ route('routes.edit', $route->id) }}" class="btn btn-primary">
+                    <i class="bx bx-edit-alt me-1"></i> Edit Route
+                </a>
+            @endif
+            <a href="{{ route('routes.index') }}" class="btn btn-secondary">Back to List</a>
+        </div>
     </div>
 
     <div class="row">
@@ -22,7 +25,7 @@
                 <div class="card-body">
                     <div class="user-avatar-section mb-4">
                         <div class="d-flex align-items-center flex-column">
-                            <div class="avatar avatar-xl bg-label-primary rounded p-3 mb-3">
+                            <div class="avatar avatar-xl bg-label-primary rounded p-3 mb-3 d-flex align-items-center justify-content-center">
                                 <i class="bx bx-git-commit fs-1"></i>
                             </div>
                             <div class="user-info text-center">
@@ -35,8 +38,12 @@
                     <div class="info-container">
                         <ul class="list-unstyled">
                             <li class="mb-3">
-                                <span class="fw-medium me-2">Merchant:</span>
-                                <span>{{ $route->merchant->name ?? 'System' }}</span>
+                                <span class="fw-medium me-2">Merchants:</span>
+                                <div>
+                                    @foreach($route->merchants as $merchant)
+                                        <span class="badge bg-label-secondary mb-1">{{ $merchant->name }}</span>
+                                    @endforeach
+                                </div>
                             </li>
                             <li class="mb-3">
                                 <span class="fw-medium me-2 text-primary">Total Stops:</span>

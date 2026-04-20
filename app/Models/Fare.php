@@ -18,6 +18,11 @@ class Fare extends Model
         return $this->belongsTo(User::class, 'merchant_id');
     }
 
+    public function merchants()
+    {
+        return $this->belongsToMany(User::class, 'fare_merchant', 'fare_id', 'merchant_id')->withTimestamps();
+    }
+
     public function route()
     {
         return $this->belongsTo(Route::class);

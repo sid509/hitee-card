@@ -6,7 +6,14 @@
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="py-3 mb-0"><span class="text-muted fw-light">Parking /</span> {{ $parking->name }}</h4>
-        <a href="{{ route('parkings.index') }}" class="btn btn-secondary">Back to List</a>
+        <div class="d-flex gap-2">
+            @if(auth()->user()->hasRole('super-admin', 'merchant'))
+                <a href="{{ route('parkings.edit', $parking->id) }}" class="btn btn-primary">
+                    <i class="bx bx-edit-alt me-1"></i> Edit Parking
+                </a>
+            @endif
+            <a href="{{ route('parkings.index') }}" class="btn btn-secondary">Back to List</a>
+        </div>
     </div>
 
     <div class="row">
@@ -14,12 +21,19 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-body">
-                    <div class="text-center mb-4">
-                        <div class="avatar avatar-xl m-auto mb-3">
-                            <span class="avatar-initial rounded-circle bg-label-info"><i class="bx bxs-parking bx-lg"></i></span>
+                    <div class="mb-4">
+                        <div class="featured-image-container mb-3">
+                            <img src="{{ $parking->featured_image_url }}" alt="Parking" class="img-fluid rounded w-100" style="max-height: 250px; object-fit: cover;">
                         </div>
-                        <h5>{{ $parking->name }}</h5>
-                        <span class="badge {{ $parking->status === 'opened' ? 'bg-label-success' : 'bg-label-secondary' }}">{{ __('messages.' . $parking->status) }}</span>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1">{{ $parking->name }}</h4>
+                                <span class="badge {{ $parking->status === 'opened' ? 'bg-label-success' : 'bg-label-secondary' }}">{{ __('messages.' . $parking->status) }}</span>
+                            </div>
+                            <div class="avatar avatar-md">
+                                <span class="avatar-initial rounded bg-label-primary"><i class="bx bxs-parking"></i></span>
+                            </div>
+                        </div>
                     </div>
                     <div class="info-container">
                         <ul class="list-unstyled">
@@ -107,7 +121,7 @@
         <div class="col-md-8">
             <div class="card mb-4">
                 <h5 class="card-header d-flex align-items-center">
-                    <i class="bx bxs-map me-2 text-info"></i>
+                    <i class="bx bx-map-pin me-2 text-primary"></i>
                     Location Visualization
                 </h5>
                 <div class="card-body">
@@ -148,7 +162,7 @@
 
         if (parking.latitude && parking.longitude) {
             const parkingIcon = L.divIcon({
-                html: '<i class="bx bxs-parking bg-info text-white p-1 rounded-circle shadow" style="font-size: 24px; border: 2px solid white;"></i>',
+                html: '<i class="bx bxs-parking bg-primary text-white p-1 rounded-circle shadow" style="font-size: 24px; border: 2px solid white;"></i>',
                 className: 'custom-div-icon',
                 iconSize: [30, 30],
                 iconAnchor: [15, 15]

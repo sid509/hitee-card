@@ -16,7 +16,7 @@ class SetTheme
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $theme = Session::get('theme', 'light');
+        $theme = Session::get('theme', 'system');
         view()->share('theme', $theme);
 
         return $next($request);

@@ -72,10 +72,16 @@ class RideController extends Controller
                     return 'Rs. ' . number_format($row->fare_amount, 2);
                 })
                 ->addColumn('tap_in_time', function($row) {
-                    return $row->tapIn ? $row->tapIn->created_at->format('Y-m-d H:i') : '-';
+                    $time = formatDate($row->tapIn?->created_at);
+                    if (!$row->tapIn) return '-';
+                    $location = ($row->reference_type === 'App\Models\Bus') ? ($row->tapIn->resolved_location_name ?? 'Unknown') : '-';
+                    return '<div>'.$time.'<br><small class="text-muted">'.$location.'</small></div>';
                 })
                 ->addColumn('tap_out_time', function($row) {
-                    return $row->tapOut ? $row->tapOut->created_at->format('Y-m-d H:i') : '-';
+                    if (!$row->tapOut) return '---';
+                    $time = formatDate($row->tapOut->created_at);
+                    $location = ($row->reference_type === 'App\Models\Bus') ? ($row->tapOut->resolved_location_name ?? 'Unknown') : '-';
+                    return '<div>'.$time.'<br><small class="text-muted">'.$location.'</small></div>';
                 })
                 ->addColumn('action', function($row) {
                     if (!$row->tapIn) return '';
@@ -89,7 +95,7 @@ class RideController extends Controller
                                 <i class="bx bx-map"></i>
                             </button>';
                 })
-                ->rawColumns(['status', 'action', 'asset_info', 'user_card'])
+                ->rawColumns(['status', 'action', 'asset_info', 'user_card', 'tap_in_time', 'tap_out_time'])
                 ->make(true);
         }
 
@@ -156,7 +162,7 @@ class RideController extends Controller
                     return '<div><a href="'.$link.'" class="fw-medium">'.$name.'</a><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$type.'</small></div>';
                 })
                 ->editColumn('created_at', function($row) {
-                    return $row->created_at->format('Y-m-d H:i:s');
+                    return formatDate($row->created_at);
                 })
                 ->addColumn('action', function($row) {
                     return '<button class="btn btn-icon btn-sm btn-primary view-tap-map" 
@@ -201,6 +207,18 @@ class RideController extends Controller
                 ->editColumn('fare_amount', function($row) {
                     return 'Rs. ' . number_format($row->fare_amount, 2);
                 })
+                ->addColumn('tap_in_time', function($row) {
+                    $time = formatDate($row->tapIn?->created_at);
+                    if (!$row->tapIn) return '-';
+                    $location = ($row->reference_type === 'App\Models\Bus') ? ($row->tapIn->resolved_location_name ?? 'Unknown') : '-';
+                    return '<div>'.$time.'<br><small class="text-muted">'.$location.'</small></div>';
+                })
+                ->addColumn('tap_out_time', function($row) {
+                    if (!$row->tapOut) return '---';
+                    $time = formatDate($row->tapOut->created_at);
+                    $location = ($row->reference_type === 'App\Models\Bus') ? ($row->tapOut->resolved_location_name ?? 'Unknown') : '-';
+                    return '<div>'.$time.'<br><small class="text-muted">'.$location.'</small></div>';
+                })
                 ->addColumn('action', function($row) {
                     if (!$row->tapIn) return '';
                     return '<button class="btn btn-icon btn-sm btn-info view-ride-map" 
@@ -213,7 +231,7 @@ class RideController extends Controller
                                 <i class="bx bx-map"></i>
                             </button>';
                 })
-                ->rawColumns(['action', 'status', 'asset_info'])
+                ->rawColumns(['action', 'status', 'asset_info', 'tap_in_time', 'tap_out_time'])
                 ->make(true);
         }
 
@@ -246,19 +264,26 @@ class RideController extends Controller
 
         if ($ongoingRide) {
             // Use same asset for tap out
-            $simData['hw_id'] = $ongoingRide->reference_type === \App\Models\Bus::class 
+            $hwId = $ongoingRide->reference_type === \App\Models\Bus::class 
                 ? \App\Models\Bus::find($ongoingRide->reference_id)->hwid 
                 : $ongoingRide->reference_id;
+            $simData['hw_id'] = (string)$hwId;
         } else {
             // Pick a random bus for tap in
             $bus = \App\Models\Bus::inRandomOrder()->first();
-            if (!$bus) return response()->json(['status' => false, 'message' => 'No buses available for simulation.']);
-            $simData['hw_id'] = $bus->hwid;
+            if ($bus) {
+                $simData['hw_id'] = (string)$bus->hwid;
+            } else {
+                // If no buses, try a parking lot
+                $parking = \App\Models\Parking::inRandomOrder()->first();
+                if (!$parking) return response()->json(['status' => false, 'message' => 'No assets (bus/parking) available for simulation.']);
+                $simData['hw_id'] = (string)$parking->id;
+            }
         }
 
         $request->merge($simData);
         
-        $response = $ongoingRide ? $tapApi->tapOut($request) : $tapApi->tapIn($request);
+        $response = $tapApi->processTap($request);
         return $response;
     }
 }

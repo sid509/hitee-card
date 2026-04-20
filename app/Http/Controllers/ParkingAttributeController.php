@@ -120,6 +120,10 @@ class ParkingAttributeController extends Controller
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
+        if ($parkingAttribute->parkings()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete attribute because it is assigned to one or more parkings.');
+        }
+
         if ($parkingAttribute->icon) {
             Storage::disk('public')->delete($parkingAttribute->icon);
         }

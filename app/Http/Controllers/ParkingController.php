@@ -217,6 +217,15 @@ class ParkingController extends Controller
     public function destroy(Parking $parking)
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
+
+        // Check for associated rides or taps (using morphMany if applicable, but rides/taps use morphTo)
+        $hasRides = \App\Models\Ride::where('reference_type', Parking::class)->where('reference_id', $parking->id)->exists();
+        $hasTaps = \App\Models\Tap::where('reference_type', Parking::class)->where('reference_id', $parking->id)->exists();
+        
+        if ($hasRides || $hasTaps || $parking->merchantIncomes()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete parking because it has associated transaction history or active rides.');
+        }
+
         $parking->delete();
         return redirect()->route('parkings.index')->with('success', 'Parking deleted successfully.');
     }

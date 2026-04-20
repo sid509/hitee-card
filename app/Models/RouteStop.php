@@ -11,10 +11,15 @@ class RouteStop extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['route_id', 'stop_name', 'latitude', 'longitude', 'order'];
+    protected $fillable = ['route_id', 'stop_id', 'stop_name', 'latitude', 'longitude', 'order'];
 
     public function route()
     {
         return $this->belongsTo(Route::class);
+    }
+
+    public function stop()
+    {
+        return $this->belongsTo(Stop::class);
     }
 }

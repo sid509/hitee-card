@@ -6,6 +6,7 @@ use App\Models\Fare;
 use App\Models\FareMatrix;
 use App\Models\Route;
 use App\Models\Bus;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
@@ -15,14 +16,38 @@ class FareController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Fare::with(['merchant', 'route']);
+            $query = Fare::with(['merchants', 'route', 'buses']);
             
             if (auth()->user()->hasRole('merchant')) {
-                $query->where('merchant_id', auth()->id());
+                $query->whereHas('merchants', function($q) {
+                    $q->where('users.id', auth()->id());
+                });
             }
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->addColumn('fare_info', function($row) {
+                    return '<div class="d-flex flex-column">
+                                <span class="text-heading fw-medium text-truncate">' . $row->name . '</span>
+                                <small class="text-muted text-truncate">' . ($row->route?->name ?? 'No Route') . '</small>
+                            </div>';
+                })
+                ->addColumn('merchant_bus', function($row) {
+                    $busCount = $row->buses->count();
+                    $busList = $row->buses->pluck('name')->implode(', ');
+                    
+                    if ($busCount > 0) {
+                        return '<span class="badge bg-label-info cursor-pointer bus-list-popover d-inline-flex align-items-center" 
+                                    data-bs-toggle="popover" 
+                                    data-bs-trigger="hover" 
+                                    data-bs-placement="top" 
+                                    data-bs-content="' . $busList . '" 
+                                    title="Assigned Buses">
+                                    <i class="bx bx-bus me-1"></i>' . $busCount . ' ' . ($busCount == 1 ? 'Bus' : 'Buses') . '
+                                 </span>';
+                    }
+                    return '<span class="text-muted small">No buses assigned</span>';
+                })
                 ->editColumn('status', function($row) {
                     $class = $row->status == 'approved' ? 'success' : ($row->status == 'proposed' ? 'warning' : 'danger');
                     return '<span class="badge bg-label-'.$class.'">'.ucfirst($row->status).'</span>';
@@ -31,12 +56,10 @@ class FareController extends Controller
                     $actions = '<a href="'.route('fares.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     
                     if (auth()->user()->hasRole('super-admin', 'merchant', 'staff')) {
-                        // Check if they can manage this fare
                         $canManage = false;
                         if (auth()->user()->hasRole('super-admin')) $canManage = true;
-                        elseif (auth()->user()->hasRole('merchant') && $row->merchant_id == auth()->id()) $canManage = true;
+                        elseif (auth()->user()->hasRole('merchant') && $row->merchants->contains(auth()->id())) $canManage = true;
                         elseif (auth()->user()->hasRole('staff')) {
-                            // Staff can manage if assigned to buses on this route
                             $canManage = auth()->user()->assignedBuses()->where('route_id', $row->route_id)->exists();
                         }
 
@@ -48,10 +71,17 @@ class FareController extends Controller
                             $actions .= '<button type="button" class="btn btn-icon btn-sm btn-info me-1 assign-bus" data-id="'.$row->id.'" data-route-id="'.$row->route_id.'" title="Assign to Bus"><i class="bx bx-bus"></i></button>';
                         }
                     }
+                     if (auth()->user()->hasRole('super-admin')) {
+                        $actions .= '<form action="'.route('fares.destroy', $row->id).'" method="POST" style="display:inline-block">
+                                        '.csrf_field().'
+                                        '.method_field('DELETE').'
+                                        <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete"><i class="bx bx-trash"></i></button>
+                                    </form>';
+                    }
                     
                     return $actions;
                 })
-                ->rawColumns(['status', 'action'])
+                ->rawColumns(['status', 'action', 'merchant_bus', 'fare_info'])
                 ->make(true);
         }
 
@@ -60,13 +90,15 @@ class FareController extends Controller
 
     public function create()
     {
-        $routes = Route::query();
+        $routesQuery = Route::query();
         if (auth()->user()->hasRole('merchant')) {
-            $routes->where('merchant_id', auth()->id());
+            $routesQuery->whereHas('merchants', function($q) {
+                $q->where('users.id', auth()->id());
+            });
         }
         return view('modules.fares.create', [
             'fare' => new Fare(),
-            'routes' => $routes->get()
+            'routes' => $routesQuery->get()
         ]);
     }
 
@@ -74,17 +106,21 @@ class FareController extends Controller
     {
         $request->validate([
             'route_id' => 'required|exists:routes,id',
+            'merchant_ids' => 'required|array',
+            'merchant_ids.*' => 'exists:users,id',
             'name' => 'required|string|max:255',
             'matrix' => 'required|array',
         ]);
 
         DB::transaction(function() use ($request) {
             $fare = Fare::create([
-                'merchant_id' => auth()->user()->hasRole('super-admin') ? $request->merchant_id : auth()->id(),
                 'route_id' => $request->route_id,
                 'name' => $request->name,
                 'status' => 'proposed',
             ]);
+
+            // Sync Merchants
+            $fare->merchants()->sync($request->merchant_ids);
 
             foreach ($request->matrix as $fromStopId => $toStops) {
                 foreach ($toStops as $toStopId => $amount) {
@@ -105,30 +141,44 @@ class FareController extends Controller
 
     public function edit(Fare $fare)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
-        $fare->load(['route.stops', 'matrices']);
+        if (auth()->user()->hasRole('merchant') && !$fare->merchants->contains(auth()->id())) abort(403);
+        $fare->load(['route.stops', 'matrices', 'merchants']);
         $routes = Route::all();
         return view('modules.fares.edit', compact('fare', 'routes'));
     }
 
     public function update(Request $request, Fare $fare)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        if (auth()->user()->hasRole('merchant') && !$fare->merchants->contains(auth()->id())) abort(403);
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'merchant_ids' => 'required|array',
+            'merchant_ids.*' => 'exists:users,id',
         ]);
 
-        $fare->update([
-            'name' => $request->name,
-        ]);
+        DB::transaction(function() use ($request, $fare) {
+            $fare->update([
+                'name' => $request->name,
+            ]);
+
+            // Sync Merchants
+            $fare->merchants()->sync($request->merchant_ids);
+        });
 
         return redirect()->route('fares.index')->with('success', 'Fare details updated successfully.');
     }
 
+    public function destroy(Fare $fare)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $fare->delete();
+        return redirect()->route('fares.index')->with('success', 'Fare deleted successfully.');
+    }
+
     public function show(Fare $fare)
     {
-        $fare->load(['route.stops', 'matrices']);
+        $fare->load(['route.stops', 'matrices', 'merchants']);
         return view('modules.fares.show', compact('fare'));
     }
 
@@ -149,10 +199,10 @@ class FareController extends Controller
         $fare = Fare::findOrFail($request->fare_id);
         $bus = Bus::findOrFail($request->bus_id);
 
-        // Authorization
         if (!auth()->user()->hasRole('super-admin')) {
             if (auth()->user()->hasRole('merchant')) {
-                if ($bus->merchant_id != auth()->id() || $fare->merchant_id != auth()->id()) abort(403);
+                // Bus must belong to merchant AND merchant must be associated with the fare
+                if ($bus->merchant_id != auth()->id() || !$fare->merchants->contains(auth()->id())) abort(403);
             } elseif (auth()->user()->hasRole('staff')) {
                 if (!auth()->user()->assignedBuses->contains($bus->id)) abort(403);
             } else {
@@ -175,9 +225,6 @@ class FareController extends Controller
         return view('modules.fares._matrix_form', compact('route', 'fare'))->render();
     }
 
-    /**
-     * Update a single cell in the fare matrix (Inline Edit).
-     */
     public function updateMatrixCell(Request $request)
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);

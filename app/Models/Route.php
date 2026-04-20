@@ -11,11 +11,11 @@ class Route extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['merchant_id', 'name', 'description'];
+    protected $fillable = ['name', 'description'];
 
-    public function merchant()
+    public function merchants()
     {
-        return $this->belongsTo(User::class, 'merchant_id');
+        return $this->belongsToMany(User::class, 'merchant_route', 'route_id', 'merchant_id')->withTimestamps();
     }
 
     public function stops()

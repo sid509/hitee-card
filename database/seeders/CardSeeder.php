@@ -20,18 +20,24 @@ class CardSeeder extends Seeder
 
         if ($customers->isEmpty()) return;
 
-        for ($i = 1; $i <= 32; $i++) {
-            $user = $customers->random();
-            
-            // Check if user already has an active card
-            $hasActive = Card::where('user_id', $user->id)->where('is_currently_active', true)->exists();
-            $isActive = !$hasActive && rand(0, 1);
-
+        foreach ($customers as $user) {
             Card::create([
                 'card_number' => "CRD-" . strtoupper(Str::random(10)),
                 'hwid' => "HW-" . strtoupper(Str::random(12)),
-                'status' => ['active', 'inactive', 'blocked'][rand(0, 2)],
-                'is_currently_active' => $isActive,
+                'status' => 'active',
+                'is_currently_active' => true,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        // Add some extra inactive/blocked cards for realism
+        for ($i = 1; $i <= 10; $i++) {
+            $user = $customers->random();
+            Card::create([
+                'card_number' => "CRD-" . strtoupper(Str::random(10)),
+                'hwid' => "HW-" . strtoupper(Str::random(12)),
+                'status' => ['inactive', 'blocked'][rand(0, 1)],
+                'is_currently_active' => false,
                 'user_id' => $user->id,
             ]);
         }

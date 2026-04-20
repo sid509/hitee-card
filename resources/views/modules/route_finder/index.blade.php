@@ -17,13 +17,13 @@
                         <div class="col-md-5">
                             <label class="form-label" for="from">From Stop</label>
                             <select name="from" id="from" class="form-select select2-ajax-stops" required>
-                                @if($from) <option value="{{ $from }}" selected>{{ $from }}</option> @endif
+                                @if(isset($fromId) && $fromId) <option value="{{ $fromId }}" selected>{{ $from }}</option> @endif
                             </select>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label" for="to">To Stop</label>
                             <select name="to" id="to" class="form-select select2-ajax-stops" required>
-                                @if($to) <option value="{{ $to }}" selected>{{ $to }}</option> @endif
+                                @if(isset($toId) && $toId) <option value="{{ $toId }}" selected>{{ $to }}</option> @endif
                             </select>
                         </div>
                         <div class="col-md-2">

@@ -26,6 +26,16 @@
                             <input type="text" class="form-control" value="{{ $fare->route->name }}" disabled>
                             <input type="hidden" name="route_id" id="route_select_fare" value="{{ $fare->route_id }}">
                         </div>
+                        @if(auth()->user()->hasRole('super-admin'))
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Merchants</label>
+                            <select name="merchant_ids[]" class="form-select select2-ajax-merchant" multiple required>
+                                @foreach($fare->merchants as $merchant)
+                                    <option value="{{ $merchant->id }}" selected>{{ $merchant->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
                     </div>
 
                     <div class="mt-4" id="matrix-container">
@@ -61,6 +71,23 @@
         if (routeId) {
             $.get("{{ route('fares.matrix-form') }}", { route_id: routeId, fare_id: fareId }, function(html) {
                 $('#matrix-form-wrapper').html(html);
+            });
+        }
+
+        // Merchant Search for Admin
+        if ($('.select2-ajax-merchant').length) {
+            $('.select2-ajax-merchant').select2({
+                ajax: {
+                    url: "{{ route('search.merchants') }}",
+                    dataType: 'json',
+                    delay: 250,
+                    data: params => ({ q: params.term, page: params.page }),
+                    processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                    cache: true
+                },
+                placeholder: 'Search Merchant...',
+                minimumInputLength: 1,
+                width: '100%'
             });
         }
     });

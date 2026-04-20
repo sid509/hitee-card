@@ -22,6 +22,21 @@ class SupportRequest extends Model
         'closed_at' => 'datetime'
     ];
 
+    protected $appends = [
+        'formatted_created_at',
+        'formatted_closed_at'
+    ];
+
+    public function getFormattedCreatedAtAttribute()
+    {
+        return formatDate($this->created_at);
+    }
+
+    public function getFormattedClosedAtAttribute()
+    {
+        return formatDate($this->closed_at);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

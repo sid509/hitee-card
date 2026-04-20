@@ -1,13 +1,40 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-    class="layout-menu-fixed layout-compact {{ $theme === 'dark' ? 'dark-style' : 'light-style' }}" 
+    class="layout-menu-fixed layout-compact {{ $theme === 'dark' ? 'dark-style' : ($theme === 'light' ? 'light-style' : '') }}" 
     dir="ltr"
-    data-theme="{{ $theme === 'dark' ? 'theme-dark' : 'theme-default' }}" 
+    data-theme="{{ $theme === 'dark' ? 'theme-dark' : ($theme === 'light' ? 'theme-default' : '') }}" 
     data-assets-path="{{ asset('assets') }}/" 
     data-template="hitee-vertical-menu-template">
 
 <head>
     <meta charset="utf-8" />
+    <script>
+        (function() {
+            const theme = "{{ $theme }}";
+            if (theme === 'system') {
+                const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                const applyTheme = (isDark) => {
+                    if (isDark) {
+                        document.documentElement.classList.add('dark-style');
+                        document.documentElement.classList.remove('light-style');
+                        document.documentElement.setAttribute('data-theme', 'theme-dark');
+                    } else {
+                        document.documentElement.classList.add('light-style');
+                        document.documentElement.classList.remove('dark-style');
+                        document.documentElement.setAttribute('data-theme', 'theme-default');
+                    }
+                };
+
+                applyTheme(darkQuery.matches);
+                
+                darkQuery.addEventListener('change', e => {
+                    if ("{{ $theme }}" === 'system') {
+                        applyTheme(e.matches);
+                    }
+                });
+            }
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
     <title>@yield('title') | Hitee Platform</title>
@@ -44,12 +71,26 @@
         .dark-style .tooltip .bs-tooltip-bottom .tooltip-arrow::before { border-bottom-color: #fff !important; }
         .dark-style .tooltip .bs-tooltip-start .tooltip-arrow::before { border-left-color: #fff !important; }
         .dark-style .tooltip .bs-tooltip-end .tooltip-arrow::before { border-right-color: #fff !important; }
+        
+        /* Logo Switching */
+        .logo-dark-version, .logo-light-version { display: none !important; }
+        .dark-style .logo-dark-version { display: inline-block !important; }
+        .light-style .logo-light-version { display: inline-block !important; }
     </style>
 
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
 </head>
 
 <body>
+    <!-- Page Loader -->
+    <div id="page-loader" class="page-loader">
+        <div class="loader-content">
+            <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
     @if(app('impersonate')->isImpersonating())
     <div class="impersonate-banner bg-danger text-white text-center py-2">
         You are currently impersonating <strong>{{ auth()->user()->name }}</strong>.
@@ -127,6 +168,16 @@
 
     <!-- Global Helpers -->
     <script type="module">
+        window.addEventListener('load', function() {
+            const loader = document.getElementById('page-loader');
+            if (loader) {
+                loader.classList.add('fade-out');
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 400);
+            }
+        });
+
         window.showAlert = function(message, icon = 'success', title = 'Success') {
             Swal.fire({
                 title: title,
@@ -160,6 +211,20 @@
         };
 
         $(function() {
+            // Display session messages
+            @if(session('success'))
+                showAlert("{{ session('success') }}", 'success', 'Success');
+            @endif
+            @if(session('error'))
+                showAlert("{{ session('error') }}", 'error', 'Error');
+            @endif
+            @if(session('info'))
+                showAlert("{{ session('info') }}", 'info', 'Info');
+            @endif
+            @if(session('warning'))
+                showAlert("{{ session('warning') }}", 'warning', 'Warning');
+            @endif
+
             const btnSend = $('#btnSendSupport');
             const supportForm = $('#quickSupportForm');
 

@@ -230,16 +230,26 @@ class BalanceController extends Controller
      */
     public function logs(Request $request, $userId = null)
     {
-        $userId = $userId ?? auth()->id();
+        // If super-admin and no userId provided, show all
+        if (!$userId && auth()->user()->hasRole('super-admin')) {
+            $userId = 'all';
+        } else {
+            $userId = $userId ?? auth()->id();
+        }
         
         // If requesting another user's logs, must be super-admin
-        if ($userId != auth()->id() && !auth()->user()->hasRole('super-admin')) {
+        if ($userId !== 'all' && $userId != auth()->id() && !auth()->user()->hasRole('super-admin')) {
             abort(403);
         }
 
         if ($request->ajax()) {
-            $queryIn = BalanceIn::where('user_id', $userId)->where('status', 'completed')->select(['id', 'amount', 'type', 'remarks', 'created_at']);
-            $queryOut = BalanceOut::where('user_id', $userId)->select(['id', 'amount', 'type', 'remarks', 'created_at', 'merchant_id', 'reference_id', 'reference_type']);
+            $queryIn = BalanceIn::where('status', 'completed')->select(['id', 'user_id', 'amount', 'type', 'remarks', 'created_at']);
+            $queryOut = BalanceOut::select(['id', 'user_id', 'amount', 'type', 'remarks', 'created_at', 'merchant_id', 'reference_id', 'reference_type']);
+
+            if ($userId !== 'all') {
+                $queryIn->where('user_id', $userId);
+                $queryOut->where('user_id', $userId);
+            }
 
             // Apply Filters
             if ($request->filled('type')) {
@@ -278,9 +288,13 @@ class BalanceController extends Controller
                     $class = $row->log_type == 'in' ? 'success' : 'danger';
                     return '<span class="badge bg-label-'.$class.'">'.strtoupper($row->log_type).'</span>';
                 })
+                ->addColumn('customer', function($row) {
+                    $user = \App\Models\User::find($row->user_id);
+                    return $user ? $user->name : 'N/A';
+                })
                 ->editColumn('type', function($row){
                     $type = str_replace('_', ' ', ucfirst($row->type));
-                    if ($row->log_type === 'out' && $row->reference_id) {
+                    if ($row->log_type === 'out' && property_exists($row, 'reference_id') && $row->reference_id) {
                         $refName = $row->reference_type === 'App\Models\Bus' ? 'Bus' : 'Parking';
                         return $type . " (" . $refName . ")";
                     }
@@ -291,7 +305,7 @@ class BalanceController extends Controller
                     $color = $row->log_type == 'in' ? 'success' : 'danger';
                     return '<span class="text-'.$color.' fw-medium">'.$prefix.' Rs. '.number_format($row->amount, 2).'</span>';
                 })
-                ->rawColumns(['direction', 'amount'])
+                ->rawColumns(['direction', 'amount', 'customer'])
                 ->make(true);
         }
 

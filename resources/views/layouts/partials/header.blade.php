@@ -39,8 +39,14 @@
 
             <!-- Style Switcher -->
             <li class="nav-item dropdown-style-switcher dropdown me-2 me-xl-0">
-                <a class="nav-link dropdown-toggle hide-arrow" href="{{ route('theme.toggle') }}">
-                    <i class='bx bx-md {{ $theme === 'dark' ? 'bx-moon' : 'bx-sun' }}'></i>
+                <a class="nav-link dropdown-toggle hide-arrow" href="{{ route('theme.toggle') }}" title="Theme: {{ ucfirst($theme) }}">
+                    @if($theme === 'dark')
+                        <i class='bx bx-md bx-moon'></i>
+                    @elseif($theme === 'light')
+                        <i class='bx bx-md bx-sun'></i>
+                    @else
+                        <i class='bx bx-md bx-desktop'></i>
+                    @endif
                 </a>
             </li>
             <!-- /Style Switcher -->

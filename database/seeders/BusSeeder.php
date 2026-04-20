@@ -25,6 +25,8 @@ class BusSeeder extends Seeder
             ['name' => 'City Yatayat', 'no' => 'BA 5 KA 7788', 'lat' => 27.686382, 'lng' => 85.289123], // Kalanki
         ];
 
+        $routes = \App\Models\Route::all();
+
         foreach ($kathmanduBuses as $index => $data) {
             Bus::create([
                 'name' => $data['name'],
@@ -34,6 +36,7 @@ class BusSeeder extends Seeder
                 'merchant_id' => $merchants->random()->id,
                 'latitude' => $data['lat'],
                 'longitude' => $data['lng'],
+                'route_id' => $routes->isNotEmpty() ? $routes->random()->id : null,
             ]);
         }
     }

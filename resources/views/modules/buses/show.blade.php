@@ -6,7 +6,14 @@
 <div class="container-xxl flex-grow-1 container-p-y">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="py-3 mb-0"><span class="text-muted fw-light">Bus /</span> {{ $bus->name }}</h4>
-        <a href="{{ route('buses.index') }}" class="btn btn-secondary">Back to List</a>
+        <div class="d-flex gap-2">
+            @if(auth()->user()->hasRole('super-admin', 'merchant'))
+                <a href="{{ route('buses.edit', $bus->id) }}" class="btn btn-primary">
+                    <i class="bx bx-edit-alt me-1"></i> Edit Bus
+                </a>
+            @endif
+            <a href="{{ route('buses.index') }}" class="btn btn-secondary">Back to List</a>
+        </div>
     </div>
 
     <div class="row">
@@ -189,8 +196,8 @@
             </div>
             <div class="modal-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-sm text-center">
-                        <thead class="table-light">
+                    <table class="table table-bordered table-sm text-center fare-matrix-table">
+                        <thead>
                             <tr>
                                 <th>From \ To</th>
                                 @foreach($bus->activeFare->route->stops as $stop)
@@ -201,7 +208,7 @@
                         <tbody>
                             @foreach($bus->activeFare->route->stops as $fromStop)
                                 <tr>
-                                    <th class="bg-light text-start">{{ $fromStop->stop_name }}</th>
+                                    <th class="text-start">{{ $fromStop->stop_name }}</th>
                                     @foreach($bus->activeFare->route->stops as $toStop)
                                         <td>
                                             @php

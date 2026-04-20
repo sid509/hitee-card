@@ -21,13 +21,13 @@
             <table class="table table-hover data-table w-100">
                 <thead>
                     <tr>
-                        <th>{{ __('messages.id') }}</th>
-                        <th>{{ __('messages.name') }}</th>
-                        <th>{{ __('messages.number') }}</th>
-                        <th>{{ __('messages.merchant') }}</th>
-                        <th>{{ __('messages.routes') }}</th>
-                        <th>{{ __('messages.status') }}</th>
-                        <th>{{ __('messages.actions') }}</th>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Number</th>
+                        <th>Merchant</th>
+                        <th>Route</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
             </table>
@@ -42,11 +42,16 @@
         var table = $('.data-table').DataTable({
             processing: true,
             serverSide: true,
-            responsive: true,
             ajax: "{{ route('buses.index') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'name', name: 'name'},
+                {
+                    data: 'name', 
+                    name: 'name',
+                    createdCell: function(td) {
+                        $(td).addClass('text-truncate-cell').attr('title', $(td).text());
+                    }
+                },
                 {data: 'bus_number', name: 'bus_number'},
                 {data: 'merchant.name', name: 'merchant.name', defaultContent: 'N/A'},
                 {data: 'route_name', name: 'route_name', orderable: false},

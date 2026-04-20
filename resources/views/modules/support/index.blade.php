@@ -53,12 +53,12 @@
                 </div>
                 <div class="mb-3">
                     <label class="fw-bold">Message:</label>
-                    <p id="view_message" class="border p-2 rounded bg-light"></p>
+                    <p id="view_message" class="border p-3 rounded bg-label-secondary"></p>
                 </div>
                 <div id="closed_info" style="display:none">
                     <div class="mb-3">
                         <label class="fw-bold text-danger">Closing Reason:</label>
-                        <p id="view_closing_reason" class="border p-2 rounded bg-lighter"></p>
+                        <p id="view_closing_reason" class="border p-3 rounded bg-label-secondary"></p>
                     </div>
                     <div class="mb-3">
                         <label class="fw-bold">Closed At:</label>
@@ -117,7 +117,7 @@
                 $('#support_id').val(data.id);
                 $('#view_user_name').text(data.user.name);
                 $('#view_subject').text(data.subject || 'General Query');
-                $('#view_created_at').text(data.created_at);
+                $('#view_created_at').text(data.formatted_created_at);
                 $('#view_message').text(data.message);
 
                 if (data.status === 'closed') {
@@ -125,7 +125,7 @@
                     $('#reason_container').hide();
                     $('#btnCloseSupport').hide();
                     $('#view_closing_reason').text(data.closing_reason);
-                    $('#view_closed_at').text(data.closed_at);
+                    $('#view_closed_at').text(data.formatted_closed_at);
                 } else {
                     $('#closed_info').hide();
                     $('#reason_container').show();

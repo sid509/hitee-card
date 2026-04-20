@@ -2,15 +2,17 @@
 
 if (!function_exists('formatDate')) {
     /**
-     * Format date to Y-m-d
+     * Format date to a uniform proper format
      *
      * @param mixed $date
+     * @param bool $showTime
      * @return string
      */
-    function formatDate($date)
+    function formatDate($date, $showTime = true)
     {
         if (!$date) return '';
-        return \Carbon\Carbon::parse($date)->format('Y-m-d');
+        $format = $showTime ? 'M d, Y h:i A' : 'M d, Y';
+        return \Carbon\Carbon::parse($date)->format($format);
     }
 }
 

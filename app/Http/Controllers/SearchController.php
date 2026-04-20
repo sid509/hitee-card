@@ -223,21 +223,26 @@ class SearchController extends Controller
     }
 
     /**
-     * Search route stops for Select2 AJAX.
+     * Search global stops for Select2 AJAX.
      */
     public function stops(Request $request)
     {
         $search = $request->get('q');
-        $query = RouteStop::query()->select('stop_name')->distinct();
+        $query = \App\Models\Stop::query();
 
         if ($search) {
-            $query->where('stop_name', 'LIKE', "%$search%");
+            $query->where('name', 'LIKE', "%$search%");
         }
 
         $stops = $query->paginate(10);
 
         return response()->json([
-            'results' => collect($stops->items())->map(fn($s) => ['id' => $s->stop_name, 'text' => $s->stop_name])->toArray(),
+            'results' => collect($stops->items())->map(fn($s) => [
+                'id' => $s->id, 
+                'text' => $s->name,
+                'lat' => $s->latitude,
+                'lng' => $s->longitude
+            ])->toArray(),
             'pagination' => ['more' => $stops->hasMorePages()]
         ]);
     }

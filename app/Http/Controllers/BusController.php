@@ -211,6 +211,13 @@ class BusController extends Controller
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
         
+        $hasRides = \App\Models\Ride::where('reference_type', Bus::class)->where('reference_id', $bus->id)->exists();
+        $hasTaps = \App\Models\Tap::where('reference_type', Bus::class)->where('reference_id', $bus->id)->exists();
+
+        if ($hasRides || $hasTaps || $bus->merchantIncomes()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete bus because it has associated transaction history or active rides.');
+        }
+
         $bus->delete();
         return redirect()->route('buses.index')->with('success', 'Bus deleted successfully.');
     }

@@ -20,7 +20,7 @@ class ActivityLogController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->editColumn('created_at', function($row){
-                    return $row->created_at->format('Y-m-d H:i:s');
+                    return formatDate($row->created_at);
                 })
                 ->addColumn('user_name', function($row){
                     return $row->user ? $row->user->name : 'System';

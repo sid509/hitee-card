@@ -233,7 +233,8 @@
                 method: "POST",
                 data: $(this).serialize(),
                 success: function(response) {
-                    $('#requestChangeModal').modal('hide');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('requestChangeModal'));
+                    if (modal) modal.hide();
                     showToast(response.message, 'Success', 'success');
                     table.ajax.reload();
                 },

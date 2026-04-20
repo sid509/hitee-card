@@ -3,9 +3,12 @@
 @section('title', 'User Details')
 
 @section('content')
-<h4 class="py-3 mb-4">
-    <span class="text-muted fw-light">Users /</span> {{ $user->name }}
-</h4>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <span class="text-muted fw-light">Users /</span> {{ $user->name }}
+    </h4>
+    <a href="{{ route('users.index') }}" class="btn btn-secondary">Back to List</a>
+</div>
 
 <div class="row">
     <!-- User Sidebar -->

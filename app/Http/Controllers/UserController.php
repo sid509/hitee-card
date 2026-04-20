@@ -213,6 +213,10 @@ class UserController extends Controller
             return redirect()->route('users.index')->with('error', 'You cannot delete your own account.');
         }
 
+        if ($user->cards()->exists() || $user->rides()->exists() || $user->taps()->exists()) {
+             return redirect()->route('users.index')->with('error', 'Cannot delete user because they have associated card or transaction history.');
+        }
+
         $user->delete();
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }

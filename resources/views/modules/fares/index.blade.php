@@ -19,12 +19,11 @@
             <table class="table table-hover data-table w-100">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Route</th>
-                        <th>Merchant</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th style="width: 30px;">#</th>
+                        <th style="width: 45%;">Fare & Route</th>
+                        <th>Buses</th>
+                        <th class="text-center" style="width: 120px;">Status</th>
+                        <th class="text-center" style="width: 140px;">Actions</th>
                     </tr>
                 </thead>
             </table>
@@ -71,16 +70,21 @@
         const table = $('.data-table').DataTable({
             processing: true,
             serverSide: true,
-            responsive: true,
             ajax: "{{ route('fares.index') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'name', name: 'name'},
-                {data: 'route.name', name: 'route.name'},
-                {data: 'merchant.name', name: 'merchant.name', defaultContent: 'N/A'},
-                {data: 'status', name: 'status'},
-                {data: 'action', name: 'action', orderable: false, searchable: false},
-            ]
+                {data: 'fare_info', name: 'name'},
+                {data: 'merchant_bus', name: 'merchant_bus', orderable: false, searchable: false},
+                {data: 'status', name: 'status', className: 'text-center'},
+                {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center'},
+            ],
+            drawCallback: function() {
+                // Initialize popovers after each table draw
+                const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+                popoverTriggerList.map(function (popoverTriggerEl) {
+                    return new bootstrap.Popover(popoverTriggerEl);
+                });
+            }
         });
 
         // Approve Fare
@@ -123,7 +127,9 @@
             e.preventDefault();
             $.post("{{ route('fares.assign-bus') }}", $(this).serialize(), function(res) {
                 showAlert(res.message);
-                $('#assignBusModal').modal('hide');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('assignBusModal'));
+                if (modal) modal.hide();
+                table.draw();
             }).fail(xhr => showAlert(xhr.responseJSON.message || 'Error assigning bus', 'error'));
         });
     });

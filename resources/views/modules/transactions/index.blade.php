@@ -31,8 +31,9 @@
                         <option value="penalty">Penalty</option>
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="button" id="resetFilters" class="btn btn-outline-secondary">Reset Filters</button>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="button" id="btnFilter" class="btn btn-primary w-100 d-none"><i class="bx bx-filter-alt me-1"></i> Filter</button>
+                    <button type="button" id="resetFilters" class="btn btn-outline-secondary w-100"><i class="bx bx-refresh me-1"></i> Clear</button>
                 </div>
             </form>
         </div>
@@ -47,6 +48,7 @@
                         <tr>
                             <th>ID</th>
                             <th>Date</th>
+                            <th>Customer</th>
                             <th>Type</th>
                             <th>Activity</th>
                             <th>Amount</th>
@@ -77,6 +79,7 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'created_at', name: 'created_at'},
+                {data: 'customer', name: 'customer'},
                 {data: 'direction', name: 'direction', orderable: false, searchable: false},
                 {data: 'type', name: 'type'},
                 {data: 'amount', name: 'amount'},

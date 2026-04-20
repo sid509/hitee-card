@@ -94,37 +94,30 @@
 </div>
 @endsection
 
-@push('scripts')
+@push('page-js')
 <script>
-$(function() {
-    if ($('.select2-ajax-users').length) {
-        $('.select2-ajax-users').select2({
+document.addEventListener('DOMContentLoaded', function () {
+    const userSearchSelect = $('.select2-ajax-users');
+    if (userSearchSelect.length) {
+        userSearchSelect.select2({
             placeholder: 'Search for a user...',
             allowClear: true,
             ajax: {
                 url: "{{ route('staff.search') }}",
                 dataType: 'json',
                 delay: 250,
-                data: function(params) {
-                    return {
-                        q: params.term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data.map(function(user) {
-                            return {
-                                id: user.id,
-                                text: user.name + ' (' + user.email + ')'
-                            };
-                        })
-                    };
-                },
+                data: params => ({ q: params.term }),
+                processResults: data => ({
+                    results: data.map(user => ({
+                        id: user.id,
+                        text: `${user.name} (${user.email})`
+                    }))
+                }),
                 cache: true
             }
         });
 
-        $('.select2-ajax-users').on('change', function() {
+        userSearchSelect.on('change', function() {
             if ($(this).val()) {
                 $('#new_user_fields').slideUp();
                 $('#new_user_fields input').prop('required', false);

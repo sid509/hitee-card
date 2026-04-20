@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Route;
 use App\Models\RouteStop;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\DB;
@@ -13,15 +14,27 @@ class RouteController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Route::with('merchant');
+            $query = Route::with(['merchants', 'stops']);
             
             if (auth()->user()->hasRole('merchant')) {
-                $query->where('merchant_id', auth()->id());
+                $query->whereHas('merchants', function($q) {
+                    $q->where('users.id', auth()->id());
+                });
             }
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('stops_count', fn($row) => $row->stops()->count())
+                ->addColumn('merchant_names', function($row) {
+                    $count = $row->merchants->count();
+                    $names = $row->merchants->pluck('name')->implode(', ');
+                    return '<span class="badge bg-label-secondary cursor-help d-inline-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $names . '">
+                                <i class="bx bx-store-alt me-1"></i>' . $count . ' ' . ($count == 1 ? 'Merchant' : 'Merchants') . '
+                            </span>';
+                })
+                ->addColumn('stops_count', function($row) {
+                    $count = $row->stops->count();
+                    return '<span class="badge bg-label-info d-inline-flex align-items-center"><i class="bx bx-map-pin me-1"></i>' . $count . ' Stops</span>';
+                })
                 ->addColumn('action', function($row) {
                     $actions = '<a href="'.route('routes.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     if (auth()->user()->hasRole('super-admin', 'merchant')) {
@@ -36,7 +49,7 @@ class RouteController extends Controller
                     }
                     return $actions;
                 })
-                ->rawColumns(['action'])
+                ->rawColumns(['merchant_names', 'stops_count', 'action'])
                 ->make(true);
         }
 
@@ -52,25 +65,29 @@ class RouteController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'merchant_ids' => 'required|array',
+            'merchant_ids.*' => 'exists:users,id',
             'stops' => 'required|array|min:2',
-            'stops.*.name' => 'required|string',
-            'stops.*.lat' => 'required|numeric',
-            'stops.*.lng' => 'required|numeric',
+            'stops.*.id' => 'required|exists:stops,id',
         ]);
 
         DB::transaction(function() use ($request) {
             $route = Route::create([
-                'merchant_id' => auth()->user()->hasRole('super-admin') ? $request->merchant_id : auth()->id(),
                 'name' => $request->name,
                 'description' => $request->description,
             ]);
 
-            foreach ($request->stops as $index => $stop) {
+            // Attach Merchants
+            $route->merchants()->sync($request->merchant_ids);
+
+            foreach ($request->stops as $index => $stopData) {
+                $stop = \App\Models\Stop::find($stopData['id']);
                 RouteStop::create([
                     'route_id' => $route->id,
-                    'stop_name' => $stop['name'],
-                    'latitude' => $stop['lat'],
-                    'longitude' => $stop['lng'],
+                    'stop_id' => $stop->id,
+                    'stop_name' => $stop->name,
+                    'latitude' => $stop->latitude,
+                    'longitude' => $stop->longitude,
                     'order' => $index,
                 ]);
             }
@@ -81,24 +98,27 @@ class RouteController extends Controller
 
     public function show(Route $route)
     {
-        $route->load(['stops', 'buses.merchant', 'merchant']);
+        $route->load(['stops.stop', 'buses.merchant', 'merchants']);
         return view('modules.routes.show', compact('route'));
     }
 
     public function edit(Route $route)
     {
-        if (auth()->user()->hasRole('merchant') && $route->merchant_id != auth()->id()) abort(403);
-        $route->load('stops');
+        if (auth()->user()->hasRole('merchant') && !$route->merchants->contains(auth()->id())) abort(403);
+        $route->load(['stops.stop', 'merchants']);
         return view('modules.routes.edit', compact('route'));
     }
 
     public function update(Request $request, Route $route)
     {
-        if (auth()->user()->hasRole('merchant') && $route->merchant_id != auth()->id()) abort(403);
+        if (auth()->user()->hasRole('merchant') && !$route->merchants->contains(auth()->id())) abort(403);
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'merchant_ids' => 'required|array',
+            'merchant_ids.*' => 'exists:users,id',
             'stops' => 'required|array|min:2',
+            'stops.*.id' => 'required|exists:stops,id',
         ]);
 
         DB::transaction(function() use ($request, $route) {
@@ -107,14 +127,19 @@ class RouteController extends Controller
                 'description' => $request->description,
             ]);
 
+            // Sync Merchants
+            $route->merchants()->sync($request->merchant_ids);
+
             $route->stops()->delete();
 
-            foreach ($request->stops as $index => $stop) {
+            foreach ($request->stops as $index => $stopData) {
+                $stop = \App\Models\Stop::find($stopData['id']);
                 RouteStop::create([
                     'route_id' => $route->id,
-                    'stop_name' => $stop['name'],
-                    'latitude' => $stop['lat'],
-                    'longitude' => $stop['lng'],
+                    'stop_id' => $stop->id,
+                    'stop_name' => $stop->name,
+                    'latitude' => $stop->latitude,
+                    'longitude' => $stop->longitude,
                     'order' => $index,
                 ]);
             }
@@ -126,6 +151,11 @@ class RouteController extends Controller
     public function destroy(Route $route)
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
+
+        if ($route->buses()->exists() || $route->fares()->exists()) {
+            return redirect()->back()->with('error', 'Cannot delete route because it is assigned to one or more buses or has fare plans.');
+        }
+
         $route->delete();
         return redirect()->route('routes.index')->with('success', 'Route deleted successfully.');
     }

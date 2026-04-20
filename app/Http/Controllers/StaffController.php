@@ -17,8 +17,19 @@ class StaffController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $merchant = auth()->user();
-            $data = $merchant->staff()->with(['assignedBuses', 'assignedParkings'])->select(['users.id', 'users.name', 'users.email', 'users.status']);
+            $user = auth()->user();
+            
+            if ($user->hasRole('super-admin')) {
+                // Admin sees all users with 'staff' role
+                $data = User::whereHas('roles', fn($q) => $q->where('slug', 'staff'))
+                    ->with(['assignedBuses', 'assignedParkings'])
+                    ->select(['users.id', 'users.name', 'users.email', 'users.status']);
+            } else {
+                // Merchant sees only their linked staff
+                $data = $user->staff()
+                    ->with(['assignedBuses', 'assignedParkings'])
+                    ->select(['users.id', 'users.name', 'users.email', 'users.status']);
+            }
             
             return DataTables::of($data)
                 ->addIndexColumn()
@@ -29,14 +40,20 @@ class StaffController extends Controller
                             </div>';
                 })
                 ->addColumn('assignments', function($row){
-                    $html = '';
-                    foreach($row->assignedBuses as $bus) {
-                        $html .= '<span class="badge bg-label-primary me-1" title="Bus"><i class="bx bx-bus me-1"></i>'.$bus->bus_number.'</span>';
-                    }
-                    foreach($row->assignedParkings as $parking) {
-                        $html .= '<span class="badge bg-label-info me-1" title="Parking"><i class="bx bx-parking me-1"></i>'.$parking->name.'</span>';
-                    }
-                    return $html ?: '<span class="text-muted small">No assignments</span>';
+                    $busCount = $row->assignedBuses->count();
+                    $parkingCount = $row->assignedParkings->count();
+                    $total = $busCount + $parkingCount;
+                    
+                    if ($total === 0) return '<span class="text-muted small">No assignments</span>';
+
+                    $details = [];
+                    foreach($row->assignedBuses as $b) $details[] = "Bus: " . $b->bus_number;
+                    foreach($row->assignedParkings as $p) $details[] = "Parking: " . $p->name;
+                    $tooltip = implode(', ', $details);
+
+                    return '<span class="badge bg-label-info cursor-help d-inline-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $tooltip . '">
+                                <i class="bx bx-task me-1"></i>' . $total . ' Assignments
+                            </span>';
                 })
                 ->addColumn('action', function($row){
                     $actions = '<div class="d-flex">';
@@ -65,10 +82,13 @@ class StaffController extends Controller
     public function store(StoreStaffRequest $request)
     {
         $merchant = auth()->user();
+        $staffRole = Role::where('slug', 'staff')->first();
         
         // If searching for existing user
         if ($request->filled('user_id')) {
             $user = User::findOrFail($request->user_id);
+            // Ensure they have the staff role
+            $user->roles()->syncWithoutDetaching([$staffRole->id]);
         } else {
             $user = User::create([
                 'name' => $request->name,
@@ -77,7 +97,6 @@ class StaffController extends Controller
                 'status' => 'active',
             ]);
             
-            $staffRole = Role::where('slug', 'staff')->first();
             $user->roles()->syncWithoutDetaching([$staffRole->id]);
         }
 
@@ -142,7 +161,8 @@ class StaffController extends Controller
         $search = $request->get('q');
         $merchantStaffIds = auth()->user()->staff()->pluck('users.id')->toArray();
         
-        $users = User::where(function($q) use ($search) {
+        $users = User::whereHas('roles', fn($q) => $q->where('slug', 'staff'))
+            ->where(function($q) use ($search) {
                 $q->where('name', 'LIKE', "%$search%")
                   ->orWhere('email', 'LIKE', "%$search%");
             })

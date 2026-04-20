@@ -1,3 +1,34 @@
+/* Page Loader */
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+    opacity: 1;
+    transition: opacity 0.4s ease-in-out, visibility 0.4s;
+}
+
+.dark-style .page-loader {
+    background-color: transparent;
+}
+
+.page-loader.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 /* Custom styles for Hitee
 ******************************************************************************* */
 
@@ -438,6 +469,60 @@ table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::befor
 .data-table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control,
 .data-table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control {
     padding-left: 0.75rem !important; /* Restore normal padding */
+}
+
+/* Table Layout Utilities */
+.table-fixed {
+    table-layout: fixed !important;
+}
+
+.text-truncate-cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Fare Matrix Specific Styles */
+.fare-matrix-table {
+    thead th {
+        background-color: #f5f5f9 !important;
+        color: #566a7f !important;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    
+    tbody th {
+        background-color: #f5f5f9 !important;
+        color: #566a7f !important;
+    }
+
+    .matrix-inline-edit, input.form-control {
+        min-width: 80px;
+        transition: all 0.2s;
+        &:focus {
+            box-shadow: 0 0 0 0.2rem rgba(105, 108, 255, 0.25);
+        }
+    }
+}
+
+.dark-style .fare-matrix-table {
+    thead th, tbody th {
+        background-color: #232333 !important;
+        color: #cbcbe2 !important;
+        border-color: #5e6266 !important;
+    }
+    
+    .matrix-inline-edit, input.form-control {
+        background-color: #121212;
+        color: #cbcbe2;
+        border-color: #444444;
+        
+        &:disabled {
+            background-color: transparent !important;
+            color: #777 !important;
+            border: 0 !important;
+        }
+    }
 }
 
 /* Spotlight Search Styling */
