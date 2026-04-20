@@ -17,11 +17,12 @@ class RoleSeeder extends Seeder
         $roles = [
             ['name' => 'Super Admin', 'slug' => 'super-admin'],
             ['name' => 'Merchant', 'slug' => 'merchant'],
+            ['name' => 'Staff', 'slug' => 'staff'],
             ['name' => 'Customers', 'slug' => 'customers'],
         ];
 
         foreach ($roles as $role) {
-            Role::create($role);
+            Role::updateOrCreate(['slug' => $role['slug']], $role);
         }
 
         // Assign super-admin to the first user

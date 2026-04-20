@@ -165,23 +165,21 @@
 @endsection
 
 @push('page-js')
-<script type="module">
-    $(function() {
-        if ($('.select2-ajax-stops').length) {
-            $('.select2-ajax-stops').select2({
-                ajax: {
-                    url: "{{ route('search.stops') }}",
-                    dataType: 'json',
-                    delay: 250,
-                    data: params => ({ q: params.term, page: params.page }),
-                    processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
-                    cache: true
-                },
-                placeholder: 'Select a stop...',
-                minimumInputLength: 1,
-                width: '100%'
-            });
-        }
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        $('.select2-ajax-stops').select2({
+            ajax: {
+                url: "{{ route('search.stops') }}",
+                dataType: 'json',
+                delay: 250,
+                data: params => ({ q: params.term, page: params.page }),
+                processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                cache: true
+            },
+            placeholder: 'Select a stop...',
+            minimumInputLength: 1,
+            width: '100%'
+        });
     });
 </script>
 @endpush

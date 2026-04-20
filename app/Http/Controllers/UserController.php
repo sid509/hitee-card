@@ -14,7 +14,7 @@ class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * 
+     *
      * Handles DataTable AJAX requests and initial page load.
      */
     public function index(Request $request)
@@ -46,7 +46,8 @@ class UserController extends Controller
                         $color = 'primary';
                         if ($role->slug === 'super-admin') { $icon = 'bx-shield-quarter'; $color = 'danger'; }
                         elseif ($role->slug === 'merchant') { $icon = 'bx-store-alt'; $color = 'info'; }
-                        
+                        elseif ($role->slug === 'staff') { $icon = 'bx-group'; $color = 'warning'; }
+
                         return '<span class="badge badge-center rounded-pill bg-label-'.$color.'" data-bs-toggle="tooltip" data-bs-placement="top" title="'.$role->name.'"><i class="bx '.$icon.'"></i></span>';
                     })->implode(' ');
                 })
@@ -61,31 +62,31 @@ class UserController extends Controller
                 ->addColumn('action', function($row){
                     $actions = '<div class="d-flex">';
 
+                    // View Button
+                    $actions .= '<a href="'.route('users.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
+
                     // Toggle Status Button
                     if (auth()->user()->hasRole('super-admin') && $row->id !== auth()->id()) {
                         $isActive = $row->status === 'active';
                         $btnClass = $isActive ? 'btn-success' : 'btn-secondary';
                         $btnIcon = $isActive ? 'bx-user-check' : 'bx-user-x';
                         $btnTitle = $isActive ? 'Deactivate Account' : 'Activate Account';
-                        
+
                         $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-user-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
                     }
 
                     // Edit Button
                     $actions .= '<a href="'.route('users.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
-                    
-                    // View Button
-                    $actions .= '<a href="'.route('users.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
-                    
+
                     // Balance Button
                     if (auth()->user()->hasRole('super-admin')) {
-                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 add-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" title="Add Balance"><i class="bx bx-wallet"></i></button>';
                         $actions .= '<button type="button" class="btn btn-icon btn-sm btn-warning me-1 deduct-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" title="Deduct Balance"><i class="bx bx-minus-circle"></i></button>';
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-secondary me-1 add-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" title="Add Balance"><i class="bx bx-wallet"></i></button>';
                     }
 
                     // Impersonate Button for super-admins
                     if (auth()->user()->canImpersonate() && $row->id !== auth()->id()) {
-                        $actions .= '<a href="'.route('impersonate', $row->id).'" class="btn btn-icon btn-sm btn-warning me-1" title="Impersonate Account"><i class="bx bx-log-in-circle"></i></a>';
+                        $actions .= '<a href="'.route('impersonate', $row->id).'" class="btn btn-icon btn-sm btn-info me-1" title="Impersonate Account"><i class="bx bx-log-in-circle"></i></a>';
                     }
 
                     // Delete Button
@@ -105,7 +106,7 @@ class UserController extends Controller
         }
 
         return view('modules.users.index', [
-            'merchants' => User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get()
+            'merchants' => User::whereHas('roles', fn($q) => $q->whereIn('slug', ['merchant', 'staff']))->get()
         ]);
     }
 
@@ -115,7 +116,7 @@ class UserController extends Controller
     public function bulkToggleStatus(Request $request)
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
-        
+
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:users,id',
@@ -123,7 +124,7 @@ class UserController extends Controller
         ]);
 
         $ids = array_filter($request->ids, fn($id) => $id != auth()->id());
-        
+
         User::whereIn('id', $ids)->update(['status' => $request->status]);
 
         return response()->json([
@@ -144,7 +145,7 @@ class UserController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * 
+     *
      * Uses StoreUserRequest for validation.
      */
     public function store(StoreUserRequest $request)
@@ -182,7 +183,7 @@ class UserController extends Controller
 
     /**
      * Update the specified resource in storage.
-     * 
+     *
      * Uses UpdateUserRequest for validation.
      */
     public function update(UpdateUserRequest $request, User $user)

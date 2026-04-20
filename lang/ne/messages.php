@@ -10,6 +10,8 @@ return [
     'users' => 'प्रयोगकर्ताहरू',
     'roles' => 'भूमिकाहरू',
     'permissions' => 'अनुमतिहरू',
+    'staff' => 'कर्मचारी',
+    'staff_management' => 'कर्मचारी व्यवस्थापन',
     'support_requests' => 'सहायता अनुरोधहरू',
     'activity_logs' => 'गतिविधि लगहरू',
     'parking_attributes' => 'पार्किङ विशेषताहरू',

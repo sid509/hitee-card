@@ -14,12 +14,19 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-body">
-                    <div class="text-center mb-4">
-                        <div class="avatar avatar-xl m-auto mb-3">
-                            <img src="{{ $bus->featured_image_url }}" alt="Bus" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                    <div class="mb-4">
+                        <div class="featured-image-container mb-3">
+                            <img src="{{ $bus->featured_image_url }}" alt="Bus" class="img-fluid rounded w-100" style="max-height: 250px; object-fit: cover;">
                         </div>
-                        <h5>{{ $bus->name }}</h5>
-                        <span class="badge {{ $bus->status === 'active' ? 'bg-label-success' : 'bg-label-secondary' }}">{{ __('messages.' . $bus->status) }}</span>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1">{{ $bus->name }}</h4>
+                                <span class="badge {{ $bus->status === 'active' ? 'bg-label-success' : 'bg-label-secondary' }}">{{ __('messages.' . $bus->status) }}</span>
+                            </div>
+                            <div class="avatar avatar-md">
+                                <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-bus"></i></span>
+                            </div>
+                        </div>
                     </div>
                     <div class="info-container">
                         <ul class="list-unstyled">

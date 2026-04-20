@@ -26,6 +26,7 @@
         "highlight.js": "^11.11.1",
         "jquery": "^4.0.0",
         "masonry-layout": "^4.2.2",
-        "perfect-scrollbar": "^1.5.6"
+        "perfect-scrollbar": "^1.5.6",
+        "select2": "^4.1.0-rc.0"
     }
 }

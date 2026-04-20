@@ -35,6 +35,18 @@ class RideController extends Controller
 
             if (auth()->user()->hasRole('merchant')) {
                 $query->where('merchant_id', auth()->id());
+            } elseif (auth()->user()->hasRole('staff')) {
+                $user = auth()->user();
+                $assignedBusIds = $user->assignedBuses->pluck('id');
+                $assignedParkingIds = $user->assignedParkings->pluck('id');
+                
+                $query->where(function($q) use ($assignedBusIds, $assignedParkingIds) {
+                    $q->where(function($sq) use ($assignedBusIds) {
+                        $sq->where('reference_type', 'App\Models\Bus')->whereIn('reference_id', $assignedBusIds);
+                    })->orWhere(function($sq) use ($assignedParkingIds) {
+                        $sq->where('reference_type', 'App\Models\Parking')->whereIn('reference_id', $assignedParkingIds);
+                    });
+                });
             }
 
             return DataTables::of($query)
@@ -110,6 +122,18 @@ class RideController extends Controller
 
             if (auth()->user()->hasRole('merchant')) {
                 $query->where('merchant_id', auth()->id());
+            } elseif (auth()->user()->hasRole('staff')) {
+                $user = auth()->user();
+                $assignedBusIds = $user->assignedBuses->pluck('id');
+                $assignedParkingIds = $user->assignedParkings->pluck('id');
+                
+                $query->where(function($q) use ($assignedBusIds, $assignedParkingIds) {
+                    $q->where(function($sq) use ($assignedBusIds) {
+                        $sq->where('reference_type', 'App\Models\Bus')->whereIn('reference_id', $assignedBusIds);
+                    })->orWhere(function($sq) use ($assignedParkingIds) {
+                        $sq->where('reference_type', 'App\Models\Parking')->whereIn('reference_id', $assignedParkingIds);
+                    });
+                });
             }
 
             return DataTables::of($query)

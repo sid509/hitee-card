@@ -26,6 +26,8 @@ class ParkingController extends Controller
             // Limit to own parkings if merchant
             if (auth()->user()->hasRole('merchant')) {
                 $query->where('merchant_id', auth()->id());
+            } elseif (auth()->user()->hasRole('staff')) {
+                $query->whereIn('id', auth()->user()->assignedParkings->pluck('id'));
             }
 
             return DataTables::of($query)
@@ -44,7 +46,7 @@ class ParkingController extends Controller
                     return '<span class="badge ' . $class . '">' . __('messages.' . $row->status) . '</span>';
                 })
                 ->addColumn('action', function($row){
-                    $canEdit = auth()->user()->hasRole('super-admin', 'merchant');
+                    $canEdit = auth()->user()->hasRole('super-admin', 'merchant', 'staff');
                     $canDelete = auth()->user()->hasRole('super-admin');
                     
                     $actions = '';
@@ -90,7 +92,8 @@ class ParkingController extends Controller
     public function toggleStatus(Parking $parking)
     {
         if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
-        if (!auth()->user()->hasRole('super-admin', 'merchant')) abort(403);
+        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
+        if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
 
         $parking->status = $parking->status === 'opened' ? 'closed' : 'opened';
         $parking->save();
@@ -105,6 +108,7 @@ class ParkingController extends Controller
     {
         // Merchant can only view their own
         if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
+        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
         
         $parking->load(['attributes', 'merchant']);
         return view('modules.parkings.show', compact('parking'));
@@ -161,7 +165,8 @@ class ParkingController extends Controller
     {
         // Merchant can only edit their own
         if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
-        if (!auth()->user()->hasRole('super-admin', 'merchant')) abort(403);
+        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
+        if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
         
         $merchants = User::whereHas('roles', function($q){ $q->where('slug', 'merchant'); })->get();
         $allAttributes = ParkingAttribute::all();
@@ -178,6 +183,7 @@ class ParkingController extends Controller
     public function update(UpdateParkingRequest $request, Parking $parking)
     {
         if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
+        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
         
         DB::transaction(function() use ($request, $parking) {
             $parking->update($request->validated());

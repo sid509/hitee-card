@@ -35,12 +35,28 @@
         .dark-style .hover-light:hover { background-color: rgba(255, 255, 255, 0.04); }
         .swal2-container { z-index: 9999 !important; }
         .border-dashed { border-style: dashed !important; }
+        .dark-style .tooltip .tooltip-inner {
+            background-color: #fff !important;
+            color: #2b2c40 !important;
+            box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.2);
+        }
+        .dark-style .tooltip .bs-tooltip-top .tooltip-arrow::before { border-top-color: #fff !important; }
+        .dark-style .tooltip .bs-tooltip-bottom .tooltip-arrow::before { border-bottom-color: #fff !important; }
+        .dark-style .tooltip .bs-tooltip-start .tooltip-arrow::before { border-left-color: #fff !important; }
+        .dark-style .tooltip .bs-tooltip-end .tooltip-arrow::before { border-right-color: #fff !important; }
     </style>
 
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
 </head>
 
 <body>
+    @if(app('impersonate')->isImpersonating())
+    <div class="impersonate-banner bg-danger text-white text-center py-2">
+        You are currently impersonating <strong>{{ auth()->user()->name }}</strong>.
+        <a href="{{ route('impersonate.leave') }}" class="btn btn-sm btn-light ms-3">Stop Impersonating</a>
+    </div>
+    @endif
+
     <!-- Layout wrapper -->
     <div class="layout-wrapper layout-content-navbar">
         <div class="layout-container">
@@ -103,39 +119,9 @@
         </div>
     </div>
 
-    <!-- Support Request Modal (Floating for users) -->
-    @if(auth()->user() && !auth()->user()->hasRole('super-admin'))
-    <div class="modal fade" id="quickSupportModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Need Help?</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="quickSupportForm">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">{{ __('messages.subject') }}</label>
-                            <input type="text" name="subject" class="form-control" placeholder="{{ __('messages.subject') }}?" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">{{ __('messages.message') }}</label>
-                            <textarea name="message" class="form-control" rows="4" placeholder="{{ __('messages.message') }}..." required></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">{{ __('messages.close') }}</button>
-                        <button type="submit" id="btnSendSupport" class="btn btn-primary">{{ __('messages.send') }}</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    @endif
+    @include('layouts.partials.support-modal')
 
     <!-- Scripts -->
-    @vite(['resources/js/app.js'])
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     @stack('page-js')
 
@@ -270,7 +256,8 @@
                     data: $(this).serialize(),
                     success: function(response) {
                         supportForm[0].reset();
-                        $('#quickSupportModal').modal('hide');
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('supportModal'));
+                        if (modal) modal.hide();
                         // Show success message with delay
                         setTimeout(() => {
                             showAlert(response.message || 'Support request sent successfully');

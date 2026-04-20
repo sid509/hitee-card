@@ -149,7 +149,7 @@ class SearchController extends Controller
     public function merchants(Request $request)
     {
         $search = $request->get('q');
-        $query = User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'));
+        $query = User::whereHas('roles', fn($q) => $q->whereIn('slug', ['merchant', 'staff']));
 
         if ($search) {
             $query->where(function($q) use ($search) {
@@ -181,10 +181,18 @@ class SearchController extends Controller
         $type = $request->get('type'); // fare_deduction or parking
         $merchantId = $request->get('merchant_id');
         $search = $request->get('q');
+        $user = auth()->user();
 
         if ($type === 'fare_deduction') {
             $query = Bus::query();
-            if ($merchantId) $query->where('merchant_id', $merchantId);
+            if ($merchantId) {
+                $query->where('merchant_id', $merchantId);
+            } elseif ($user->hasRole('merchant')) {
+                $query->where('merchant_id', $user->id);
+            } elseif ($user->hasRole('staff')) {
+                $query->whereIn('id', $user->assignedBuses->pluck('id'));
+            }
+
             if ($search) $query->where('name', 'LIKE', "%$search%")->orWhere('bus_number', 'LIKE', "%$search%");
 
             $items = $query->paginate(10);
@@ -194,7 +202,14 @@ class SearchController extends Controller
             ]);
         } elseif ($type === 'parking') {
             $query = Parking::query();
-            if ($merchantId) $query->where('merchant_id', $merchantId);
+            if ($merchantId) {
+                $query->where('merchant_id', $merchantId);
+            } elseif ($user->hasRole('merchant')) {
+                $query->where('merchant_id', $user->id);
+            } elseif ($user->hasRole('staff')) {
+                $query->whereIn('id', $user->assignedParkings->pluck('id'));
+            }
+
             if ($search) $query->where('name', 'LIKE', "%$search%")->orWhere('location', 'LIKE', "%$search%");
 
             $items = $query->paginate(10);

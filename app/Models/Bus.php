@@ -23,6 +23,11 @@ class Bus extends Model
         return $this->belongsTo(User::class, 'merchant_id');
     }
 
+    public function assignedStaff()
+    {
+        return $this->belongsToMany(User::class, 'bus_user', 'bus_id', 'user_id')->withTimestamps();
+    }
+
     public function route()
     {
         return $this->belongsTo(Route::class);

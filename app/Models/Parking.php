@@ -23,6 +23,11 @@ class Parking extends Model
         return $this->belongsTo(User::class, 'merchant_id');
     }
 
+    public function assignedStaff()
+    {
+        return $this->belongsToMany(User::class, 'parking_user', 'parking_id', 'user_id')->withTimestamps();
+    }
+
     public function attributes()
     {
         return $this->belongsToMany(ParkingAttribute::class);

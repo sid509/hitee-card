@@ -10,6 +10,8 @@ return [
     'users' => 'Users',
     'roles' => 'Roles',
     'permissions' => 'Permissions',
+    'staff' => 'Staff',
+    'staff_management' => 'Staff Management',
     'support_requests' => 'Support Requests',
     'activity_logs' => 'Activity Logs',
     'parking_attributes' => 'Parking Attributes',

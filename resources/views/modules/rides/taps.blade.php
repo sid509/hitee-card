@@ -96,8 +96,8 @@
 @endsection
 
 @push('page-js')
-<script type="module">
-    $(function () {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
         var table = $('.data-table').DataTable({
             processing: true,
             serverSide: true,
@@ -165,7 +165,8 @@
             $('#tap-location-name').text(name);
             $('#tap-coords').text(`${lat}, ${lon}`);
             
-            $('#tapMapModal').modal('show');
+            const mapModal = new bootstrap.Modal(document.getElementById('tapMapModal'));
+            mapModal.show();
 
             setTimeout(() => {
                 if (!tapMap) {

@@ -175,7 +175,8 @@
             $('#ride-start-loc').text(sName);
             $('#ride-end-loc').text(eName);
             
-            $('#rideMapModal').modal('show');
+            const mapModal = new bootstrap.Modal(document.getElementById('rideMapModal'));
+            mapModal.show();
 
             setTimeout(() => {
                 if (!rideMap) {

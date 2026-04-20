@@ -30,12 +30,23 @@ class FareController extends Controller
                 ->addColumn('action', function($row) {
                     $actions = '<a href="'.route('fares.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     
-                    if (auth()->user()->hasRole('super-admin')) {
-                        $actions .= '<a href="'.route('fares.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
-                        if ($row->status == 'proposed') {
-                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 approve-fare" data-id="'.$row->id.'" title="Approve"><i class="bx bx-check"></i></button>';
+                    if (auth()->user()->hasRole('super-admin', 'merchant', 'staff')) {
+                        // Check if they can manage this fare
+                        $canManage = false;
+                        if (auth()->user()->hasRole('super-admin')) $canManage = true;
+                        elseif (auth()->user()->hasRole('merchant') && $row->merchant_id == auth()->id()) $canManage = true;
+                        elseif (auth()->user()->hasRole('staff')) {
+                            // Staff can manage if assigned to buses on this route
+                            $canManage = auth()->user()->assignedBuses()->where('route_id', $row->route_id)->exists();
                         }
-                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-info me-1 assign-bus" data-id="'.$row->id.'" data-route-id="'.$row->route_id.'" title="Assign to Bus"><i class="bx bx-bus"></i></button>';
+
+                        if ($canManage) {
+                            $actions .= '<a href="'.route('fares.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
+                            if ($row->status == 'proposed' && auth()->user()->hasRole('super-admin')) {
+                                $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 approve-fare" data-id="'.$row->id.'" title="Approve"><i class="bx bx-check"></i></button>';
+                            }
+                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-info me-1 assign-bus" data-id="'.$row->id.'" data-route-id="'.$row->route_id.'" title="Assign to Bus"><i class="bx bx-bus"></i></button>';
+                        }
                     }
                     
                     return $actions;
@@ -130,8 +141,6 @@ class FareController extends Controller
 
     public function assignBus(Request $request)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
-        
         $request->validate([
             'bus_id' => 'required|exists:buses,id',
             'fare_id' => 'required|exists:fares,id',
@@ -139,6 +148,17 @@ class FareController extends Controller
 
         $fare = Fare::findOrFail($request->fare_id);
         $bus = Bus::findOrFail($request->bus_id);
+
+        // Authorization
+        if (!auth()->user()->hasRole('super-admin')) {
+            if (auth()->user()->hasRole('merchant')) {
+                if ($bus->merchant_id != auth()->id() || $fare->merchant_id != auth()->id()) abort(403);
+            } elseif (auth()->user()->hasRole('staff')) {
+                if (!auth()->user()->assignedBuses->contains($bus->id)) abort(403);
+            } else {
+                abort(403);
+            }
+        }
 
         $bus->update([
             'route_id' => $fare->route_id,

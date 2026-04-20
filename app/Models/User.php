@@ -123,6 +123,26 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class);
     }
 
+    public function staff()
+    {
+        return $this->belongsToMany(User::class, 'merchant_user', 'merchant_id', 'user_id')->withTimestamps();
+    }
+
+    public function merchants()
+    {
+        return $this->belongsToMany(User::class, 'merchant_user', 'user_id', 'merchant_id')->withTimestamps();
+    }
+
+    public function assignedBuses()
+    {
+        return $this->belongsToMany(Bus::class, 'bus_user', 'user_id', 'bus_id')->withTimestamps();
+    }
+
+    public function assignedParkings()
+    {
+        return $this->belongsToMany(Parking::class, 'parking_user', 'user_id', 'parking_id')->withTimestamps();
+    }
+
     public function buses()
     {
         return $this->hasMany(Bus::class, 'merchant_id');

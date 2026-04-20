@@ -21,6 +21,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\RouteFinderController;
 use App\Http\Controllers\ParkingAttributeController;
 use App\Http\Controllers\RideController;
+use App\Http\Controllers\StaffController;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -79,6 +80,9 @@ Route::middleware(['auth'])->group(function () {
         if ($user->hasRole('merchant')) {
             $busesQuery->where('merchant_id', $user->id);
             $parkingsQuery->where('merchant_id', $user->id);
+        } elseif ($user->hasRole('staff')) {
+            $busesQuery->whereIn('id', $user->assignedBuses->pluck('id'));
+            $parkingsQuery->whereIn('id', $user->assignedParkings->pluck('id'));
         }
 
         $busCount = (clone $busesQuery)->count();
@@ -110,8 +114,6 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('parking-attributes', ParkingAttributeController::class);
         Route::post('/cards/bulk-toggle-status', [CardController::class, 'bulkToggleStatus'])->name('cards.bulk-toggle-status');
         Route::post('/cards/{card}/toggle-status', [CardController::class, 'toggleStatus'])->name('cards.toggle-status');
-        Route::get('/rides', [RideController::class, 'index'])->name('rides.index');
-        Route::get('/tap-ledger', [RideController::class, 'tapLedger'])->name('rides.tap-ledger');
         
         // Support Management
         Route::controller(SupportController::class)->group(function () {
@@ -133,6 +135,12 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('users.index');
     })->name('impersonate.leave');
 
+    // Journey Ledger
+    Route::middleware(['role:super-admin,merchant,staff'])->group(function () {
+        Route::get('/rides', [RideController::class, 'index'])->name('rides.index');
+        Route::get('/tap-ledger', [RideController::class, 'tapLedger'])->name('rides.tap-ledger');
+    });
+
     // Route & Fare Management
     Route::resource('routes', RouteController::class);
     Route::post('/fares/update-matrix-cell', [FareController::class, 'updateMatrixCell'])->name('fares.update-matrix-cell');
@@ -142,6 +150,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/fares/{fare}/approve', [FareController::class, 'approve'])->name('fares.approve');
 
     // Business Logic Resources
+    Route::middleware(['role:merchant'])->group(function () {
+        Route::get('/staff/search', [StaffController::class, 'search'])->name('staff.search');
+        Route::post('/staff/{staff}/detach', [StaffController::class, 'detach'])->name('staff.detach');
+        Route::resource('staff', StaffController::class);
+    });
+
     Route::get('/route-finder', [RouteFinderController::class, 'index'])->name('route-finder.index');
     Route::get('/my-rides', [RideController::class, 'myRides'])->name('rides.my-rides');
     Route::post('/rides/simulate-tap', [RideController::class, 'simulateTap'])->name('rides.simulate-tap');

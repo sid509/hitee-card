@@ -24,6 +24,8 @@ class BusController extends Controller
             // Limit buses to merchant's own if they are a merchant
             if (auth()->user()->hasRole('merchant')) {
                 $query->where('merchant_id', auth()->id());
+            } elseif (auth()->user()->hasRole('staff')) {
+                $query->whereIn('id', auth()->user()->assignedBuses->pluck('id'));
             }
 
             return DataTables::of($query)
@@ -40,7 +42,7 @@ class BusController extends Controller
                     return '<span class="badge ' . $class . '">' . __('messages.' . $row->status) . '</span>';
                 })
                 ->addColumn('action', function($row){
-                    $canEdit = auth()->user()->hasRole('super-admin', 'merchant');
+                    $canEdit = auth()->user()->hasRole('super-admin', 'merchant', 'staff');
                     $canDelete = auth()->user()->hasRole('super-admin');
                     
                     $actions = '';
@@ -86,7 +88,8 @@ class BusController extends Controller
     public function toggleStatus(Bus $bus)
     {
         if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
-        if (!auth()->user()->hasRole('super-admin', 'merchant')) abort(403);
+        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
+        if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
 
         $bus->status = $bus->status === 'active' ? 'inactive' : 'active';
         $bus->save();
@@ -101,6 +104,7 @@ class BusController extends Controller
     {
         // Merchant can only view their own
         if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
+        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
         
         return view('modules.buses.show', compact('bus'));
     }
@@ -152,7 +156,8 @@ class BusController extends Controller
     {
         // Ensure merchant only edits their own bus
         if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
-        if (!auth()->user()->hasRole('super-admin', 'merchant')) abort(403);
+        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
+        if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
         
         $merchants = User::whereHas('roles', function($q){ $q->where('slug', 'merchant'); })->get();
         return view('modules.buses.edit', compact('bus', 'merchants'));
@@ -167,6 +172,7 @@ class BusController extends Controller
     {
         // Ensure merchant only updates their own bus
         if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
+        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
         
         $data = [
             'name' => $request->name,

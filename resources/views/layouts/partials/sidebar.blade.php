@@ -65,6 +65,9 @@
                 <div class="text-truncate">{{ __('messages.parking_attributes') }}</div>
             </a>
         </li>
+        @endif
+
+        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">{{ __('messages.journey_ledger') }}</span>
         </li>
@@ -82,7 +85,19 @@
         </li>
         @endif
 
-        @if(auth()->user()->hasRole('super-admin', 'merchant'))
+        @if(auth()->user()->hasRole('merchant'))
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">{{ __('messages.staff_management') }}</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('staff.*') ? 'active' : '' }}">
+            <a href="{{ route('staff.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-group"></i>
+                <div class="text-truncate">{{ __('messages.staff') }}</div>
+            </a>
+        </li>
+        @endif
+
+        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">{{ __('messages.fleet_management') }}</span>
         </li>
@@ -98,6 +113,7 @@
                 <div class="text-truncate">{{ __('messages.parkings') }}</div>
             </a>
         </li>
+        @if(!auth()->user()->hasRole('staff'))
         <li class="menu-item {{ request()->routeIs('routes.*') ? 'active' : '' }}">
             <a href="{{ route('routes.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-map-alt"></i>
@@ -110,6 +126,10 @@
                 <div class="text-truncate">{{ __('messages.fares') }}</div>
             </a>
         </li>
+        @endif
+        @endif
+
+        @if(auth()->user()->hasRole('super-admin', 'merchant'))
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">{{ __('messages.earnings') }}</span>
         </li>

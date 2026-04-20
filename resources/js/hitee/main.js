@@ -125,6 +125,19 @@ document.addEventListener('DOMContentLoaded', function () {
       window.Helpers.setCollapsed(true, false);
     }
   }
+
+  // Ensure PerfectScrollbar is re-initialized on the menu
+  const menuInner = document.querySelector('.menu-inner');
+  if (menuInner) {
+      if (window.Helpers.menuPsScroll) {
+          window.Helpers.menuPsScroll.update();
+      } else {
+          window.Helpers.menuPsScroll = new PerfectScrollbar(menuInner, {
+              suppressScrollX: true,
+              wheelPropagation: false
+          });
+      }
+  }
 });
 
 // Utils
