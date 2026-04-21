@@ -21,6 +21,7 @@ class BalanceController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
+            'card_id' => 'nullable|exists:cards,id',
             'amount' => 'required|numeric|min:1',
             'type' => 'required|string|in:manual,cashback,penalty_reversal',
             'remarks' => 'nullable|string|max:255',
@@ -32,6 +33,7 @@ class BalanceController extends Controller
 
         BalanceIn::create([
             'user_id' => $request->user_id,
+            'card_id' => $request->card_id,
             'amount' => $request->amount,
             'type' => $request->type,
             'remarks' => $request->remarks,
@@ -42,6 +44,7 @@ class BalanceController extends Controller
         logActivity('balance_addition', 'Balance added manually', [
             'amount' => $request->amount,
             'target_user_id' => $request->user_id,
+            'card_id' => $request->card_id,
             'type' => $request->type,
             'remarks' => $request->remarks
         ]);
@@ -56,7 +59,7 @@ class BalanceController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'card_id' => 'required|exists:cards,id',
+            'card_id' => 'nullable|exists:cards,id',
             'amount' => 'required|numeric|min:1',
             'type' => 'required|string|in:fare_deduction,parking,penalty,manual_deduction',
             'merchant_id' => 'nullable|exists:users,id',
@@ -256,7 +259,7 @@ class BalanceController extends Controller
 
             if ($userId !== 'all') {
                 $targetUser = User::find($userId);
-                $userCardIds = $targetUser ? $targetUser->cards()->pluck('id')->toArray() : [];
+                $userCardIds = $targetUser ? $targetUser->cards()->withTrashed()->pluck('id')->toArray() : [];
                 
                 $queryIn->where(function($q) use ($userId, $userCardIds) {
                     $q->where('user_id', $userId);

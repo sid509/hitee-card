@@ -62,7 +62,7 @@ class User extends Authenticatable
 
     public function balanceIns()
     {
-        $cardIds = $this->cards()->pluck('id');
+        $cardIds = $this->cards()->withTrashed()->pluck('id');
         return BalanceIn::where(function($q) use ($cardIds) {
             $q->where('user_id', $this->id)
               ->orWhereIn('card_id', $cardIds);
@@ -71,7 +71,7 @@ class User extends Authenticatable
 
     public function balanceOuts()
     {
-        $cardIds = $this->cards()->pluck('id');
+        $cardIds = $this->cards()->withTrashed()->pluck('id');
         return BalanceOut::where(function($q) use ($cardIds) {
             $q->where('user_id', $this->id)
               ->orWhereIn('card_id', $cardIds);
@@ -80,7 +80,7 @@ class User extends Authenticatable
 
     public function taps()
     {
-        $cardIds = $this->cards()->pluck('id');
+        $cardIds = $this->cards()->withTrashed()->pluck('id');
         return Tap::where(function($q) use ($cardIds) {
             $q->where('user_id', $this->id)
               ->orWhereIn('card_id', $cardIds);
@@ -89,7 +89,7 @@ class User extends Authenticatable
 
     public function rides()
     {
-        $cardIds = $this->cards()->pluck('id');
+        $cardIds = $this->cards()->withTrashed()->pluck('id');
         return Ride::where(function($q) use ($cardIds) {
             $q->where('user_id', $this->id)
               ->orWhereIn('card_id', $cardIds);

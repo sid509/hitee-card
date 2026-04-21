@@ -96,6 +96,7 @@
             <form action="{{ route('transactions.manual-add') }}" method="POST">
                 @csrf
                 <input type="hidden" name="user_id" id="balance_user_id">
+                <input type="hidden" name="card_id" id="balance_card_id">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">User</label>
@@ -320,8 +321,10 @@
             const id = $(this).data('id');
             const name = $(this).data('name');
             const balance = $(this).data('balance');
+            const cardId = $(this).data('card-id');
 
             $('#balance_user_id').val(id);
+            $('#balance_card_id').val(cardId);
             $('#balance_user_name').val(name);
             $('#balance_current_amount').val('Rs. ' + parseFloat(balance).toLocaleString(undefined, {minimumFractionDigits: 2}));
             $('#balanceModalTitle').text('Load Funds for ' + name);
@@ -334,8 +337,10 @@
             const id = $(this).data('id');
             const name = $(this).data('name');
             const balance = $(this).data('balance');
+            const cardId = $(this).data('card-id');
 
             $('#deduct_user_id').val(id);
+            $('#deduct_card_id').val(cardId);
             $('#deduct_user_name').val(name);
             $('#deduct_current_amount').val('Rs. ' + parseFloat(balance).toLocaleString(undefined, {minimumFractionDigits: 2}));
             $('#deductModalTitle').text('Deduct Balance for ' + name);
