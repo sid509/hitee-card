@@ -62,37 +62,45 @@ class User extends Authenticatable
 
     public function balanceIns()
     {
-        $cardIds = $this->cards()->withTrashed()->pluck('id');
+        $cardIds = $this->cards()->withTrashed()->pluck('id')->toArray();
         return BalanceIn::where(function($q) use ($cardIds) {
-            $q->where('user_id', $this->id)
-              ->orWhereIn('card_id', $cardIds);
+            $q->where('user_id', $this->id);
+            if (!empty($cardIds)) {
+                $q->orWhereIn('card_id', $cardIds);
+            }
         });
     }
 
     public function balanceOuts()
     {
-        $cardIds = $this->cards()->withTrashed()->pluck('id');
+        $cardIds = $this->cards()->withTrashed()->pluck('id')->toArray();
         return BalanceOut::where(function($q) use ($cardIds) {
-            $q->where('user_id', $this->id)
-              ->orWhereIn('card_id', $cardIds);
+            $q->where('user_id', $this->id);
+            if (!empty($cardIds)) {
+                $q->orWhereIn('card_id', $cardIds);
+            }
         });
     }
 
     public function taps()
     {
-        $cardIds = $this->cards()->withTrashed()->pluck('id');
+        $cardIds = $this->cards()->withTrashed()->pluck('id')->toArray();
         return Tap::where(function($q) use ($cardIds) {
-            $q->where('user_id', $this->id)
-              ->orWhereIn('card_id', $cardIds);
+            $q->where('user_id', $this->id);
+            if (!empty($cardIds)) {
+                $q->orWhereIn('card_id', $cardIds);
+            }
         });
     }
 
     public function rides()
     {
-        $cardIds = $this->cards()->withTrashed()->pluck('id');
+        $cardIds = $this->cards()->withTrashed()->pluck('id')->toArray();
         return Ride::where(function($q) use ($cardIds) {
-            $q->where('user_id', $this->id)
-              ->orWhereIn('card_id', $cardIds);
+            $q->where('user_id', $this->id);
+            if (!empty($cardIds)) {
+                $q->orWhereIn('card_id', $cardIds);
+            }
         });
     }
 
