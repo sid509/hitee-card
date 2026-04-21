@@ -18,22 +18,34 @@ window.DataTable = DataTable;
 $.extend(true, $.fn.dataTable.defaults, {
     stateSave: true,
     stateSaveCallback: function(settings, data) {
-        const page = (data.start / data.length) + 1;
+        const page = Math.floor(data.start / data.length) + 1;
         const url = new URL(window.location.href);
-        url.searchParams.set('page', page);
+        
+        if (page > 1) {
+            url.searchParams.set('page', page);
+        } else {
+            url.searchParams.delete('page');
+        }
+        
         window.history.replaceState(null, null, url);
         localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data));
     },
     stateLoadCallback: function(settings) {
         const urlParams = new URLSearchParams(window.location.search);
         const page = parseInt(urlParams.get('page'));
-        const saved = JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
         
-        if (saved && !isNaN(page)) {
-            saved.start = (page - 1) * saved.length;
+        // If no page param or page 1, ignore localStorage and start fresh
+        if (isNaN(page) || page <= 1) {
+            localStorage.removeItem('DataTables_' + settings.sInstance);
+            return null;
+        }
+        
+        const saved = JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+        if (saved) {
+            saved.start = (page - 1) * (saved.length || 10);
             return saved;
         }
-        return saved;
+        return null;
     }
 });
 
