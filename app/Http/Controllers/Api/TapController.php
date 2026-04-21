@@ -37,7 +37,7 @@ class TapController extends Controller
         if (!$asset) return apiResponse(false, 'Scanner (Asset) not found', '', 404);
 
         $user = $card->user;
-        if (!$user) return apiResponse(false, 'Card is not assigned to a user', '', 400);
+        // if (!$user) return apiResponse(false, 'Card is not assigned to a user', '', 400); // Allow orphan cards
         if ($card->status !== 'active') return apiResponse(false, 'Card is blocked or inactive', '', 403);
 
         // Check for an ongoing journey for this card on ANY asset
@@ -62,7 +62,9 @@ class TapController extends Controller
     private function handleTapIn($request, $user, $card, $asset)
     {
         // Check minimum wallet balance to start journey
-        if ($user->balance() < 20) {
+        // If user is null, check card balance
+        $balance = $user ? $user->balance() : $card->balance();
+        if ($balance < 20) {
             return apiResponse(false, 'Insufficient balance (Min Rs. 20 required)', '', 402);
         }
 
@@ -71,7 +73,7 @@ class TapController extends Controller
 
         // 1. Record Raw Tap
         $tap = Tap::create([
-            'user_id' => $user->id,
+            'user_id' => $user?->id,
             'card_id' => $card->id,
             'merchant_id' => $asset->merchant_id,
             'reference_id' => $asset->id,
@@ -85,7 +87,7 @@ class TapController extends Controller
 
         // 2. Create Reconciled Ride
         $ride = Ride::create([
-            'user_id' => $user->id,
+            'user_id' => $user?->id,
             'card_id' => $card->id,
             'merchant_id' => $asset->merchant_id,
             'reference_id' => $asset->id,
@@ -94,7 +96,7 @@ class TapController extends Controller
             'status' => 'ongoing'
         ]);
 
-        logActivity('tap_in', "Tapped in at {$location['name']} on {$asset->name}", ['ride_id' => $ride->id], $user->id);
+        logActivity('tap_in', "Tapped in at {$location['name']} on {$asset->name}", ['ride_id' => $ride->id], $user?->id);
 
         return apiResponse(true, "Tap In successful at {$location['name']}", [
             'type' => 'in',
@@ -109,11 +111,12 @@ class TapController extends Controller
     private function handleTapOut($request, $ride, $currentAsset)
     {
         $user = $ride->user;
+        $card = $ride->card;
         $location = $this->resolveLocation($request->lat, $request->lon, $currentAsset);
 
         // 1. Record Raw Tap
         $tapOut = Tap::create([
-            'user_id' => $user->id,
+            'user_id' => $user?->id,
             'card_id' => $ride->card_id,
             'merchant_id' => $currentAsset->merchant_id,
             'reference_id' => $currentAsset->id,
@@ -136,7 +139,7 @@ class TapController extends Controller
         // 3. Financial Reconciliation (Transaction & Merchant Income)
         if ($fareAmount > 0) {
             $balanceOut = BalanceOut::create([
-                'user_id' => $user->id,
+                'user_id' => $user?->id,
                 'card_id' => $ride->card_id,
                 'merchant_id' => $ride->merchant_id,
                 'amount' => $fareAmount,
@@ -169,12 +172,12 @@ class TapController extends Controller
             'fare' => $fareAmount,
             'start' => $ride->tapIn->resolved_location_name,
             'end' => $location['name']
-        ], $user->id);
+        ], $user?->id);
 
         return apiResponse(true, "Tap Out successful at {$location['name']}. Fare: Rs. {$fareAmount}", [
             'type' => 'out',
             'fare' => $fareAmount,
-            'new_balance' => $user->balance()
+            'new_balance' => $user ? $user->balance() : $card->balance()
         ]);
     }
 

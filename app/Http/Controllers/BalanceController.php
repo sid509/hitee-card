@@ -182,7 +182,13 @@ class BalanceController extends Controller
                     return formatDate($row->created_at);
                 })
                 ->addColumn('customer', function($row){
-                    return $row->transaction->user->name ?? 'N/A';
+                    if ($row->transaction->user) {
+                        return $row->transaction->user->name;
+                    }
+                    if ($row->transaction->card) {
+                        return 'Card: ' . $row->transaction->card->card_number;
+                    }
+                    return 'N/A';
                 })
                 ->editColumn('type', function($row){
                     return ucfirst($row->type);
@@ -235,11 +241,8 @@ class BalanceController extends Controller
         // If super-admin and no userId provided, show all
         if (!$userId && auth()->user()->hasRole('super-admin')) {
             $userId = 'all';
-            $userCardIds = [];
         } else {
             $userId = $userId ?? auth()->id();
-            $targetUser = User::find($userId);
-            $userCardIds = $targetUser ? $targetUser->cards()->pluck('id')->toArray() : [];
         }
         
         // If requesting another user's logs, must be super-admin
@@ -248,75 +251,89 @@ class BalanceController extends Controller
         }
 
         if ($request->ajax()) {
-            $queryIn = BalanceIn::where('status', 'completed')->select(['id', 'user_id', 'card_id', 'amount', 'type', 'remarks', 'created_at']);
-            $queryOut = BalanceOut::select(['id', 'user_id', 'card_id', 'amount', 'type', 'remarks', 'created_at', 'merchant_id', 'reference_id', 'reference_type']);
+            $queryIn = BalanceIn::with(['user', 'card'])->where('status', 'completed');
+            $queryOut = BalanceOut::with(['user', 'card', 'merchant']);
 
             if ($userId !== 'all') {
+                $targetUser = User::find($userId);
+                $userCardIds = $targetUser ? $targetUser->cards()->pluck('id')->toArray() : [];
+                
                 $queryIn->where(function($q) use ($userId, $userCardIds) {
-                    $q->where('user_id', $userId)
-                      ->orWhereIn('card_id', $userCardIds);
+                    $q->where('user_id', $userId);
+                    if (!empty($userCardIds)) {
+                        $q->orWhereIn('card_id', $userCardIds);
+                    }
                 });
                 $queryOut->where(function($q) use ($userId, $userCardIds) {
-                    $q->where('user_id', $userId)
-                      ->orWhereIn('card_id', $userCardIds);
+                    $q->where('user_id', $userId);
+                    if (!empty($userCardIds)) {
+                        $q->orWhereIn('card_id', $userCardIds);
+                    }
                 });
             }
 
-            // Apply Filters
-            if ($request->filled('type')) {
-                $type = $request->get('type');
-                if ($type == 'in') {
-                    $queryOut->whereRaw('1=0'); // Exclude outs
-                } elseif ($type == 'out') {
-                    $queryIn->whereRaw('1=0'); // Exclude ins
-                }
+            $allLogs = [];
+
+            foreach ($ins as $item) {
+                $allLogs[] = [
+                    'id' => $item->id,
+                    'user_id' => $item->user_id,
+                    'card_id' => $item->card_id,
+                    'customer' => $item->user ? $item->user->name : ($item->card ? 'Card: ' . $item->card->card_number : 'N/A'),
+                    'amount' => (float)$item->amount,
+                    'type' => $item->type,
+                    'log_type' => 'in',
+                    'remarks' => $item->remarks,
+                    'created_at' => $item->created_at->toDateTimeString(),
+                    'reference_id' => null,
+                    'reference_type' => null
+                ];
             }
 
-            if ($request->filled('activity')) {
-                $activity = $request->get('activity');
-                $queryIn->where('type', $activity);
-                $queryOut->where('type', $activity);
+            foreach ($outs as $item) {
+                $allLogs[] = [
+                    'id' => $item->id,
+                    'user_id' => $item->user_id,
+                    'card_id' => $item->card_id,
+                    'customer' => $item->user ? $item->user->name : ($item->card ? 'Card: ' . $item->card->card_number : 'N/A'),
+                    'amount' => (float)$item->amount,
+                    'type' => $item->type,
+                    'log_type' => 'out',
+                    'remarks' => $item->remarks,
+                    'created_at' => $item->created_at->toDateTimeString(),
+                    'reference_id' => $item->reference_id,
+                    'reference_type' => $item->reference_type
+                ];
             }
 
-            $ins = $queryIn->get()->map(function($item) {
-                $item->log_type = 'in';
-                return $item;
+            // Sort by created_at desc
+            usort($allLogs, function($a, $b) {
+                return strcmp($b['created_at'], $a['created_at']);
             });
 
-            $outs = $queryOut->get()->map(function($item) {
-                $item->log_type = 'out';
-                return $item;
-            });
-
-            $logs = $ins->concat($outs)->sortByDesc('created_at');
-
-            return DataTables::of($logs)
+            return DataTables::of(collect($allLogs))
                 ->addIndexColumn()
                 ->editColumn('created_at', function($row){
-                    return formatDate($row->created_at);
+                    return formatDate($row['created_at']);
                 })
                 ->addColumn('direction', function($row){
-                    $class = $row->log_type == 'in' ? 'success' : 'danger';
-                    return '<span class="badge bg-label-'.$class.'">'.strtoupper($row->log_type).'</span>';
-                })
-                ->addColumn('customer', function($row) {
-                    $user = \App\Models\User::find($row->user_id);
-                    return $user ? $user->name : 'N/A';
+                    $class = $row['log_type'] == 'in' ? 'success' : 'danger';
+                    return '<span class="badge bg-label-'.$class.'">'.strtoupper($row['log_type']).'</span>';
                 })
                 ->editColumn('type', function($row){
-                    $type = str_replace('_', ' ', ucfirst($row->type));
-                    if ($row->log_type === 'out' && property_exists($row, 'reference_id') && $row->reference_id) {
-                        $refName = $row->reference_type === 'App\Models\Bus' ? 'Bus' : 'Parking';
+                    $type = str_replace('_', ' ', ucfirst($row['type']));
+                    if ($row['log_type'] === 'out' && $row['reference_id']) {
+                        $refName = (strpos((string)$row['reference_type'], 'Bus') !== false) ? 'Bus' : 'Parking';
                         return $type . " (" . $refName . ")";
                     }
                     return $type;
                 })
                 ->editColumn('amount', function($row){
-                    $prefix = $row->log_type == 'in' ? '+' : '-';
-                    $color = $row->log_type == 'in' ? 'success' : 'danger';
-                    return '<span class="text-'.$color.' fw-medium">'.$prefix.' Rs. '.number_format($row->amount, 2).'</span>';
+                    $prefix = $row['log_type'] == 'in' ? '+' : '-';
+                    $color = $row['log_type'] == 'in' ? 'success' : 'danger';
+                    return '<span class="text-'.$color.' fw-medium">'.$prefix.' Rs. '.number_format($row['amount'], 2).'</span>';
                 })
-                ->rawColumns(['direction', 'amount', 'customer'])
+                ->rawColumns(['direction', 'amount'])
                 ->make(true);
         }
 
