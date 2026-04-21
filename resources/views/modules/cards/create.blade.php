@@ -23,3 +23,23 @@
     </div>
 </div>
 @endsection
+
+@push('page-js')
+<script type="module">
+    $(function() {
+        $('.select2-users').select2({
+            ajax: {
+                url: "{{ route('search.users') }}",
+                dataType: 'json',
+                delay: 250,
+                data: params => ({ q: params.term, page: params.page }),
+                processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                cache: true
+            },
+            placeholder: 'Search Customer...',
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
+@endpush

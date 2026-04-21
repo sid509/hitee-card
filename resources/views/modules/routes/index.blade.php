@@ -13,6 +13,7 @@
         <a href="{{ route('routes.create') }}" class="btn btn-primary">
             <i class="bx bx-plus me-1"></i> Add Route
         </a>
+    </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
             <style>
@@ -31,7 +32,7 @@
                 table.data-table th:nth-child(3) { width: 200px; }
                 table.data-table th:nth-child(4) { width: 120px; text-align: center; }
                 table.data-table th:nth-child(5) { width: 150px; }
-                table.data-table th:nth-child(6) { width: 150px; text-align: center; }
+                table.data-table th:nth-child(6) { width: 180px; text-align: center; }
 
                 table.data-table td:nth-child(4),
                 table.data-table td:nth-child(6) { text-align: center; }
@@ -51,8 +52,8 @@
             </table>
         </div>
     </div>
-    </div>
-    @endsection
+</div>
+@endsection
 
     @push('page-js')
     <script type="module">

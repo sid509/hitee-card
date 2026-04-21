@@ -161,7 +161,7 @@ class BalanceController extends Controller
         $merchantId = $user->id;
         
         if ($request->ajax()) {
-            $query = MerchantIncome::with('transaction.user');
+            $query = MerchantIncome::with(['transaction.user', 'transaction.card']);
 
             // If super admin and a specific asset is requested, don't limit by current user id
             // This allows admin to see logs for buses/parkings they don't own
@@ -179,17 +179,20 @@ class BalanceController extends Controller
                 $query->where('reference_type', $request->get('reference_type'));
             }
 
-            return DataTables::of($query->select(['merchant_incomes.*'])->latest())
+            return DataTables::of($query->select(['merchant_incomes.*'])->orderBy('created_at', 'desc'))
                 ->addIndexColumn()
-                ->editColumn('created_at', function($row){
+                ->addColumn('display_date', function($row){
                     return formatDate($row->created_at);
                 })
                 ->addColumn('customer', function($row){
                     if ($row->transaction->user) {
                         return $row->transaction->user->name;
                     }
+                    return 'N/A';
+                })
+                ->addColumn('card_number', function($row){
                     if ($row->transaction->card) {
-                        return 'Card: ' . $row->transaction->card->card_number;
+                        return $row->transaction->card->card_number;
                     }
                     return 'N/A';
                 })
@@ -216,11 +219,11 @@ class BalanceController extends Controller
         if ($request->ajax()) {
             $data = MerchantWithdrawal::where('merchant_id', $merchantId)
                 ->select(['merchant_withdrawals.*'])
-                ->latest();
+                ->orderBy('created_at', 'desc');
 
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->editColumn('created_at', function($row){
+                ->addColumn('display_date', function($row){
                     return formatDate($row->created_at);
                 })
                 ->editColumn('status', function($row){
@@ -304,6 +307,7 @@ class BalanceController extends Controller
                     'id' => $item->id,
                     'user_id' => $item->user_id,
                     'card_id' => $item->card_id,
+                    'card_number' => $item->card ? $item->card->card_number : 'N/A',
                     'customer' => $item->user ? $item->user->name : ($item->card ? 'Card: ' . $item->card->card_number : 'N/A'),
                     'amount' => (float)$item->amount,
                     'type' => $item->type,
@@ -320,6 +324,7 @@ class BalanceController extends Controller
                     'id' => $item->id,
                     'user_id' => $item->user_id,
                     'card_id' => $item->card_id,
+                    'card_number' => $item->card ? $item->card->card_number : 'N/A',
                     'customer' => $item->user ? $item->user->name : ($item->card ? 'Card: ' . $item->card->card_number : 'N/A'),
                     'amount' => (float)$item->amount,
                     'type' => $item->type,
@@ -333,12 +338,12 @@ class BalanceController extends Controller
 
             // Sort by created_at desc
             usort($allLogs, function($a, $b) {
-                return strcmp($b['created_at'], $a['created_at']);
+                return \Carbon\Carbon::parse($b['created_at'])->timestamp <=> \Carbon\Carbon::parse($a['created_at'])->timestamp;
             });
 
             return DataTables::of(collect($allLogs))
                 ->addIndexColumn()
-                ->editColumn('created_at', function($row){
+                ->addColumn('display_date', function($row){
                     return formatDate($row['created_at']);
                 })
                 ->addColumn('direction', function($row){
@@ -353,12 +358,16 @@ class BalanceController extends Controller
                     }
                     return $type;
                 })
+                ->addColumn('card_info', function($row){
+                    if ($row['card_number'] === 'N/A') return '<span class="text-muted">N/A</span>';
+                    return '<span class="fw-medium">'.$row['card_number'].'</span>';
+                })
                 ->editColumn('amount', function($row){
                     $prefix = $row['log_type'] == 'in' ? '+' : '-';
                     $color = $row['log_type'] == 'in' ? 'success' : 'danger';
                     return '<span class="text-'.$color.' fw-medium">'.$prefix.' Rs. '.number_format($row['amount'], 2).'</span>';
                 })
-                ->rawColumns(['direction', 'amount'])
+                ->rawColumns(['direction', 'amount', 'card_info'])
                 ->make(true);
         }
 

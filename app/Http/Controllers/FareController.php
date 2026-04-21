@@ -52,7 +52,8 @@ class FareController extends Controller
                     return '<span class="badge bg-label-'.$class.'">'.ucfirst($row->status).'</span>';
                 })
                 ->addColumn('action', function($row) {
-                    $actions = '<a href="'.route('fares.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
+                    $actions = '<div class="d-flex justify-content-center">';
+                    $actions .= '<a href="'.route('fares.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     
                     if (auth()->user()->hasRole('super-admin', 'merchant', 'staff')) {
                         $canManage = false;
@@ -77,7 +78,7 @@ class FareController extends Controller
                                         <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete"><i class="bx bx-trash"></i></button>
                                     </form>';
                     }
-                    
+                    $actions .= '</div>';
                     return $actions;
                 })
                 ->addColumn('created_at', function($row){

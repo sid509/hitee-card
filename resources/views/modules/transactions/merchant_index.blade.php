@@ -22,6 +22,7 @@
                             <th>#</th>
                             <th>Date</th>
                             <th>Customer</th>
+                            <th>Card</th>
                             <th>Type</th>
                             <th>Amount</th>
                         </tr>
@@ -43,8 +44,9 @@
             ajax: "{{ route('merchant.income') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'created_at', name: 'created_at', orderable: true},
+                {data: 'display_date', name: 'created_at', orderable: true},
                 {data: 'customer', name: 'customer'},
+                {data: 'card_number', name: 'card_number'},
                 {data: 'type', name: 'type'},
                 {data: 'amount', name: 'amount'},
             ],

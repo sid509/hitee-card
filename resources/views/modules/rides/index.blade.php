@@ -45,8 +45,8 @@
                 </select>
             </div>
             <div class="col-md-2 d-flex align-items-end gap-2">
-                <button type="button" id="btnFilter" class="btn btn-primary" style="height: 30px !important;"><i class="bx bx-filter-alt"></i></button>
-                <button type="button" id="btnClearFilter" class="btn btn-outline-secondary" style="height: 30px !important;"><i class="bx bx-refresh"></i></button>
+                <button type="button" id="btnFilter" class="btn btn-primary btn-filter-reset"><i class="bx bx-filter-alt"></i></button>
+                <button type="button" id="btnClearFilter" class="btn btn-outline-secondary btn-filter-reset"><i class="bx bx-refresh"></i></button>
             </div>
         </form>
     </div>
@@ -135,7 +135,7 @@
                 {data: 'tap_out_time', name: 'tap_out_id', orderable: false},
                 {data: 'fare_amount', name: 'fare_amount'},
                 {data: 'status', name: 'status'},
-                {data: 'created_at', name: 'created_at'},
+                {data: 'display_date', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ],
             order: [[7, 'desc']]

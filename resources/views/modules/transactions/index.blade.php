@@ -14,13 +14,14 @@
                 @if(auth()->user()->hasRole('super-admin'))
                 <div class="col-md-3">
                     <label class="form-label">User</label>
-                    <select name="user_id" id="user_id_filter" class="form-select filter-input">
-                        <option value="all" {{ $userId === 'all' ? 'selected' : '' }}>All Users</option>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}" {{ $userId == $user->id ? 'selected' : '' }}>
-                                {{ $user->name }} ({{ $user->email }})
-                            </option>
-                        @endforeach
+                    <select name="user_id" id="user_id_filter" class="form-select filter-input select2-users">
+                        <option value="all">All Users</option>
+                        @if($userId && $userId !== 'all')
+                            @php $selectedUser = \App\Models\User::find($userId); @endphp
+                            @if($selectedUser)
+                                <option value="{{ $selectedUser->id }}" selected>{{ $selectedUser->name }} ({{ $selectedUser->email }})</option>
+                            @endif
+                        @endif
                     </select>
                 </div>
                 @endif
@@ -47,8 +48,8 @@
                     </select>
                 </div>
                 <div class="{{ auth()->user()->hasRole('super-admin') ? 'col-md-3' : 'col-md-4' }} d-flex align-items-end gap-2">
-                    <button type="button" id="btnFilter" class="btn btn-primary d-none"><i class="bx bx-filter-alt"></i></button>
-                    <button type="button" id="resetFilters" class="btn btn-outline-secondary"><i class="bx bx-refresh"></i></button>
+                    <button type="button" id="btnFilter" class="btn btn-primary btn-filter-reset d-none"><i class="bx bx-filter-alt"></i></button>
+                    <button type="button" id="resetFilters" class="btn btn-outline-secondary btn-filter-reset"><i class="bx bx-refresh"></i></button>
                 </div>
             </form>
         </div>
@@ -61,9 +62,10 @@
                 <table class="table table-hover transaction-data-table w-100">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>ID</th>
                             <th>Date</th>
                             <th>Customer</th>
+                            <th>Card</th>
                             <th>Type</th>
                             <th>Activity</th>
                             <th>Amount</th>
@@ -94,14 +96,30 @@
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'created_at', name: 'created_at'},
+                {data: 'display_date', name: 'created_at'},
                 {data: 'customer', name: 'customer'},
+                {data: 'card_info', name: 'card_info'},
                 {data: 'direction', name: 'direction', orderable: false, searchable: false},
                 {data: 'type', name: 'type'},
                 {data: 'amount', name: 'amount'},
                 {data: 'remarks', name: 'remarks'},
             ],
             order: [[1, 'desc']]
+        });
+
+        // Initialize Select2 for User Search
+        $('.select2-users').select2({
+            ajax: {
+                url: "{{ route('search.users') }}",
+                dataType: 'json',
+                delay: 250,
+                data: params => ({ q: params.term, page: params.page }),
+                processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                cache: true
+            },
+            placeholder: 'Search User...',
+            allowClear: true,
+            width: '100%'
         });
 
         $('.filter-input').on('change', function() {
@@ -112,8 +130,8 @@
         $('#resetFilters').on('click', function() {
             $('#filterForm')[0].reset();
             // Explicitly set user_id to all if it exists (for super-admins)
-            if ($('select[name="user_id"]').length) {
-                $('select[name="user_id"]').val('all');
+            if ($('.select2-users').length) {
+                $('.select2-users').val('all').trigger('change');
             }
             table.draw();
             updateUrl();

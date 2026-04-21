@@ -82,7 +82,7 @@
                 {data: 'tap_in_time', name: 'tap_in_time', defaultContent: '-'},
                 {data: 'tap_out_time', name: 'tap_out_time', defaultContent: '---'},
                 {data: 'fare_amount', name: 'fare_amount'},
-                {data: 'created_at', name: 'created_at'},
+                {data: 'display_date', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ],
             order: [[6, 'desc']]

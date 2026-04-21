@@ -32,9 +32,10 @@
                 table.data-table th:nth-child(3) { width: 180px; }
                 table.data-table th:nth-child(4) { width: 120px; text-align: center; }
                 table.data-table th:nth-child(5) { width: 150px; }
-                table.data-table th:nth-child(6) { width: 180px; }
+                table.data-table th:nth-child(6) { width: 220px; text-align: center; }
                 
-                table.data-table td:nth-child(4) { text-align: center; }
+                table.data-table td:nth-child(4),
+                table.data-table td:nth-child(6) { text-align: center; }
                 .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
             </style>
             <table class="table table-hover data-table">

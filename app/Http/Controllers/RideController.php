@@ -55,7 +55,7 @@ class RideController extends Controller
                     $class = $row->status == 'completed' ? 'success' : ($row->status == 'ongoing' ? 'primary' : 'danger');
                     return '<span class="badge bg-label-'.$class.'">'.ucfirst($row->status).'</span>';
                 })
-                ->editColumn('created_at', function($row){
+                ->addColumn('display_date', function($row){
                     return formatDate($row->created_at);
                 })
                 ->addColumn('user_card', function($row) {
@@ -164,7 +164,7 @@ class RideController extends Controller
                     $link = route($route, $row->reference_id);
                     return '<div><a href="'.$link.'" class="fw-medium">'.$name.'</a><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$type.'</small></div>';
                 })
-                ->editColumn('created_at', function($row) {
+                ->addColumn('display_date', function($row) {
                     return formatDate($row->created_at);
                 })
                 ->addColumn('action', function($row) {
@@ -210,7 +210,7 @@ class RideController extends Controller
                 ->editColumn('fare_amount', function($row) {
                     return 'Rs. ' . number_format($row->fare_amount, 2);
                 })
-                ->editColumn('created_at', function($row) {
+                ->addColumn('display_date', function($row) {
                     return formatDate($row->created_at);
                 })
                 ->addColumn('tap_in_time', function($row) {

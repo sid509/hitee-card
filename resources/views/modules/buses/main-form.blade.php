@@ -22,13 +22,14 @@
 @if(auth()->user()->hasRole('super-admin'))
 <div class="mb-3">
     <label class="form-label" for="merchant_id">Merchant</label>
-    <select name="merchant_id" id="merchant_id" class="form-select @error('merchant_id') is-invalid @enderror">
+    <select name="merchant_id" id="merchant_id" class="form-select select2-ajax-merchant @error('merchant_id') is-invalid @enderror">
         <option value="">Select Merchant</option>
-        @foreach($merchants as $merchant)
-            <option value="{{ $merchant->id }}" {{ old('merchant_id', $bus->merchant_id) == $merchant->id ? 'selected' : '' }}>
-                {{ $merchant->name }}
-            </option>
-        @endforeach
+        @if(old('merchant_id', $bus->merchant_id))
+            @php $selectedMerchant = \App\Models\User::find(old('merchant_id', $bus->merchant_id)); @endphp
+            @if($selectedMerchant)
+                <option value="{{ $selectedMerchant->id }}" selected>{{ $selectedMerchant->name }} ({{ $selectedMerchant->email }})</option>
+            @endif
+        @endif
     </select>
     @error('merchant_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>

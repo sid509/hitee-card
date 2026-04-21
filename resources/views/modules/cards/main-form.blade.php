@@ -14,13 +14,19 @@
 
 <div class="mb-3">
     <label class="form-label" for="user_id">User (Customer)</label>
-    <select name="user_id" id="user_id" class="form-select @error('user_id') is-invalid @enderror">
+    <select name="user_id" id="user_id" class="form-select select2-users @error('user_id') is-invalid @enderror">
         <option value="">Select Customer</option>
-        @foreach($users as $user)
-            <option value="{{ $user->id }}" {{ old('user_id', $card->user_id) == $user->id ? 'selected' : '' }}>
-                {{ $user->name }} ({{ $user->email }})
-            </option>
-        @endforeach
+        @if(old('user_id', $card->user_id))
+            @php $selectedUser = \App\Models\User::find(old('user_id', $card->user_id)); @endphp
+            @if($selectedUser)
+                <option value="{{ $selectedUser->id }}" selected>{{ $selectedUser->name }} ({{ $selectedUser->email }})</option>
+            @endif
+        @elseif(request('user_id'))
+            @php $selectedUser = \App\Models\User::find(request('user_id')); @endphp
+            @if($selectedUser)
+                <option value="{{ $selectedUser->id }}" selected>{{ $selectedUser->name }} ({{ $selectedUser->email }})</option>
+            @endif
+        @endif
     </select>
     @error('user_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>

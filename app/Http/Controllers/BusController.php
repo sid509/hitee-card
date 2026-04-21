@@ -48,7 +48,7 @@ class BusController extends Controller
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant', 'staff');
                     $canDelete = auth()->user()->hasRole('super-admin');
                     
-                    $actions = '';
+                    $actions = '<div class="d-flex justify-content-center">';
                     // View Button
                     $actions .= '<a href="'.route('buses.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     
@@ -76,6 +76,7 @@ class BusController extends Controller
                                         <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete"><i class="bx bx-trash"></i></button>
                                     </form>';
                     }
+                    $actions .= '</div>';
                     return $actions;
                 })
                 ->rawColumns(['name', 'status', 'action'])

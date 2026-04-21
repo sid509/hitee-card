@@ -15,6 +15,7 @@
             <i class="bx bx-plus me-1"></i> {{ __('messages.add') }} {{ __('messages.buses') }}
         </a>
         @endif
+    </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
             <style>
@@ -35,9 +36,10 @@
                 table.data-table th:nth-child(5) { width: 150px; }
                 table.data-table th:nth-child(6) { width: 100px; text-align: center; }
                 table.data-table th:nth-child(7) { width: 150px; }
-                table.data-table th:nth-child(8) { width: 150px; }
+                table.data-table th:nth-child(8) { width: 200px; text-align: center; }
 
-                table.data-table td:nth-child(6) { text-align: center; }
+                table.data-table td:nth-child(6),
+                table.data-table td:nth-child(8) { text-align: center; }
                 .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
             </style>
             <table class="table table-hover data-table">
@@ -56,8 +58,8 @@
             </table>
         </div>
     </div>
-    </div>
-    @endsection
+</div>
+@endsection
 
     @push('page-js')
     <script type="module">

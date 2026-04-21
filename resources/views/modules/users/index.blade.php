@@ -168,14 +168,14 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Merchant (Optional)</label>
-                        <select name="merchant_id" id="merchant_search" class="form-select">
+                        <select name="merchant_id" id="merchant_search" class="form-select select2-ajax-merchant">
                             <option value="">Search Merchant...</option>
                         </select>
                         <div class="form-text">Credit this amount as merchant income.</div>
                     </div>
                     <div class="mb-3" id="reference_container" style="display: none;">
                         <label class="form-label" id="reference_label">Reference (Bus/Parking)</label>
-                        <select name="reference_id" id="reference_search" class="form-select">
+                        <select name="reference_id" id="reference_search" class="form-select select2-ajax-references">
                             <option value="">Search...</option>
                         </select>
                         <div class="form-text">Specific Bus or Parking to track income.</div>

@@ -76,12 +76,12 @@
         <!-- User Tabs -->
         <ul class="nav nav-pills flex-column flex-md-row mb-3" role="tablist">
             <li class="nav-item">
-                <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-account" aria-controls="navs-pills-account" aria-selected="true">
+                <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-account" aria-controls="navs-pills-account" aria-selected="false">
                     <i class="bx bx-user me-1"></i>Account
                 </button>
             </li>
             <li class="nav-item">
-                <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-cards" aria-controls="navs-pills-cards" aria-selected="false">
+                <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-cards" aria-controls="navs-pills-cards" aria-selected="true">
                     <i class="bx bx-credit-card me-1"></i>Cards
                 </button>
             </li>
@@ -93,7 +93,7 @@
 
         <div class="tab-content p-0" style="background: none; border: none; box-shadow: none;">
             <!-- Account Tab -->
-            <div class="tab-pane fade show active" id="navs-pills-account" role="tabpanel">
+            <div class="tab-pane fade" id="navs-pills-account" role="tabpanel">
                 <!-- Activity Timeline -->
                 <div class="card mb-4">
                     <h5 class="card-header">Recent Transactions</h5>
@@ -103,20 +103,20 @@
                                 <thead>
                                     <tr>
                                         <th>Date</th>
+                                        <th>Card</th>
                                         <th>Type</th>
                                         <th>Activity</th>
                                         <th>Amount</th>
                                     </tr>
                                 </thead>
-                            </table>
-                        </div>
+                            </table>                        </div>
                     </div>
                 </div>
                 <!-- /Activity Timeline -->
             </div>
 
             <!-- Cards Tab -->
-            <div class="tab-pane fade" id="navs-pills-cards" role="tabpanel">
+            <div class="tab-pane fade show active" id="navs-pills-cards" role="tabpanel">
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Linked Cards</h5>
@@ -190,7 +190,8 @@
             lengthMenu: [5, 10, 25],
             ajax: "{{ route('transactions.logs', $user->id) }}",
             columns: [
-                {data: 'created_at', name: 'created_at'},
+                {data: 'display_date', name: 'created_at'},
+                {data: 'card_info', name: 'card_info', orderable: false},
                 {data: 'direction', name: 'direction', orderable: false, searchable: false},
                 {data: 'type', name: 'type'},
                 {data: 'amount', name: 'amount'},

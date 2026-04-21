@@ -36,7 +36,8 @@ class RouteController extends Controller
                     return '<span class="badge bg-label-info d-inline-flex align-items-center"><i class="bx bx-map-pin me-1"></i>' . $count . ' Stops</span>';
                 })
                 ->addColumn('action', function($row) {
-                    $actions = '<a href="'.route('routes.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
+                    $actions = '<div class="d-flex justify-content-center">';
+                    $actions .= '<a href="'.route('routes.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     if (auth()->user()->hasRole('super-admin', 'merchant')) {
                         $actions .= '<a href="'.route('routes.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
                     }
@@ -47,6 +48,7 @@ class RouteController extends Controller
                                         <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete"><i class="bx bx-trash"></i></button>
                                     </form>';
                     }
+                    $actions .= '</div>';
                     return $actions;
                 })
                 ->addColumn('created_at', function($row){

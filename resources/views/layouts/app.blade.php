@@ -76,6 +76,38 @@
         .logo-dark-version, .logo-light-version { display: none !important; }
         .dark-style .logo-dark-version { display: inline-block !important; }
         .light-style .logo-light-version { display: inline-block !important; }
+
+        /* Consistent Sizing for Filters and Buttons */
+        .select2-container--default .select2-selection--single {
+            height: 38px !important;
+            padding: 5px 12px;
+            border: 1px solid #d9dee3;
+            border-radius: 0.375rem;
+        }
+        .dark-style .select2-container--default .select2-selection--single {
+            border-color: #444564;
+            background-color: #232333;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 26px !important;
+            padding-left: 0 !important;
+            color: #697a8d;
+        }
+        .dark-style .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #a3a4cc;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+        .form-select, .form-control {
+            height: 38px !important;
+        }
+        .btn-filter-reset {
+            height: 38px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
@@ -308,6 +340,42 @@
                             form.submit();
                         }
                     });
+            });
+
+            // Global Select2 for AJAX Merchants
+            $('.select2-ajax-merchant').each(function() {
+                $(this).select2({
+                    ajax: {
+                        url: "{{ route('search.merchants') }}",
+                        dataType: 'json',
+                        delay: 250,
+                        data: params => ({ q: params.term, page: params.page }),
+                        processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                        cache: true
+                    },
+                    placeholder: 'Search Merchant...',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
+                });
+            });
+
+            // Global Select2 for AJAX Users
+            $('.select2-users').each(function() {
+                $(this).select2({
+                    ajax: {
+                        url: "{{ route('search.users') }}",
+                        dataType: 'json',
+                        delay: 250,
+                        data: params => ({ q: params.term, page: params.page }),
+                        processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                        cache: true
+                    },
+                    placeholder: 'Search Customer...',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
+                });
             });
 
             supportForm.on('submit', function(e) {
