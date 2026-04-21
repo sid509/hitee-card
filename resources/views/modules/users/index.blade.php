@@ -109,6 +109,7 @@
             <form action="{{ route('transactions.manual-deduct') }}" method="POST">
                 @csrf
                 <input type="hidden" name="user_id" id="deduct_user_id">
+                <input type="hidden" name="card_id" id="deduct_card_id">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">User</label>

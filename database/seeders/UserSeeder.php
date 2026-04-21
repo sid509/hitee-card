@@ -27,6 +27,7 @@ class UserSeeder extends Seeder
         $admin = User::create([
             'name' => 'Sudip Dahal',
             'email' => 'admin@hitee.ai',
+            'phone_number' => '9801234567',
             'password' => Hash::make('Admin@Hitee2026'),
             'status' => 'active',
         ]);
@@ -34,17 +35,18 @@ class UserSeeder extends Seeder
 
         // 2. Merchants (Familiar Nepali Business Names/Owners)
         $merchants = [
-            ['name' => 'Ram Bahadur Thapa', 'email' => 'ram@merchant.com'],
-            ['name' => 'Sita Kumari Dahal', 'email' => 'sita@merchant.com'],
-            ['name' => 'Ganesh Prasad Bhatta', 'email' => 'ganesh@merchant.com'],
-            ['name' => 'Maya Devi Sharma', 'email' => 'maya@merchant.com'],
-            ['name' => 'Krishna Prasad Oli', 'email' => 'krishna@merchant.com'],
+            ['name' => 'Ram Bahadur Thapa', 'email' => 'ram@merchant.com', 'phone' => '9841000001'],
+            ['name' => 'Sita Kumari Dahal', 'email' => 'sita@merchant.com', 'phone' => '9841000002'],
+            ['name' => 'Ganesh Prasad Bhatta', 'email' => 'ganesh@merchant.com', 'phone' => '9841000003'],
+            ['name' => 'Maya Devi Sharma', 'email' => 'maya@merchant.com', 'phone' => '9841000004'],
+            ['name' => 'Krishna Prasad Oli', 'email' => 'krishna@merchant.com', 'phone' => '9841000005'],
         ];
 
         foreach ($merchants as $m) {
             $user = User::create([
                 'name' => $m['name'],
                 'email' => $m['email'],
+                'phone_number' => $m['phone'],
                 'password' => Hash::make('password'),
                 'status' => 'active',
             ]);
@@ -65,6 +67,7 @@ class UserSeeder extends Seeder
             $user = User::create([
                 'name' => $name,
                 'email' => $email,
+                'phone_number' => '9860' . str_pad($index, 6, '0', STR_PAD_LEFT),
                 'password' => Hash::make('password'),
                 'status' => $index % 10 == 0 ? 'inactive' : 'active',
             ]);

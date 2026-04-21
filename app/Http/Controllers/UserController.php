@@ -80,8 +80,9 @@ class UserController extends Controller
 
                     // Balance Button
                     if (auth()->user()->hasRole('super-admin')) {
-                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-warning me-1 deduct-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" title="Deduct Balance"><i class="bx bx-minus-circle"></i></button>';
-                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-secondary me-1 add-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" title="Add Balance"><i class="bx bx-wallet"></i></button>';
+                        $activeCardId = $row->activeCard?->id;
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-warning me-1 deduct-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" data-card-id="'.$activeCardId.'" title="Deduct Balance"><i class="bx bx-minus-circle"></i></button>';
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-secondary me-1 add-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" data-card-id="'.$activeCardId.'" title="Add Balance"><i class="bx bx-wallet"></i></button>';
                     }
 
                     // Impersonate Button for super-admins
@@ -191,6 +192,7 @@ class UserController extends Controller
         $data = [
             'name' => $request->name,
             'email' => $request->email,
+            'phone_number' => $request->phone_number,
         ];
 
         if ($request->filled('password')) {

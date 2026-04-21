@@ -22,6 +22,18 @@
     @enderror
 </div>
 
+<div class="mb-3">
+    <label class="form-label" for="phone_number">Phone Number</label>
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-phone"></i></span>
+        <input type="text" id="phone_number" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" 
+            placeholder="98XXXXXXXX" value="{{ old('phone_number', $user->phone_number) }}" required />
+    </div>
+    @error('phone_number')
+        <div class="text-danger small mt-1">{{ $message }}</div>
+    @enderror
+</div>
+
 <div class="mb-3 form-password-toggle">
     <label class="form-label" for="password">Password {{ isset($user->id) ? '(Leave blank to keep current)' : '' }}</label>
     <div class="input-group input-group-merge">

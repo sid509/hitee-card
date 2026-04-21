@@ -13,6 +13,7 @@ class BalanceIn extends Model
 
     protected $fillable = [
         'user_id',
+        'card_id',
         'amount',
         'type',
         'remarks',
@@ -25,6 +26,11 @@ class BalanceIn extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function card()
+    {
+        return $this->belongsTo(Card::class);
     }
 
     public function creator()

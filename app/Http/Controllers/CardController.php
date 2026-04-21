@@ -122,7 +122,17 @@ class CardController extends Controller
         $recentTaps = Tap::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
         $recentRides = Ride::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
 
-        return view('modules.cards.show', compact('card', 'recentTaps', 'recentRides'));
+        $ins = \App\Models\BalanceIn::where('card_id', $card->id)->where('status', 'completed')->get()->map(function($item) {
+            $item->log_type = 'in';
+            return $item;
+        });
+        $outs = \App\Models\BalanceOut::where('card_id', $card->id)->get()->map(function($item) {
+            $item->log_type = 'out';
+            return $item;
+        });
+        $balanceLogs = $ins->concat($outs)->sortByDesc('created_at');
+
+        return view('modules.cards.show', compact('card', 'recentTaps', 'recentRides', 'balanceLogs'));
     }
 
     public function create()

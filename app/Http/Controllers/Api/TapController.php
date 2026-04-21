@@ -137,6 +137,7 @@ class TapController extends Controller
         if ($fareAmount > 0) {
             $balanceOut = BalanceOut::create([
                 'user_id' => $user->id,
+                'card_id' => $ride->card_id,
                 'merchant_id' => $ride->merchant_id,
                 'amount' => $fareAmount,
                 'type' => $ride->reference_type === Bus::class ? 'fare_deduction' : 'parking',

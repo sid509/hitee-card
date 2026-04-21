@@ -34,6 +34,15 @@
                             </div>
                         </div>
                     </div>
+                    <div class="d-flex justify-content-around flex-wrap my-4 py-3 border-top border-bottom">
+                        <div class="d-flex align-items-start me-4 mt-3 gap-3">
+                            <span class="badge bg-label-primary p-2 rounded"><i class="bx bx-wallet bx-sm"></i></span>
+                            <div>
+                                <h5 class="mb-0">Rs. {{ number_format($card->balance(), 2) }}</h5>
+                                <span>Balance</span>
+                            </div>
+                        </div>
+                    </div>
                     <p class="small text-muted text-uppercase mb-3">Ownership</p>
                     <div class="info-container">
                         <ul class="list-unstyled">
@@ -135,6 +144,40 @@
                                         </tr>
                                     @empty
                                         <tr><td colspan="4" class="text-center py-4 text-muted">No tap events found.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Balance History -->
+                    <div class="tab-pane fade" id="navs-pills-balance" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($balanceLogs as $log)
+                                        <tr>
+                                            <td>{{ formatDate($log->created_at) }}</td>
+                                            <td>
+                                                <span class="badge bg-label-{{ $log->log_type === 'in' ? 'success' : 'danger' }}">
+                                                    {{ strtoupper($log->log_type) }}: {{ str_replace('_', ' ', ucfirst($log->type)) }}
+                                                </span>
+                                            </td>
+                                            <td class="text-{{ $log->log_type === 'in' ? 'success' : 'danger' }} fw-medium">
+                                                {{ $log->log_type === 'in' ? '+' : '-' }} Rs. {{ number_format($log->amount, 2) }}
+                                            </td>
+                                            <td class="small">{{ $log->remarks }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4" class="text-center py-4 text-muted">No transactions found for this card.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>

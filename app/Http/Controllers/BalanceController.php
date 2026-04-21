@@ -56,6 +56,7 @@ class BalanceController extends Controller
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
+            'card_id' => 'required|exists:cards,id',
             'amount' => 'required|numeric|min:1',
             'type' => 'required|string|in:fare_deduction,parking,penalty,manual_deduction',
             'merchant_id' => 'nullable|exists:users,id',
@@ -75,6 +76,7 @@ class BalanceController extends Controller
         DB::transaction(function () use ($request) {
             $balanceOut = BalanceOut::create([
                 'user_id' => $request->user_id,
+                'card_id' => $request->card_id,
                 'merchant_id' => $request->merchant_id,
                 'amount' => $request->amount,
                 'type' => $request->type,

@@ -52,6 +52,11 @@
                             <input class="form-control @error('email') is-invalid @enderror" type="text" id="email" name="email" value="{{ old('email', $user->email) }}" placeholder="john.doe@example.com" />
                             @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+                        <div class="mb-3 col-md-6">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input class="form-control @error('phone_number') is-invalid @enderror" type="text" id="phone_number" name="phone_number" value="{{ old('phone_number', $user->phone_number) }}" placeholder="98XXXXXXXX" />
+                            @error('phone_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
                     </div>
                     <div class="mt-2">
                         <button type="submit" class="btn btn-primary me-2">Save changes</button>

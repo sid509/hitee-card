@@ -27,6 +27,7 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
  */
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
     Route::post('/tap', [TapController::class, 'processTap']);
 });
 

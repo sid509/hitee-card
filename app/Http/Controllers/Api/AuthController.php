@@ -33,6 +33,7 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'status' => 'active',
         ]);
@@ -40,6 +41,18 @@ class AuthController extends Controller
         $customerRole = Role::where('slug', 'customers')->first();
         if ($customerRole) {
             $user->roles()->attach($customerRole);
+        }
+
+        if ($request->card_number) {
+            $card = \App\Models\Card::where('card_number', $request->card_number)->first();
+            if ($card) {
+                // If the card is already linked to someone else, we might want to handle it.
+                // For now, following the instruction to "link to the correct card".
+                $card->update([
+                    'user_id' => $user->id,
+                    'is_currently_active' => true
+                ]);
+            }
         }
 
         logActivity('registration', 'New user registered via API', [], $user->id);

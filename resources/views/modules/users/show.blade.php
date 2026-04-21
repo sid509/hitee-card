@@ -46,6 +46,10 @@
                             <span>{{ $user->email }}</span>
                         </li>
                         <li class="mb-3">
+                            <span class="fw-medium me-2">Phone:</span>
+                            <span>{{ $user->phone_number }}</span>
+                        </li>
+                        <li class="mb-3">
                             <span class="fw-medium me-2">Status:</span>
                             <span class="badge bg-label-{{ $user->status == 'active' ? 'success' : 'danger' }}">{{ ucfirst($user->status) }}</span>
                         </li>
@@ -141,7 +145,13 @@
             <form action="{{ route('transactions.manual-add') }}" method="POST">
                 @csrf
                 <input type="hidden" name="user_id" value="{{ $user->id }}">
+                <input type="hidden" name="card_id" value="{{ $user->activeCard?->id }}">
                 <div class="modal-body">
+                    @if(!$user->activeCard)
+                        <div class="alert alert-warning">
+                            This user does not have an active card. Balance might not be usable for transit.
+                        </div>
+                    @endif
                     <div class="mb-3">
                         <label class="form-label">Current Balance</label>
                         <input type="text" class="form-control" value="Rs. {{ number_format($user->balance(), 2) }}" readonly disabled>

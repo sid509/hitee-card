@@ -16,6 +16,23 @@ class Card extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function balanceIns()
+    {
+        return $this->hasMany(BalanceIn::class);
+    }
+
+    public function balanceOuts()
+    {
+        return $this->hasMany(BalanceOut::class);
+    }
+
+    public function balance()
+    {
+        $in = $this->balanceIns()->where('status', 'completed')->sum('amount');
+        $out = $this->balanceOuts()->sum('amount');
+        return $in - $out;
+    }
+
     public function taps()
     {
         return $this->hasMany(Tap::class);
