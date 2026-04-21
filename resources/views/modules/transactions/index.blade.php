@@ -85,7 +85,7 @@
             serverSide: true,
             responsive: true,
             ajax: {
-                url: "{{ route('transactions.logs') }}",
+                url: "{{ route('transactions.logs', ['userId' => $userId]) }}",
                 data: function (d) {
                     d.user_id = $('select[name="user_id"]').val();
                     d.type = $('select[name="type"]').val();

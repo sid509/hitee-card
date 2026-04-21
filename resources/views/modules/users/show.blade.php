@@ -68,63 +68,22 @@
             </div>
         </div>
         <!-- /User Card -->
-
-        <!-- Cards List -->
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Linked Cards</h5>
-                @if(auth()->user()->hasRole('super-admin'))
-                    <a href="{{ route('cards.create', ['user_id' => $user->id]) }}" class="btn btn-sm btn-primary">Add Card</a>
-                @endif
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover">
-                        <thead>
-                            <tr>
-                                <th>Card Number</th>
-                                <th>Status</th>
-                                <th>Balance</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($user->cards as $card)
-                                <tr>
-                                    <td>
-                                        <a href="{{ route('cards.show', $card->id) }}" class="fw-medium">
-                                            {{ $card->card_number }}
-                                        </a>
-                                        @if($card->is_currently_active)
-                                            <span class="badge bg-label-info ms-1" style="font-size: 0.65rem;">Active</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-label-{{ $card->status === 'active' ? 'success' : 'secondary' }}">
-                                            {{ ucfirst($card->status) }}
-                                        </span>
-                                    </td>
-                                    <td class="fw-medium">Rs. {{ number_format($card->balance(), 2) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted py-3">No cards linked to this user.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <!-- /Cards List -->
     </div>
     <!--/ User Sidebar -->
 
     <!-- User Content -->
     <div class="col-xl-8 col-lg-7 col-md-7 order-0 order-md-1">
         <!-- User Tabs -->
-        <ul class="nav nav-pills flex-column flex-md-row mb-3">
+        <ul class="nav nav-pills flex-column flex-md-row mb-3" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" href="javascript:void(0);"><i class="bx bx-user me-1"></i>Account</a>
+                <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-account" aria-controls="navs-pills-account" aria-selected="true">
+                    <i class="bx bx-user me-1"></i>Account
+                </button>
+            </li>
+            <li class="nav-item">
+                <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-cards" aria-controls="navs-pills-cards" aria-selected="false">
+                    <i class="bx bx-credit-card me-1"></i>Cards
+                </button>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('transactions.logs') }}?user_id={{ $user->id }}"><i class="bx bx-list-ul me-1"></i>Transactions</a>
@@ -132,25 +91,87 @@
         </ul>
         <!--/ User Tabs -->
 
-        <!-- Activity Timeline -->
-        <div class="card mb-4">
-            <h5 class="card-header">Recent Transactions</h5>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover recent-transactions-table w-100">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Activity</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                    </table>
+        <div class="tab-content p-0" style="background: none; border: none; box-shadow: none;">
+            <!-- Account Tab -->
+            <div class="tab-pane fade show active" id="navs-pills-account" role="tabpanel">
+                <!-- Activity Timeline -->
+                <div class="card mb-4">
+                    <h5 class="card-header">Recent Transactions</h5>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover recent-transactions-table w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Activity</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- /Activity Timeline -->
+            </div>
+
+            <!-- Cards Tab -->
+            <div class="tab-pane fade" id="navs-pills-cards" role="tabpanel">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Linked Cards</h5>
+                        @if(auth()->user()->hasRole('super-admin'))
+                            <a href="{{ route('cards.create', ['user_id' => $user->id]) }}" class="btn btn-sm btn-primary">Add Card</a>
+                        @endif
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Card Number</th>
+                                        <th>Status</th>
+                                        <th>Usage</th>
+                                        <th>Balance</th>
+                                        <th>Added</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($user->cards as $card)
+                                        <tr>
+                                            <td>
+                                                <a href="{{ route('cards.show', $card->id) }}" class="fw-medium">
+                                                    {{ $card->card_number }}
+                                                </a>
+                                                <br><small class="text-muted">HW: {{ $card->hwid }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-label-{{ $card->status === 'active' ? 'success' : 'secondary' }}">
+                                                    {{ ucfirst($card->status) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if($card->is_currently_active)
+                                                    <span class="badge bg-label-info">Current Active</span>
+                                                @else
+                                                    <span class="text-muted small">Inactive</span>
+                                                @endif
+                                            </td>
+                                            <td class="fw-medium text-primary">Rs. {{ number_format($card->balance(), 2) }}</td>
+                                            <td>{{ formatDate($card->created_at) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-3">No cards linked to this user.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <!-- /Activity Timeline -->
     </div>
     <!--/ User Content -->
 </div>

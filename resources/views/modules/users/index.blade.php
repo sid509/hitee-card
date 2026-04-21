@@ -204,7 +204,7 @@
             serverSide: true,
             responsive: false,
             autoWidth: false,
-            
+            ajax: "{{ route('users.index') }}",
             order: [[7, 'desc']],
             columnDefs: [
                 {
