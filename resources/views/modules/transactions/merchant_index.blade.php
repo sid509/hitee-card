@@ -19,7 +19,7 @@
                 <table class="table table-hover merchant-income-table w-100">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>#</th>
                             <th>Date</th>
                             <th>Customer</th>
                             <th>Type</th>

@@ -127,7 +127,7 @@
                 <a class="nav-link active" href="javascript:void(0);"><i class="bx bx-user me-1"></i>Account</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{{ route('transactions.logs', $user->id) }}"><i class="bx bx-list-ul me-1"></i>Transactions</a>
+                <a class="nav-link" href="{{ route('transactions.logs') }}?user_id={{ $user->id }}"><i class="bx bx-list-ul me-1"></i>Transactions</a>
             </li>
         </ul>
         <!--/ User Tabs -->

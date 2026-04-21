@@ -18,7 +18,7 @@
                 <table class="table table-hover merchant-withdrawals-table w-100">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>#</th>
                             <th>Date</th>
                             <th>Transaction ID</th>
                             <th>Status</th>

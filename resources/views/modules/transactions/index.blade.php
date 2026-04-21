@@ -61,7 +61,7 @@
                 <table class="table table-hover transaction-data-table w-100">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>#</th>
                             <th>Date</th>
                             <th>Customer</th>
                             <th>Type</th>
@@ -87,14 +87,14 @@
             ajax: {
                 url: "{{ route('transactions.logs') }}",
                 data: function (d) {
-                    d.user_id = $('select[name="user_id"]').val() || "{{ $userId }}";
+                    d.user_id = $('select[name="user_id"]').val();
                     d.type = $('select[name="type"]').val();
                     d.activity = $('select[name="activity"]').val();
                 }
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'created_at', name: 'created_at', orderable: true},
+                {data: 'created_at', name: 'created_at'},
                 {data: 'customer', name: 'customer'},
                 {data: 'direction', name: 'direction', orderable: false, searchable: false},
                 {data: 'type', name: 'type'},
@@ -106,12 +106,32 @@
 
         $('.filter-input').on('change', function() {
             table.draw();
+            updateUrl();
         });
 
         $('#resetFilters').on('click', function() {
             $('#filterForm')[0].reset();
+            // Explicitly set user_id to all if it exists (for super-admins)
+            if ($('select[name="user_id"]').length) {
+                $('select[name="user_id"]').val('all');
+            }
             table.draw();
+            updateUrl();
         });
+
+        function updateUrl() {
+            const params = new URLSearchParams();
+            const userId = $('select[name="user_id"]').val();
+            const type = $('select[name="type"]').val();
+            const activity = $('select[name="activity"]').val();
+
+            if (userId && userId !== 'all') params.set('user_id', userId);
+            if (type) params.set('type', type);
+            if (activity) params.set('activity', activity);
+
+            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            window.history.pushState({path: newUrl}, '', newUrl);
+        }
     });
 </script>
 @endpush

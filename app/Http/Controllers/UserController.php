@@ -25,9 +25,6 @@ class UserController extends Controller
                 ->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
-                ->orderColumn('created_at', function ($query, $order) {
-                    $query->orderBy('created_at', $order);
-                })
                 ->addColumn('checkbox', function($row){
                     if ($row->id === auth()->id()) return '';
                     return '<input type="checkbox" class="form-check-input row-checkbox" value="'.$row->id.'">';
