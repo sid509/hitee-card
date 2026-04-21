@@ -272,6 +272,25 @@ class BalanceController extends Controller
                 });
             }
 
+            // Apply filters
+            if ($request->filled('activity')) {
+                $activity = $request->activity;
+                $queryIn->where('type', $activity);
+                $queryOut->where('type', $activity);
+            }
+
+            $type = $request->get('type');
+            $ins = collect();
+            $outs = collect();
+
+            if (!$type || $type === 'in') {
+                $ins = $queryIn->get();
+            }
+
+            if (!$type || $type === 'out') {
+                $outs = $queryOut->get();
+            }
+
             $allLogs = [];
 
             foreach ($ins as $item) {

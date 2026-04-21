@@ -30,7 +30,40 @@
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
-            <table class="table table-hover data-table w-100">
+            <style>
+                /* Force absolute stability across pagination */
+                table.data-table {
+                    table-layout: fixed !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                }
+                table.data-table th, table.data-table td {
+                    overflow: hidden;
+                    white-space: nowrap;
+                }
+                /* Apply ellipsis only to columns with potential long text */
+                table.data-table td.column-ellipsis {
+                    text-overflow: ellipsis;
+                }
+                
+                /* Explicit column widths */
+                table.data-table th:nth-child(1) { width: 40px; }  /* Checkbox */
+                table.data-table th:nth-child(2) { width: 50px; }  /* ID */
+                table.data-table th:nth-child(3) { width: 220px; } /* User Details */
+                table.data-table th:nth-child(4) { width: 140px; } /* Card Details */
+                table.data-table th:nth-child(5) { width: 80px; text-align: center; }  /* Roles */
+                table.data-table th:nth-child(6) { width: 130px; } /* Balance */
+                table.data-table th:nth-child(7) { width: 90px; text-align: center; }  /* Status */
+                table.data-table th:nth-child(8) { width: 160px; } /* Created At */
+                table.data-table th:nth-child(9) { width: 220px; } /* Actions */
+
+                /* Cell specific styling */
+                table.data-table td:nth-child(5), 
+                table.data-table td:nth-child(7) { text-align: center; }
+
+                .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
+            </style>
+            <table class="table table-hover data-table">
                 <thead>
                     <tr>
                         <th width="10" class="text-start"><input type="checkbox" class="form-check-input" id="select-all"></th>
@@ -168,11 +201,13 @@
         var table = $('.data-table').DataTable({
             processing: true,
             serverSide: true,
-            responsive: true,
+            responsive: false,
+            autoWidth: false,
+            stateSave: true,
             ajax: "{{ route('users.index') }}",
             columnDefs: [
                 {
-                    targets: 0,
+                    targets: [0, 1, 3, 4, 5, 6, 7, 8],
                     orderable: false,
                     searchable: false
                 }
@@ -180,7 +215,7 @@
             columns: [
                 {data: 'checkbox', name: 'checkbox', orderable: false, searchable: false},
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'user_info', name: 'name'},
+                {data: 'user_info', name: 'name', className: 'column-ellipsis'},
                 {data: 'card_info', name: 'card_info', orderable: false, searchable: false},
                 {data: 'role_icons', name: 'role_icons', orderable: false},
                 {data: 'balance', name: 'balance', orderable: false, searchable: false},

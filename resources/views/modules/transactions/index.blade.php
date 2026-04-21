@@ -26,9 +26,11 @@
                         <option value="manual">Manual Load</option>
                         <option value="khalti">Khalti Topup</option>
                         <option value="cashback">Cashback</option>
+                        <option value="penalty_reversal">Penalty Reversal</option>
                         <option value="fare_deduction">Bus Fare</option>
                         <option value="parking">Parking Fee</option>
                         <option value="penalty">Penalty</option>
+                        <option value="manual_deduction">Manual Deduction</option>
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end gap-2">

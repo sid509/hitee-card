@@ -14,6 +14,29 @@ window.bootstrap = bootstrap;
 window.PerfectScrollbar = PerfectScrollbar;
 window.DataTable = DataTable;
 
+// Set DataTables Defaults
+$.extend(true, $.fn.dataTable.defaults, {
+    stateSave: true,
+    stateSaveCallback: function(settings, data) {
+        const page = (data.start / data.length) + 1;
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page);
+        window.history.replaceState(null, null, url);
+        localStorage.setItem('DataTables_' + settings.sInstance, JSON.stringify(data));
+    },
+    stateLoadCallback: function(settings) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const page = parseInt(urlParams.get('page'));
+        const saved = JSON.parse(localStorage.getItem('DataTables_' + settings.sInstance));
+        
+        if (saved && !isNaN(page)) {
+            saved.start = (page - 1) * saved.length;
+            return saved;
+        }
+        return saved;
+    }
+});
+
 // Initialize Select2
 select2();
 
