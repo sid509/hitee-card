@@ -68,6 +68,19 @@ class ActivityLogController extends Controller
         }
 
         if (!empty($logsToInsert)) {
+            // Validate user_ids to prevent foreign key constraint violations
+            $userIds = array_filter(array_unique(array_column($logsToInsert, 'user_id')));
+            $existingUserIds = \App\Models\User::whereIn('id', $userIds)->pluck('id')->toArray();
+
+            foreach ($logsToInsert as &$log) {
+                if ($log['user_id'] && !in_array($log['user_id'], $existingUserIds)) {
+                    $properties = json_decode($log['properties'], true) ?: [];
+                    $properties['invalid_user_id'] = $log['user_id'];
+                    $log['properties'] = json_encode($properties);
+                    $log['user_id'] = null;
+                }
+            }
+
             // Efficient bulk insert
             ActivityLog::insert($logsToInsert);
             // Clear the buffer

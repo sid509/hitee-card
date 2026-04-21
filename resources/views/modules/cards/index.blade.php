@@ -29,7 +29,36 @@
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
-            <table class="table table-hover data-table w-100">
+            <style>
+                /* Force absolute stability across pagination */
+                table.data-table {
+                    table-layout: fixed !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                }
+                table.data-table th, table.data-table td {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+                /* Explicit column widths */
+                table.data-table th:nth-child(1) { width: 40px; }  /* Checkbox */
+                table.data-table th:nth-child(2) { width: 50px; }  /* ID */
+                table.data-table th:nth-child(3) { width: 180px; } /* Card Number */
+                table.data-table th:nth-child(4) { width: 180px; } /* HWID */
+                table.data-table th:nth-child(5) { width: 150px; } /* User */
+                table.data-table th:nth-child(6) { width: 120px; text-align: center; } /* Status */
+                table.data-table th:nth-child(7) { width: 100px; text-align: center; } /* Usage */
+                table.data-table th:nth-child(8) { width: 150px; } /* Created At */
+                table.data-table th:nth-child(9) { width: 180px; } /* Actions */
+
+                /* Cell specific styling */
+                table.data-table td:nth-child(6), 
+                table.data-table td:nth-child(7) { text-align: center; }
+
+                .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
+            </style>
+            <table class="table table-hover data-table">
                 <thead>
                     <tr>
                         <th width="10" class="text-start"><input type="checkbox" class="form-check-input" id="select-all"></th>
@@ -37,8 +66,9 @@
                         <th>Card Number</th>
                         <th>HWID</th>
                         <th>User</th>
-                        <th>System Status</th>
-                        <th>Usage State</th>
+                        <th>Status</th>
+                        <th>Usage</th>
+                        <th>Created At</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -96,11 +126,14 @@
         var table = $('.data-table').DataTable({
             processing: true,
             serverSide: true,
-            responsive: true,
+            responsive: false,
+            autoWidth: false,
+            stateSave: true,
+            order: [[7, 'desc']],
             ajax: "{{ route('cards.index') }}",
             columnDefs: [
                 {
-                    targets: 0,
+                    targets: [0, 1, 6, 8],
                     orderable: false,
                     searchable: false
                 }
@@ -116,6 +149,7 @@
                     return `<span class="badge ${classMap[data] || 'bg-label-info'}">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
                 }},
                 {data: 'usage_badge', name: 'is_currently_active', orderable: false, searchable: false},
+                {data: 'created_at', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });

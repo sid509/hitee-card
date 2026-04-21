@@ -81,6 +81,9 @@ class FareController extends Controller
                     
                     return $actions;
                 })
+                ->addColumn('created_at', function($row){
+                    return formatDate($row->created_at);
+                })
                 ->rawColumns(['status', 'action', 'merchant_bus', 'fare_info'])
                 ->make(true);
         }

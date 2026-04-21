@@ -15,50 +15,75 @@
             <i class="bx bx-plus me-1"></i> {{ __('messages.add') }} {{ __('messages.buses') }}
         </a>
         @endif
-    </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
-            <table class="table table-hover data-table w-100">
+            <style>
+                table.data-table {
+                    table-layout: fixed !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                }
+                table.data-table th, table.data-table td {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+                table.data-table th:nth-child(1) { width: 50px; }
+                table.data-table th:nth-child(2) { width: 220px; }
+                table.data-table th:nth-child(3) { width: 120px; }
+                table.data-table th:nth-child(4) { width: 150px; }
+                table.data-table th:nth-child(5) { width: 150px; }
+                table.data-table th:nth-child(6) { width: 100px; text-align: center; }
+                table.data-table th:nth-child(7) { width: 150px; }
+                table.data-table th:nth-child(8) { width: 150px; }
+
+                table.data-table td:nth-child(6) { text-align: center; }
+                .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
+            </style>
+            <table class="table table-hover data-table">
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Name</th>
-                        <th>Number</th>
+                        <th>Bus Name</th>
+                        <th>Bus Number</th>
                         <th>Merchant</th>
                         <th>Route</th>
                         <th>Status</th>
+                        <th>Created At</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
             </table>
         </div>
     </div>
-</div>
-@endsection
+    </div>
+    @endsection
 
-@push('page-js')
-<script type="module">
+    @push('page-js')
+    <script type="module">
     $(function () {
         var table = $('.data-table').DataTable({
             processing: true,
             serverSide: true,
+            responsive: false,
+            autoWidth: false,
+            stateSave: true,
+            order: [[6, 'desc']],
             ajax: "{{ route('buses.index') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {
                     data: 'name', 
-                    name: 'name',
-                    createdCell: function(td) {
-                        $(td).addClass('text-truncate-cell').attr('title', $(td).text());
-                    }
+                    name: 'name'
                 },
                 {data: 'bus_number', name: 'bus_number'},
                 {data: 'merchant.name', name: 'merchant.name', defaultContent: 'N/A'},
                 {data: 'route_name', name: 'route_name', orderable: false},
                 {data: 'status', name: 'status'},
+                {data: 'created_at', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });
     });
-</script>
-@endpush
+    </script>
+    @endpush

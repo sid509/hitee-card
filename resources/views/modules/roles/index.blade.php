@@ -16,10 +16,29 @@
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
-            <table class="table table-hover data-table w-100">
+            <style>
+                table.data-table {
+                    table-layout: fixed !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                }
+                table.data-table th, table.data-table td {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+                table.data-table th:nth-child(1) { width: 50px; }
+                table.data-table th:nth-child(2) { width: 250px; }
+                table.data-table th:nth-child(3) { width: 250px; }
+                table.data-table th:nth-child(4) { width: 180px; }
+                table.data-table th:nth-child(5) { width: 150px; }
+
+                .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
+            </style>
+            <table class="table table-hover data-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>#</th>
                         <th>Name</th>
                         <th>Slug</th>
                         <th>Created At</th>
@@ -29,16 +48,19 @@
             </table>
         </div>
     </div>
-</div>
-@endsection
+    </div>
+    @endsection
 
-@push('page-js')
-<script type="module">
+    @push('page-js')
+    <script type="module">
     $(function () {
         var table = $('.data-table').DataTable({
             processing: true,
             serverSide: true,
-            responsive: true,
+            responsive: false,
+            autoWidth: false,
+            stateSave: true,
+            order: [[3, 'desc']],
             ajax: "{{ route('roles.index') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},

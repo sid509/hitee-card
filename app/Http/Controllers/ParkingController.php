@@ -42,8 +42,11 @@ class ParkingController extends Controller
                     return 'Rs. ' . number_format($row->first_hour_fee, 2);
                 })
                 ->editColumn('status', function($row) {
-                    $class = $row->status === 'opened' ? 'bg-label-success' : 'bg-label-secondary';
+                    $class = $row->status === 'active' ? 'bg-label-success' : 'bg-label-secondary';
                     return '<span class="badge ' . $class . '">' . __('messages.' . $row->status) . '</span>';
+                })
+                ->editColumn('created_at', function($row){
+                    return formatDate($row->created_at);
                 })
                 ->addColumn('action', function($row){
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant', 'staff');

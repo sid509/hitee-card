@@ -25,6 +25,9 @@ class StopController extends Controller
                             </form>';
                     return $btn;
                 })
+                ->addColumn('created_at', function($row){
+                    return formatDate($row->created_at);
+                })
                 ->rawColumns(['action'])
                 ->make(true);
         }

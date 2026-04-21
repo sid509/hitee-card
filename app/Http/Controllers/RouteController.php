@@ -49,6 +49,9 @@ class RouteController extends Controller
                     }
                     return $actions;
                 })
+                ->addColumn('created_at', function($row){
+                    return formatDate($row->created_at);
+                })
                 ->rawColumns(['merchant_names', 'stops_count', 'action'])
                 ->make(true);
         }

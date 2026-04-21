@@ -41,6 +41,9 @@ class BusController extends Controller
                     $class = $row->status === 'active' ? 'bg-label-success' : 'bg-label-secondary';
                     return '<span class="badge ' . $class . '">' . __('messages.' . $row->status) . '</span>';
                 })
+                ->editColumn('created_at', function($row){
+                    return formatDate($row->created_at);
+                })
                 ->addColumn('action', function($row){
                     $canEdit = auth()->user()->hasRole('super-admin', 'merchant', 'staff');
                     $canDelete = auth()->user()->hasRole('super-admin');
