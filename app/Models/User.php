@@ -62,25 +62,45 @@ class User extends Authenticatable
 
     public function balanceIns()
     {
-        return $this->hasMany(BalanceIn::class);
+        $cardIds = $this->cards()->pluck('id');
+        return BalanceIn::where(function($q) use ($cardIds) {
+            $q->where('user_id', $this->id)
+              ->orWhereIn('card_id', $cardIds);
+        });
     }
 
     public function balanceOuts()
     {
-        return $this->hasMany(BalanceOut::class);
+        $cardIds = $this->cards()->pluck('id');
+        return BalanceOut::where(function($q) use ($cardIds) {
+            $q->where('user_id', $this->id)
+              ->orWhereIn('card_id', $cardIds);
+        });
+    }
+
+    public function taps()
+    {
+        $cardIds = $this->cards()->pluck('id');
+        return Tap::where(function($q) use ($cardIds) {
+            $q->where('user_id', $this->id)
+              ->orWhereIn('card_id', $cardIds);
+        });
+    }
+
+    public function rides()
+    {
+        $cardIds = $this->cards()->pluck('id');
+        return Ride::where(function($q) use ($cardIds) {
+            $q->where('user_id', $this->id)
+              ->orWhereIn('card_id', $cardIds);
+        });
     }
 
     public function balance()
     {
-        $in = \App\Models\BalanceIn::where('user_id', $this->id)->where('status', 'completed')->sum('amount');
-        // Also include balance added to cards specifically linked to this user (in case user_id is null on balance_in but card is linked)
-        $cardIds = $this->cards()->pluck('id');
-        $cardIn = \App\Models\BalanceIn::whereIn('card_id', $cardIds)->where('user_id', '!=', $this->id)->where('status', 'completed')->sum('amount');
-        
-        $out = \App\Models\BalanceOut::where('user_id', $this->id)->sum('amount');
-        $cardOut = \App\Models\BalanceOut::whereIn('card_id', $cardIds)->where('user_id', '!=', $this->id)->sum('amount');
-        
-        return ($in + $cardIn) - ($out + $cardOut);
+        $in = $this->balanceIns()->where('status', 'completed')->sum('amount');
+        $out = $this->balanceOuts()->sum('amount');
+        return $in - $out;
     }
 
     public function merchantIncomes()

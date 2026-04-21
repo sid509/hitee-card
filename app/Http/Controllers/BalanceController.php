@@ -235,8 +235,11 @@ class BalanceController extends Controller
         // If super-admin and no userId provided, show all
         if (!$userId && auth()->user()->hasRole('super-admin')) {
             $userId = 'all';
+            $userCardIds = [];
         } else {
             $userId = $userId ?? auth()->id();
+            $targetUser = User::find($userId);
+            $userCardIds = $targetUser ? $targetUser->cards()->pluck('id')->toArray() : [];
         }
         
         // If requesting another user's logs, must be super-admin
@@ -245,12 +248,18 @@ class BalanceController extends Controller
         }
 
         if ($request->ajax()) {
-            $queryIn = BalanceIn::where('status', 'completed')->select(['id', 'user_id', 'amount', 'type', 'remarks', 'created_at']);
-            $queryOut = BalanceOut::select(['id', 'user_id', 'amount', 'type', 'remarks', 'created_at', 'merchant_id', 'reference_id', 'reference_type']);
+            $queryIn = BalanceIn::where('status', 'completed')->select(['id', 'user_id', 'card_id', 'amount', 'type', 'remarks', 'created_at']);
+            $queryOut = BalanceOut::select(['id', 'user_id', 'card_id', 'amount', 'type', 'remarks', 'created_at', 'merchant_id', 'reference_id', 'reference_type']);
 
             if ($userId !== 'all') {
-                $queryIn->where('user_id', $userId);
-                $queryOut->where('user_id', $userId);
+                $queryIn->where(function($q) use ($userId, $userCardIds) {
+                    $q->where('user_id', $userId)
+                      ->orWhereIn('card_id', $userCardIds);
+                });
+                $queryOut->where(function($q) use ($userId, $userCardIds) {
+                    $q->where('user_id', $userId)
+                      ->orWhereIn('card_id', $userCardIds);
+                });
             }
 
             // Apply Filters
