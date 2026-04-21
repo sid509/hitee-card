@@ -45,8 +45,8 @@
                 </select>
             </div>
             <div class="col-md-2 d-flex align-items-end gap-2">
-                <button type="button" id="btnFilter" class="btn btn-primary w-100"><i class="bx bx-filter-alt me-1"></i> Filter</button>
-                <button type="button" id="btnClearFilter" class="btn btn-outline-secondary w-100"><i class="bx bx-refresh me-1"></i> Clear</button>
+                <button type="button" id="btnFilter" class="btn btn-primary" style="height: 30px !important;"><i class="bx bx-filter-alt"></i></button>
+                <button type="button" id="btnClearFilter" class="btn btn-outline-secondary" style="height: 30px !important;"><i class="bx bx-refresh"></i></button>
             </div>
         </form>
     </div>

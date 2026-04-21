@@ -18,8 +18,9 @@ class StaffSeeder extends Seeder
     {
         $merchants = User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get();
         $staffRole = Role::where('slug', 'staff')->first();
+        $customerRole = Role::where('slug', 'customers')->first();
 
-        if ($merchants->isEmpty() || !$staffRole) return;
+        if ($merchants->isEmpty() || !$staffRole || !$customerRole) return;
 
         foreach ($merchants as $index => $merchant) {
             $this->command->info("Creating staff for merchant: {$merchant->name}");
@@ -36,7 +37,7 @@ class StaffSeeder extends Seeder
                     ]
                 );
 
-                $staff->roles()->syncWithoutDetaching([$staffRole->id]);
+                $staff->roles()->syncWithoutDetaching([$staffRole->id, $customerRole->id]);
                 $merchant->staff()->syncWithoutDetaching([$staff->id]);
 
                 // Assign to random buses and parkings of this merchant

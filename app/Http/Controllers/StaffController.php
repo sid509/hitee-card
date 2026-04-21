@@ -83,12 +83,13 @@ class StaffController extends Controller
     {
         $merchant = auth()->user();
         $staffRole = Role::where('slug', 'staff')->first();
+        $customerRole = Role::where('slug', 'customers')->first();
         
         // If searching for existing user
         if ($request->filled('user_id')) {
             $user = User::findOrFail($request->user_id);
-            // Ensure they have the staff role
-            $user->roles()->syncWithoutDetaching([$staffRole->id]);
+            // Ensure they have both roles
+            $user->roles()->syncWithoutDetaching([$staffRole->id, $customerRole->id]);
         } else {
             $user = User::create([
                 'name' => $request->name,
@@ -97,7 +98,7 @@ class StaffController extends Controller
                 'status' => 'active',
             ]);
             
-            $user->roles()->syncWithoutDetaching([$staffRole->id]);
+            $user->roles()->syncWithoutDetaching([$staffRole->id, $customerRole->id]);
         }
 
         $merchant->staff()->syncWithoutDetaching([$user->id]);

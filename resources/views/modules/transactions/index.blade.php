@@ -32,8 +32,8 @@
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end gap-2">
-                    <button type="button" id="btnFilter" class="btn btn-primary w-100 d-none"><i class="bx bx-filter-alt me-1"></i> Filter</button>
-                    <button type="button" id="resetFilters" class="btn btn-outline-secondary w-100"><i class="bx bx-refresh me-1"></i> Clear</button>
+                    <button type="button" id="btnFilter" class="btn btn-primary d-none"><i class="bx bx-filter-alt"></i></button>
+                    <button type="button" id="resetFilters" class="btn btn-outline-secondary"><i class="bx bx-refresh"></i></button>
                 </div>
             </form>
         </div>

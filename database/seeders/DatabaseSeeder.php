@@ -20,25 +20,19 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserSeeder::class,
             
-            // 1. Create Routes and their Stops
-            RingRoadSeeder::class,
-            MayurYatayatSeeder::class,
-            MahanagarYatayatSeeder::class,
-            NepalYatayatSeeder::class,
-            CityCoreSeeder::class,
+            // 1. COMPREHENSIVE DATA INGESTION
+            // This replaces individual company seeders with the full JSON dataset
+            JsonDataSeeder::class,
             
             // 2. Create Buses and link to Routes
             BusSeeder::class,
             
-            // 3. Create Fares for those Routes and link to Buses
-            FareSeeder::class,
-            
-            // 4. Create other assets
+            // 3. Create other assets
             ParkingSeeder::class,
             ParkingAttributeSeeder::class,
             StaffSeeder::class,
             
-            // 5. Final Step: Simulation (requires Buses with Fares and Customers with Cards)
+            // 4. Final Step: Simulation (requires Buses with Fares and Customers with Cards)
             CardSeeder::class,
             UltraRealisticTransitSeeder::class,
         ]);

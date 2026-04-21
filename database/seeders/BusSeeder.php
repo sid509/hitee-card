@@ -28,7 +28,7 @@ class BusSeeder extends Seeder
         $routes = \App\Models\Route::all();
 
         foreach ($kathmanduBuses as $index => $data) {
-            Bus::create([
+            $bus = Bus::create([
                 'name' => $data['name'],
                 'bus_number' => $data['no'],
                 'hwid' => 'HW_' . uniqid(),
@@ -38,6 +38,14 @@ class BusSeeder extends Seeder
                 'longitude' => $data['lng'],
                 'route_id' => $routes->isNotEmpty() ? $routes->random()->id : null,
             ]);
+
+            // Assign an active fare based on the route
+            if ($bus->route_id) {
+                $fare = \App\Models\Fare::where('route_id', $bus->route_id)->first();
+                if ($fare) {
+                    $bus->update(['active_fare_id' => $fare->id]);
+                }
+            }
         }
     }
 }

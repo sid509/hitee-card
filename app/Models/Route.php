@@ -11,7 +11,7 @@ class Route extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['name', 'description', 'direction'];
 
     public function merchants()
     {

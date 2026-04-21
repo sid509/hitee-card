@@ -154,7 +154,7 @@
         </li>
         @endif
 
-        @if(auth()->user()->hasRole('super-admin', 'customers'))
+        @if(auth()->user()->hasRole('super-admin', 'customers', 'staff'))
         <li class="menu-item {{ request()->routeIs('route-finder.*') ? 'active' : '' }}">
             <a href="{{ route('route-finder.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-map-pin"></i>
