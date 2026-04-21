@@ -11,7 +11,20 @@
         <h5 class="card-header">Filters</h5>
         <div class="card-body">
             <form id="filterForm" class="row g-3">
-                <div class="col-md-4">
+                @if(auth()->user()->hasRole('super-admin'))
+                <div class="col-md-3">
+                    <label class="form-label">User</label>
+                    <select name="user_id" id="user_id_filter" class="form-select filter-input">
+                        <option value="all" {{ $userId === 'all' ? 'selected' : '' }}>All Users</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" {{ $userId == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }} ({{ $user->email }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+                <div class="{{ auth()->user()->hasRole('super-admin') ? 'col-md-3' : 'col-md-4' }}">
                     <label class="form-label">Type</label>
                     <select name="type" class="form-select filter-input">
                         <option value="">All Types</option>
@@ -19,7 +32,7 @@
                         <option value="out">Debit (Out)</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="{{ auth()->user()->hasRole('super-admin') ? 'col-md-3' : 'col-md-4' }}">
                     <label class="form-label">Activity</label>
                     <select name="activity" class="form-select filter-input">
                         <option value="">All Activities</option>
@@ -33,7 +46,7 @@
                         <option value="manual_deduction">Manual Deduction</option>
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end gap-2">
+                <div class="{{ auth()->user()->hasRole('super-admin') ? 'col-md-3' : 'col-md-4' }} d-flex align-items-end gap-2">
                     <button type="button" id="btnFilter" class="btn btn-primary d-none"><i class="bx bx-filter-alt"></i></button>
                     <button type="button" id="resetFilters" class="btn btn-outline-secondary"><i class="bx bx-refresh"></i></button>
                 </div>
@@ -72,15 +85,16 @@
             serverSide: true,
             responsive: true,
             ajax: {
-                url: "{{ route('transactions.logs', $userId) }}",
+                url: "{{ route('transactions.logs') }}",
                 data: function (d) {
+                    d.user_id = $('select[name="user_id"]').val() || "{{ $userId }}";
                     d.type = $('select[name="type"]').val();
                     d.activity = $('select[name="activity"]').val();
                 }
             },
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'created_at', name: 'created_at'},
+                {data: 'created_at', name: 'created_at', orderable: true},
                 {data: 'customer', name: 'customer'},
                 {data: 'direction', name: 'direction', orderable: false, searchable: false},
                 {data: 'type', name: 'type'},

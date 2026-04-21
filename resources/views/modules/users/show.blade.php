@@ -68,6 +68,54 @@
             </div>
         </div>
         <!-- /User Card -->
+
+        <!-- Cards List -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Linked Cards</h5>
+                @if(auth()->user()->hasRole('super-admin'))
+                    <a href="{{ route('cards.create', ['user_id' => $user->id]) }}" class="btn btn-sm btn-primary">Add Card</a>
+                @endif
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Card Number</th>
+                                <th>Status</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($user->cards as $card)
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('cards.show', $card->id) }}" class="fw-medium">
+                                            {{ $card->card_number }}
+                                        </a>
+                                        @if($card->is_currently_active)
+                                            <span class="badge bg-label-info ms-1" style="font-size: 0.65rem;">Active</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-label-{{ $card->status === 'active' ? 'success' : 'secondary' }}">
+                                            {{ ucfirst($card->status) }}
+                                        </span>
+                                    </td>
+                                    <td class="fw-medium">Rs. {{ number_format($card->balance(), 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-3">No cards linked to this user.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- /Cards List -->
     </div>
     <!--/ User Sidebar -->
 

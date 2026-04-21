@@ -216,7 +216,7 @@
             columns: [
                 {data: 'checkbox', name: 'checkbox', orderable: false, searchable: false},
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'user_info', name: 'name', className: 'column-ellipsis'},
+                {data: 'user_info', name: 'name', className: 'column-ellipsis', orderable: false},
                 {data: 'card_info', name: 'card_info', orderable: false, searchable: false},
                 {data: 'role_icons', name: 'role_icons', orderable: false},
                 {data: 'balance', name: 'balance', orderable: false, searchable: false},
@@ -225,7 +225,7 @@
                     let classMap = { active: 'bg-label-success', inactive: 'bg-label-secondary' };
                     return `<span class="badge ${classMap[data] || 'bg-label-info'}">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
                 }},
-                {data: 'created_at', name: 'created_at'},
+                {data: 'created_at', name: 'created_at', orderable: true},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ],
             drawCallback: function() {

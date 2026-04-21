@@ -242,6 +242,8 @@ class BalanceController extends Controller
      */
     public function logs(Request $request, $userId = null)
     {
+        $userId = $request->get('user_id', $userId);
+
         // If super-admin and no userId provided, show all
         if (!$userId && auth()->user()->hasRole('super-admin')) {
             $userId = 'all';
@@ -255,8 +257,8 @@ class BalanceController extends Controller
         }
 
         if ($request->ajax()) {
-            $queryIn = BalanceIn::with(['user', 'card'])->where('status', 'completed');
-            $queryOut = BalanceOut::with(['user', 'card', 'merchant']);
+            $queryIn = BalanceIn::with(['user', 'card'])->where('status', 'completed')->latest();
+            $queryOut = BalanceOut::with(['user', 'card', 'merchant'])->latest();
 
             if ($userId !== 'all') {
                 $targetUser = User::find($userId);
@@ -360,7 +362,9 @@ class BalanceController extends Controller
                 ->make(true);
         }
 
-        return view('modules.transactions.index', compact('userId'));
+        $users = User::all(['id', 'name', 'email']);
+
+        return view('modules.transactions.index', compact('userId', 'users'));
     }
 
     /**

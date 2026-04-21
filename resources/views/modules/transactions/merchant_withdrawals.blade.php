@@ -81,7 +81,7 @@
             ajax: "{{ route('merchant.withdrawals') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'created_at', name: 'created_at'},
+                {data: 'created_at', name: 'created_at', orderable: true},
                 {data: 'transaction_id', name: 'transaction_id'},
                 {data: 'status', name: 'status'},
                 {data: 'amount', name: 'amount'},

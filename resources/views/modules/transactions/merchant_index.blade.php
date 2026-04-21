@@ -43,7 +43,7 @@
             ajax: "{{ route('merchant.income') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'created_at', name: 'created_at'},
+                {data: 'created_at', name: 'created_at', orderable: true},
                 {data: 'customer', name: 'customer'},
                 {data: 'type', name: 'type'},
                 {data: 'amount', name: 'amount'},
