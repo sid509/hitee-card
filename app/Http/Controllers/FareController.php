@@ -16,10 +16,9 @@ class FareController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Fare::with(['merchants', 'route', 'buses']);
-            
-            if (auth()->user()->hasRole('merchant')) {
-                $query->whereHas('merchants', function($q) {
+            $query = Fare::with(['merchants', 'route', 'buses'])->latest();
+
+            if (auth()->user()->hasRole('merchant')) {                $query->whereHas('merchants', function($q) {
                     $q->where('users.id', auth()->id());
                 });
             }

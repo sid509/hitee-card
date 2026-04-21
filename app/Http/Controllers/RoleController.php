@@ -20,7 +20,7 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = Role::select(['id', 'name', 'slug', 'created_at']);
+            $data = Role::select(['id', 'name', 'slug', 'created_at'])->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->editColumn('created_at', function($row){

@@ -19,7 +19,7 @@ class SupportController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
         if ($request->ajax()) {
-            $data = SupportModel::with('user')->select(['id', 'user_id', 'subject', 'message', 'status', 'created_at']);
+            $data = SupportModel::with('user')->select(['id', 'user_id', 'subject', 'message', 'status', 'created_at'])->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->editColumn('user_name', function($row){

@@ -23,16 +23,21 @@ class StaffController extends Controller
                 // Admin sees all users with 'staff' role
                 $data = User::whereHas('roles', fn($q) => $q->where('slug', 'staff'))
                     ->with(['assignedBuses', 'assignedParkings'])
-                    ->select(['users.id', 'users.name', 'users.email', 'users.status']);
+                    ->select(['users.id', 'users.name', 'users.email', 'users.status', 'users.created_at'])
+                    ->latest();
             } else {
                 // Merchant sees only their linked staff
                 $data = $user->staff()
                     ->with(['assignedBuses', 'assignedParkings'])
-                    ->select(['users.id', 'users.name', 'users.email', 'users.status']);
+                    ->select(['users.id', 'users.name', 'users.email', 'users.status', 'users.created_at'])
+                    ->latest();
             }
             
             return DataTables::of($data)
                 ->addIndexColumn()
+                ->editColumn('created_at', function($row){
+                    return formatDate($row->created_at);
+                })
                 ->addColumn('staff_info', function($row){
                     return '<div>
                                 <span class="fw-medium">'.$row->name.'</span><br>

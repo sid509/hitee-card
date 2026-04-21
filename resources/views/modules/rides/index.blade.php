@@ -69,6 +69,7 @@
                         <th>Tap Out</th>
                         <th>Fare</th>
                         <th>Status</th>
+                        <th>Created At</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -129,14 +130,15 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'user_card', name: 'user.name'},
-                {data: 'asset_info', name: 'asset.name'},
-                {data: 'tap_in_time', name: 'tap_in_time', defaultContent: '-'},
-                {data: 'tap_out_time', name: 'tap_out_time', defaultContent: '---'},
+                {data: 'asset_info', name: 'asset.name', orderable: false},
+                {data: 'tap_in_time', name: 'tap_in_id', orderable: false},
+                {data: 'tap_out_time', name: 'tap_out_id', orderable: false},
                 {data: 'fare_amount', name: 'fare_amount'},
                 {data: 'status', name: 'status'},
+                {data: 'created_at', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ],
-            order: [[0, 'desc']]
+            order: [[7, 'desc']]
         });
 
         $('#btnFilter').click(function() {

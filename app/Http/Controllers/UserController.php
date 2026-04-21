@@ -20,7 +20,9 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = User::with(['roles', 'activeCard'])->select(['id', 'name', 'email', 'phone_number', 'status', 'created_at']);
+            $data = User::with(['roles', 'activeCard'])
+                ->select(['id', 'name', 'email', 'phone_number', 'status', 'created_at'])
+                ->latest();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function($row){

@@ -129,7 +129,7 @@
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ],
 
-            order: [[0, 'desc']]
+            order: [[5, 'desc']]
         });
 
         $('#btnFilter').click(function() {

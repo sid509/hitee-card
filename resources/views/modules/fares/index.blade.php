@@ -16,14 +16,36 @@
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
-            <table class="table table-hover data-table w-100">
+            <style>
+                table.data-table {
+                    table-layout: fixed !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                }
+                table.data-table th, table.data-table td {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+                table.data-table th:nth-child(1) { width: 50px; }
+                table.data-table th:nth-child(2) { width: 250px; }
+                table.data-table th:nth-child(3) { width: 180px; }
+                table.data-table th:nth-child(4) { width: 120px; text-align: center; }
+                table.data-table th:nth-child(5) { width: 150px; }
+                table.data-table th:nth-child(6) { width: 180px; }
+                
+                table.data-table td:nth-child(4) { text-align: center; }
+                .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
+            </style>
+            <table class="table table-hover data-table">
                 <thead>
                     <tr>
-                        <th style="width: 30px;">#</th>
-                        <th style="width: 45%;">Fare & Route</th>
-                        <th>Buses</th>
-                        <th class="text-center" style="width: 120px;">Status</th>
-                        <th class="text-center" style="width: 140px;">Actions</th>
+                        <th>#</th>
+                        <th>Fare Plan</th>
+                        <th>Assigned Buses</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
             </table>
@@ -70,12 +92,17 @@
         const table = $('.data-table').DataTable({
             processing: true,
             serverSide: true,
+            responsive: false,
+            autoWidth: false,
+            stateSave: true,
+            order: [[4, 'desc']],
             ajax: "{{ route('fares.index') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'fare_info', name: 'name'},
                 {data: 'merchant_bus', name: 'merchant_bus', orderable: false, searchable: false},
                 {data: 'status', name: 'status', className: 'text-center'},
+                {data: 'created_at', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center'},
             ],
             drawCallback: function() {

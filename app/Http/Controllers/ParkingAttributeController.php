@@ -17,7 +17,7 @@ class ParkingAttributeController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
         if ($request->ajax()) {
-            $data = ParkingAttribute::query();
+            $data = ParkingAttribute::latest();
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->editColumn('icon', function($row){
@@ -25,6 +25,9 @@ class ParkingAttributeController extends Controller
                         return '<img src="'.asset('storage/'.$row->icon).'" alt="'.$row->name.'" height="24" width="24" class="me-2">';
                     }
                     return '<span class="text-muted small">No Icon</span>';
+                })
+                ->editColumn('created_at', function($row){
+                    return formatDate($row->created_at);
                 })
                 ->addColumn('action', function($row){
                     $actions = '<a href="'.route('parking-attributes.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';

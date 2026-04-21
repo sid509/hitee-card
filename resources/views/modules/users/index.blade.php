@@ -206,10 +206,9 @@
             autoWidth: false,
             stateSave: true,
             order: [[7, 'desc']],
-            ajax: "{{ route('users.index') }}",
             columnDefs: [
                 {
-                    targets: [0, 1, 3, 4, 5, 6, 7, 8],
+                    targets: [0, 1, 3, 4, 5, 6, 8],
                     orderable: false,
                     searchable: false
                 }

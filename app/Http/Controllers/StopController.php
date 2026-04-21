@@ -12,7 +12,7 @@ class StopController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Stop::query();
+            $query = Stop::latest();
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('action', function($row){

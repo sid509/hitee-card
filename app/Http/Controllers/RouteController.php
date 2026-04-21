@@ -14,7 +14,7 @@ class RouteController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Route::with(['merchants', 'stops']);
+            $query = Route::with(['merchants', 'stops'])->latest();
             
             if (auth()->user()->hasRole('merchant')) {
                 $query->whereHas('merchants', function($q) {

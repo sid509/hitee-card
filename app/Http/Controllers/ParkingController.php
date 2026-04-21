@@ -21,7 +21,7 @@ class ParkingController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Parking::with('merchant');
+            $query = Parking::with('merchant')->latest();
             
             // Limit to own parkings if merchant
             if (auth()->user()->hasRole('merchant')) {

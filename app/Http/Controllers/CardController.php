@@ -21,7 +21,7 @@ class CardController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Card::with('user');
+            $query = Card::with('user')->latest();
 
             // Limit to own cards if customer
             if (auth()->user()->hasRole('customers')) {

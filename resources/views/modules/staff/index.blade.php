@@ -22,6 +22,7 @@
                         <th style="width: 30px;">#</th>
                         <th>Staff Details</th>
                         <th>Assignments</th>
+                        <th>Joined At</th>
                         <th class="text-center" style="width: 100px;">Status</th>
                         <th class="text-center" style="width: 120px;">Actions</th>
                     </tr>
@@ -39,10 +40,12 @@
         processing: true,
         serverSide: true,
         ajax: "{{ route('staff.index') }}",
+        order: [[3, 'desc']],
         columns: [
             {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, width: '30px'},
             {data: 'staff_info', name: 'name'},
             {data: 'assignments', name: 'assignments', orderable: false, searchable: false, className: 'text-center'},
+            {data: 'created_at', name: 'created_at'},
             {data: 'status', name: 'status', className: 'text-center', render: function(data) {
                 if (!data) return '-';
                 let classMap = { active: 'bg-label-success', inactive: 'bg-label-secondary' };

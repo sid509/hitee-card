@@ -19,9 +19,10 @@
             <table class="table table-hover data-table w-100">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>#</th>
                         <th>Icon</th>
                         <th>Name</th>
+                        <th>Created At</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -38,11 +39,13 @@
             processing: true,
             serverSide: true,
             responsive: true,
+            order: [[3, 'desc']],
             ajax: "{{ route('parking-attributes.index') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'icon', name: 'icon', orderable: false, searchable: false},
                 {data: 'name', name: 'name'},
+                {data: 'created_at', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ]
         });
