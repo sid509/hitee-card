@@ -48,7 +48,19 @@
                         <ul class="list-unstyled">
                             <li class="mb-3">
                                 <span class="fw-medium me-2">User:</span>
-                                <span>{{ $card->user->name ?? 'Unassigned' }}</span>
+                                <span>
+                                    @if($card->user)
+                                        @if(auth()->user()->hasRole('super-admin'))
+                                            <a href="{{ route('users.show', $card->user->id) }}">{{ $card->user->name }}</a>
+                                        @elseif(auth()->id() === $card->user_id)
+                                            <a href="{{ route('profile.show') }}">{{ $card->user->name }}</a>
+                                        @else
+                                            {{ $card->user->name }}
+                                        @endif
+                                    @else
+                                        Unassigned
+                                    @endif
+                                </span>
                             </li>
                             <li class="mb-3">
                                 <span class="fw-medium me-2">Hardware ID:</span>

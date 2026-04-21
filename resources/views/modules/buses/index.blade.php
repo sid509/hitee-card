@@ -67,7 +67,7 @@
             serverSide: true,
             responsive: false,
             autoWidth: false,
-            stateSave: true,
+            
             order: [[6, 'desc']],
             ajax: "{{ route('buses.index') }}",
             columns: [

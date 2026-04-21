@@ -128,7 +128,7 @@
             serverSide: true,
             responsive: false,
             autoWidth: false,
-            stateSave: true,
+            
             order: [[7, 'desc']],
             ajax: "{{ route('cards.index') }}",
             columnDefs: [

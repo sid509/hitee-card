@@ -66,7 +66,7 @@
             serverSide: true,
             responsive: false,
             autoWidth: false,
-            stateSave: true,
+            
             order: [[5, 'desc']],
             ajax: "{{ route('parkings.index') }}",
             columns: [

@@ -59,7 +59,7 @@
             serverSide: true,
             responsive: false,
             autoWidth: false,
-            stateSave: true,
+            
             order: [[3, 'desc']],
             ajax: "{{ route('permissions.index') }}",
             columns: [

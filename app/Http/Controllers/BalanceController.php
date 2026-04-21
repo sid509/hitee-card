@@ -179,7 +179,7 @@ class BalanceController extends Controller
                 $query->where('reference_type', $request->get('reference_type'));
             }
 
-            return DataTables::of($query->select(['merchant_incomes.*']))
+            return DataTables::of($query->select(['merchant_incomes.*'])->latest())
                 ->addIndexColumn()
                 ->editColumn('created_at', function($row){
                     return formatDate($row->created_at);
@@ -215,7 +215,8 @@ class BalanceController extends Controller
         
         if ($request->ajax()) {
             $data = MerchantWithdrawal::where('merchant_id', $merchantId)
-                ->select(['merchant_withdrawals.*']);
+                ->select(['merchant_withdrawals.*'])
+                ->latest();
 
             return DataTables::of($data)
                 ->addIndexColumn()

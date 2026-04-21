@@ -16,7 +16,7 @@ window.DataTable = DataTable;
 
 // Set DataTables Defaults
 $.extend(true, $.fn.dataTable.defaults, {
-    stateSave: true,
+    stateSave: false,
     stateSaveCallback: function(settings, data) {
         const page = Math.floor(data.start / data.length) + 1;
         const url = new URL(window.location.href);

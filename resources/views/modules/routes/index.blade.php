@@ -62,7 +62,7 @@
             serverSide: true,
             responsive: false,
             autoWidth: false,
-            stateSave: true,
+            
             order: [[4, 'desc']],
             ajax: "{{ route('routes.index') }}",
             columns: [
