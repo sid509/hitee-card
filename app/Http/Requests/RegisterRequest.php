@@ -14,7 +14,7 @@ class RegisterRequest extends BaseRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'phone_number' => 'required|string|max:20|unique:users',
+            'phone_number' => 'required|string|regex:/^9\d{9}$/|unique:users',
             'card_number' => 'nullable|string|exists:cards,card_number',
             'password' => 'required|string|min:8|confirmed',
         ];

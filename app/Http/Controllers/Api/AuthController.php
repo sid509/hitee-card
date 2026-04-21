@@ -68,11 +68,11 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request)
     {
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (!Auth::attempt($request->only('phone_number', 'password'))) {
             return apiResponse(false, 'Invalid login credentials', '', 401);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
+        $user = User::where('phone_number', $request->phone_number)->with(['roles', 'cards'])->firstOrFail();
         
         // Revoke old tokens
         $user->tokens()->delete();
@@ -89,7 +89,21 @@ class AuthController extends Controller
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
-                'email' => $user->email
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+                'status' => $user->status,
+                'balance' => $user->balance(),
+                'roles' => $user->roles->pluck('name'),
+                'cards' => $user->cards->map(function($card) {
+                    return [
+                        'id' => $card->id,
+                        'card_number' => $card->card_number,
+                        'hwid' => $card->hwid,
+                        'status' => $card->status,
+                        'balance' => $card->balance(),
+                        'is_active' => (bool)$card->is_currently_active
+                    ];
+                })
             ]
         ]);
     }
@@ -167,6 +181,8 @@ class AuthController extends Controller
 
             logActivity('login', 'User logged in via social login (' . $provider . ')', [], $user->id);
 
+            $user->load(['roles', 'cards']);
+
             return apiResponse(true, 'Social login successful', [
                 'access_token' => $accessToken,
                 'refresh_token' => $refreshToken,
@@ -174,7 +190,21 @@ class AuthController extends Controller
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'email' => $user->email
+                    'email' => $user->email,
+                    'phone_number' => $user->phone_number,
+                    'status' => $user->status,
+                    'balance' => $user->balance(),
+                    'roles' => $user->roles->pluck('name'),
+                    'cards' => $user->cards->map(function($card) {
+                        return [
+                            'id' => $card->id,
+                            'card_number' => $card->card_number,
+                            'hwid' => $card->hwid,
+                            'status' => $card->status,
+                            'balance' => $card->balance(),
+                            'is_active' => (bool)$card->is_currently_active
+                        ];
+                    })
                 ]
             ]);
 

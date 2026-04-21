@@ -12,7 +12,7 @@ class LoginRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|string|email',
+            'phone_number' => 'required|string',
             'password' => 'required|string',
         ];
     }

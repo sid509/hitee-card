@@ -40,6 +40,16 @@
                 </span>
                 @enderror
             </div>
+            <div class="mb-6">
+                <label for="phone_number" class="form-label">Phone Number</label>
+                <input type="text" class="form-control @error('phone_number') is-invalid @enderror" id="phone_number" name="phone_number"
+                    placeholder="9XXXXXXXXX" value="{{ old('phone_number') }}" />
+                @error('phone_number')
+                <span class="invalid-feedback" role="alert">
+                    <strong>{{ $message }}</strong>
+                </span>
+                @enderror
+            </div>
             <div class="mb-6 form-password-toggle">
                 <label class="form-label" for="password">Password</label>
                 <div class="input-group input-group-merge">

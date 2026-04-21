@@ -21,10 +21,10 @@
         <form id="formAuthentication" class="mb-6" action="{{ route('login') }}" method="POST">
             @csrf
             <div class="mb-6">
-                <label for="email" class="form-label">Email</label>
-                <input type="text" class="form-control @error('email') is-invalid @enderror" id="email" name="email"
-                    placeholder="Enter your email" value="{{ old('email') }}" autofocus />
-                @error('email')
+                <label for="phone_number" class="form-label">Phone Number</label>
+                <input type="text" class="form-control @error('phone_number') is-invalid @enderror" id="phone_number" name="phone_number"
+                    placeholder="Enter your phone number" value="{{ old('phone_number') }}" autofocus />
+                @error('phone_number')
                 <span class="invalid-feedback" role="alert">
                     <strong>{{ $message }}</strong>
                 </span>

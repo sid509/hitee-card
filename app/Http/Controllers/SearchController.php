@@ -27,14 +27,15 @@ class SearchController extends Controller
         if ($user->hasRole('super-admin')) {
             $users = User::where(function($query) use ($q) {
                     $query->where('name', 'LIKE', "%$q%")
-                          ->orWhere('email', 'LIKE', "%$q%");
+                          ->orWhere('email', 'LIKE', "%$q%")
+                          ->orWhere('phone_number', 'LIKE', "%$q%");
                 })
                 ->limit(5)->get();
             
             if ($users->count() > 0) {
                 $results['Users'] = $users->map(fn($u) => [
                     'title' => $u->name,
-                    'subtitle' => $u->email,
+                    'subtitle' => $u->phone_number ?? $u->email,
                     'url' => route('users.show', $u->id),
                     'icon' => 'bx-user'
                 ]);
@@ -123,7 +124,8 @@ class SearchController extends Controller
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'LIKE', "%$search%")
-                  ->orWhere('email', 'LIKE', "%$search%");
+                  ->orWhere('email', 'LIKE', "%$search%")
+                  ->orWhere('phone_number', 'LIKE', "%$search%");
             });
         }
 
@@ -133,7 +135,7 @@ class SearchController extends Controller
             'results' => collect($users->items())->map(function ($user) {
                 return [
                     'id' => $user->id,
-                    'text' => $user->name . " (" . $user->email . ") - Bal: Rs. " . number_format($user->balance(), 2),
+                    'text' => $user->name . " (" . ($user->phone_number ?? $user->email) . ") - Bal: Rs. " . number_format($user->balance(), 2),
                     'balance' => $user->balance()
                 ];
             })->toArray(),
@@ -154,7 +156,8 @@ class SearchController extends Controller
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'LIKE', "%$search%")
-                  ->orWhere('email', 'LIKE', "%$search%");
+                  ->orWhere('email', 'LIKE', "%$search%")
+                  ->orWhere('phone_number', 'LIKE', "%$search%");
             });
         }
 
@@ -164,7 +167,7 @@ class SearchController extends Controller
             'results' => collect($merchants->items())->map(function ($merchant) {
                 return [
                     'id' => $merchant->id,
-                    'text' => $merchant->name . " (" . $merchant->email . ")"
+                    'text' => $merchant->name . " (" . ($merchant->phone_number ?? $merchant->email) . ")"
                 ];
             })->toArray(),
             'pagination' => [
