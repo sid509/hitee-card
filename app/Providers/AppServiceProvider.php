@@ -32,8 +32,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Scramble::extendOpenApi(function (OpenApi $openApi) {
-            $openApi->components->addSecurityScheme(
-                'bearer',
+            $openApi->secure(
                 SecurityScheme::http('bearer')
             );
         });
