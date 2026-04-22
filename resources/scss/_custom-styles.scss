@@ -471,12 +471,15 @@ input:-webkit-autofill:active {
 }
 
 @media (max-width: 1199.98px) {
-    .layout-menu-fixed .layout-menu {
-        position: fixed !important;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 1075;
+    .layout-menu {
+        z-index: 1085 !important;
+    }
+    .layout-overlay {
+        z-index: 1080 !important;
+        display: none;
+    }
+    .layout-menu-expanded .layout-overlay {
+        display: block !important;
     }
 }
 
