@@ -24,17 +24,21 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
 
-            if ($user->status == \App\Models\User::STATUS_INACTIVE) {
+            // 1. Check if email is verified
+            if (!$user->hasVerifiedEmail()) {
                 Auth::logout();
-                throw ValidationException::withMessages(['phone_number' => 'Your account is deactivated.']);
+                return redirect()->route('verification.notice');
             }
 
-            if ($user->status == \App\Models\User::STATUS_PENDING) {
-                if (!$user->email_verified_at) {
-                    return redirect()->route('verification.notice');
-                }
+            // 2. Check for active status (1)
+            if ($user->status != \App\Models\User::STATUS_ACTIVE) {
                 Auth::logout();
-                return redirect()->route('login')->with('warning', 'Your account is pending admin approval.');
+                
+                if ($user->status == \App\Models\User::STATUS_PENDING) {
+                    return redirect()->route('login')->with('warning', 'Your account is pending admin approval.');
+                }
+                
+                throw ValidationException::withMessages(['phone_number' => 'Your account is deactivated.']);
             }
 
             $request->session()->regenerate();

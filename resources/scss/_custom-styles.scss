@@ -1,3 +1,22 @@
+/* Sidebar Customizations */
+.menu-vertical .menu-item.active > .menu-link {
+    background-color: var(--bs-primary) !important;
+    color: #fff !important;
+}
+
+.menu-vertical .menu-item.active > .menu-link i,
+.menu-vertical .menu-item.active > .menu-link div {
+    color: #fff !important;
+}
+
+.menu-vertical .menu-item.active.open > .menu-link {
+    background-color: var(--bs-primary) !important;
+}
+
+.menu-inner .menu-item.open > .menu-link:not(.active) {
+    background-color: rgba(var(--bs-primary-rgb), 0.04);
+}
+
 /* Page Loader */
 .page-loader {
     position: fixed;

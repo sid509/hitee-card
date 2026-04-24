@@ -68,15 +68,17 @@ class AuthController extends Controller
 
         $user = User::where('phone_number', $request->phone_number)->with(['roles', 'cards'])->firstOrFail();
         
-        if ($user->status == User::STATUS_INACTIVE) {
-            return apiResponse(false, 'Your account has been deactivated. Please contact support.', '', 403);
+        // 1. Check if email is verified
+        if (!$user->hasVerifiedEmail()) {
+            return apiResponse(false, 'Please verify your email address before logging in.', ['needs_verification' => true], 403);
         }
 
-        if ($user->status == User::STATUS_PENDING) {
-            if (!$user->email_verified_at) {
-                return apiResponse(false, 'Please verify your email address before logging in.', ['needs_verification' => true], 403);
+        // 2. Check for active status (1)
+        if ($user->status != User::STATUS_ACTIVE) {
+            if ($user->status == User::STATUS_PENDING) {
+                return apiResponse(false, 'Your account is pending admin approval. You will be notified once activated.', ['pending_approval' => true], 403);
             }
-            return apiResponse(false, 'Your account is pending admin approval. You will be notified once activated.', ['pending_approval' => true], 403);
+            return apiResponse(false, 'Your account has been deactivated. Please contact support.', '', 403);
         }
 
         if ($request->fcm_token) {

@@ -30,39 +30,164 @@
         </li>
         @endif
 
+        <!-- Operations Group -->
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Operations</span>
+        </li>
+        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
+        <li class="menu-item {{ request()->routeIs('rides.index', 'rides.tap-ledger') ? 'active open' : '' }}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-git-commit"></i>
+                <div class="text-truncate">Journeys</div>
+            </a>
+            <ul class="menu-sub">
+                <li class="menu-item {{ request()->routeIs('rides.index') ? 'active' : '' }}">
+                    <a href="{{ route('rides.index') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.rides_ledger') }}</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('rides.tap-ledger') ? 'active' : '' }}">
+                    <a href="{{ route('rides.tap-ledger') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.raw_taps') }}</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
+        @endif
+
+        @if(auth()->user()->hasRole('merchant'))
+        <li class="menu-item {{ request()->routeIs('staff.*') ? 'active' : '' }}">
+            <a href="{{ route('staff.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-group"></i>
+                <div class="text-truncate">{{ __('messages.staff') }}</div>
+            </a>
+        </li>
+        @endif
+
+        <!-- Fleet & Infrastructure -->
+        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Fleet & Infrastructure</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('buses.*') ? 'active' : '' }}">
+            <a href="{{ route('buses.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bus"></i>
+                <div class="text-truncate">{{ __('messages.buses') }}</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('parkings.*') ? 'active' : '' }}">
+            <a href="{{ route('parkings.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bxs-parking"></i>
+                <div class="text-truncate">{{ __('messages.parkings') }}</div>
+            </a>
+        </li>
+        @if(!auth()->user()->hasRole('staff'))
+        <li class="menu-item {{ request()->routeIs('routes.*', 'fares.*', 'stops.*') ? 'active open' : '' }}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-map-alt"></i>
+                <div class="text-truncate">Network</div>
+            </a>
+            <ul class="menu-sub">
+                <li class="menu-item {{ request()->routeIs('routes.*') ? 'active' : '' }}">
+                    <a href="{{ route('routes.index') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.routes') }}</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('fares.*') ? 'active' : '' }}">
+                    <a href="{{ route('fares.index') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.fares') }}</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('stops.*') ? 'active' : '' }}">
+                    <a href="{{ route('stops.index') }}" class="menu-link">
+                        <div class="text-truncate">Stops</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
+        @endif
+        @endif
+
+        <!-- Earning & Finance -->
+        @if(auth()->user()->hasRole('super-admin', 'merchant'))
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Financials</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('merchant.income', 'merchant.withdrawals') ? 'active open' : '' }}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-trending-up"></i>
+                <div class="text-truncate">Earnings</div>
+            </a>
+            <ul class="menu-sub">
+                <li class="menu-item {{ request()->routeIs('merchant.income') ? 'active' : '' }}">
+                    <a href="{{ route('merchant.income') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.income') }}</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('merchant.withdrawals') ? 'active' : '' }}">
+                    <a href="{{ route('merchant.withdrawals') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.withdrawals') }}</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
+        @endif
+
+        <!-- User Tools (Customers/Staff/Admin) -->
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">User Tools</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('route-finder.*') ? 'active' : '' }}">
+            <a href="{{ route('route-finder.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-navigation"></i>
+                <div class="text-truncate">{{ __('messages.route_finder') }}</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('rides.my-rides') ? 'active' : '' }}">
+            <a href="{{ route('rides.my-rides') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-trip"></i>
+                <div class="text-truncate">{{ __('messages.my_rides') }}</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('transactions.logs') ? 'active' : '' }}">
+            <a href="{{ route('transactions.logs') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-list-ul"></i>
+                <div class="text-truncate">{{ __('messages.transactions') }}</div>
+            </a>
+        </li>
+
+        <!-- Administration Group -->
         @if(auth()->user()->hasRole('super-admin'))
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">{{ __('messages.administration') }}</span>
         </li>
-        <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
-            <a href="{{ route('users.index') }}" class="menu-link">
+        <li class="menu-item {{ request()->routeIs('users.*', 'roles.*', 'permissions.*', 'cards.*') ? 'active open' : '' }}">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-user"></i>
-                <div class="text-truncate">{{ __('messages.users') }}</div>
+                <div class="text-truncate">Users & Access</div>
             </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('cards.*') ? 'active' : '' }}">
-            <a href="{{ route('cards.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-credit-card"></i>
-                <div class="text-truncate">{{ __('messages.cards') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
-            <a href="{{ route('roles.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-shield-quarter"></i>
-                <div class="text-truncate">{{ __('messages.roles') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
-            <a href="{{ route('permissions.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-key"></i>
-                <div class="text-truncate">{{ __('messages.permissions') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('stops.*') ? 'active' : '' }}">
-            <a href="{{ route('stops.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-map-pin"></i>
-                <div class="text-truncate">Stops</div>
-            </a>
+            <ul class="menu-sub">
+                <li class="menu-item {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <a href="{{ route('users.index') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.users') }}</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('cards.*') ? 'active' : '' }}">
+                    <a href="{{ route('cards.index') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.cards') }}</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                    <a href="{{ route('roles.index') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.roles') }}</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+                    <a href="{{ route('permissions.index') }}" class="menu-link">
+                        <div class="text-truncate">{{ __('messages.permissions') }}</div>
+                    </a>
+                </li>
+            </ul>
         </li>
         <li class="menu-item {{ request()->routeIs('supports.*') ? 'active' : '' }}">
             <a href="{{ route('supports.index') }}" class="menu-link d-flex justify-content-between align-items-center">
@@ -81,12 +206,6 @@
                 <div class="text-truncate">{{ __('messages.activity_logs') }}</div>
             </a>
         </li>
-        <li class="menu-item {{ request()->routeIs('parking-attributes.*') ? 'active' : '' }}">
-            <a href="{{ route('parking-attributes.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-list-check"></i>
-                <div class="text-truncate">{{ __('messages.parking_attributes') }}</div>
-            </a>
-        </li>
         <li class="menu-item {{ request()->routeIs('banners.*') ? 'active' : '' }}">
             <a href="{{ route('banners.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-image"></i>
@@ -94,8 +213,15 @@
             </a>
         </li>
 
+        <!-- System Settings -->
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">{{ __('messages.system') }}</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('parking-attributes.*') ? 'active' : '' }}">
+            <a href="{{ route('parking-attributes.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-list-check"></i>
+                <div class="text-truncate">{{ __('messages.parking_attributes') }}</div>
+            </a>
         </li>
         <li class="menu-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
             <a href="{{ route('settings.index') }}" class="menu-link">
@@ -104,107 +230,5 @@
             </a>
         </li>
         @endif
-
-        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">{{ __('messages.journey_ledger') }}</span>
-        </li>
-        <li class="menu-item {{ request()->routeIs('rides.index') ? 'active' : '' }}">
-            <a href="{{ route('rides.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-git-commit"></i>
-                <div class="text-truncate">{{ __('messages.rides_ledger') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('rides.tap-ledger') ? 'active' : '' }}">
-            <a href="{{ route('rides.tap-ledger') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-fingerprint"></i>
-                <div class="text-truncate">{{ __('messages.raw_taps') }}</div>
-            </a>
-        </li>
-        @endif
-
-        @if(auth()->user()->hasRole('merchant'))
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">{{ __('messages.staff_management') }}</span>
-        </li>
-        <li class="menu-item {{ request()->routeIs('staff.*') ? 'active' : '' }}">
-            <a href="{{ route('staff.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-group"></i>
-                <div class="text-truncate">{{ __('messages.staff') }}</div>
-            </a>
-        </li>
-        @endif
-
-        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">{{ __('messages.fleet_management') }}</span>
-        </li>
-        <li class="menu-item {{ request()->routeIs('buses.*') ? 'active' : '' }}">
-            <a href="{{ route('buses.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-bus"></i>
-                <div class="text-truncate">{{ __('messages.buses') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('parkings.*') ? 'active' : '' }}">
-            <a href="{{ route('parkings.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bxs-parking"></i>
-                <div class="text-truncate">{{ __('messages.parkings') }}</div>
-            </a>
-        </li>
-        @if(!auth()->user()->hasRole('staff'))
-        <li class="menu-item {{ request()->routeIs('routes.*') ? 'active' : '' }}">
-            <a href="{{ route('routes.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-map-alt"></i>
-                <div class="text-truncate">{{ __('messages.routes') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('fares.*') ? 'active' : '' }}">
-            <a href="{{ route('fares.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                <div class="text-truncate">{{ __('messages.fares') }}</div>
-            </a>
-        </li>
-        @endif
-        @endif
-
-        @if(auth()->user()->hasRole('super-admin', 'merchant'))
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">{{ __('messages.earnings') }}</span>
-        </li>
-        <li class="menu-item {{ request()->routeIs('merchant.income') ? 'active' : '' }}">
-            <a href="{{ route('merchant.income') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-trending-up"></i>
-                <div class="text-truncate">{{ __('messages.income') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('merchant.withdrawals') ? 'active' : '' }}">
-            <a href="{{ route('merchant.withdrawals') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-export"></i>
-                <div class="text-truncate">{{ __('messages.withdrawals') }}</div>
-            </a>
-        </li>
-        @endif
-
-        @if(auth()->user()->hasRole('super-admin', 'customers', 'staff'))
-        <li class="menu-item {{ request()->routeIs('route-finder.*') ? 'active' : '' }}">
-            <a href="{{ route('route-finder.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-map-pin"></i>
-                <div class="text-truncate">{{ __('messages.route_finder') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('rides.my-rides') ? 'active' : '' }}">
-            <a href="{{ route('rides.my-rides') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-trip"></i>
-                <div class="text-truncate">{{ __('messages.my_rides') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('transactions.*') ? 'active' : '' }}">
-            <a href="{{ route('transactions.logs') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-list-ul"></i>
-                <div class="text-truncate">{{ __('messages.transactions') }}</div>
-            </a>
-        </li>
-        @endif
-
     </ul>
 </aside>

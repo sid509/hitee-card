@@ -196,7 +196,6 @@
 
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    @stack('page-js')
 
     <!-- Global Helpers -->
     <script type="module">
@@ -223,7 +222,6 @@
         };
 
         window.showToast = function(message, title = 'Info', type = 'info') {
-            // Simple logic for Bootstrap Toast or just alert
             showAlert(message, type, title);
         };
 
@@ -268,10 +266,8 @@
                 const results = $('#spotlight-results');
                 let debounceTimer;
 
-                // Trigger on click
                 $('#spotlight-trigger').on('click', () => spotlightModal.show());
 
-                // Trigger on Keyboard Shortcut (Cmd+K or Ctrl+K)
                 $(document).on('keydown', function(e) {
                     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                         e.preventDefault();
@@ -279,16 +275,13 @@
                     }
                 });
 
-                // Focus input when modal opens
                 modalEl.addEventListener('shown.bs.modal', () => input.focus());
                 
-                // Clear on hide
                 modalEl.addEventListener('hidden.bs.modal', () => {
                     input.val('');
                     results.html('<div class="text-center py-5 text-muted"><i class="bx bx-search-alt fs-1 mb-2"></i><p>Search for anything...</p></div>');
                 });
 
-                // Handle typing
                 input.on('input', function() {
                     clearTimeout(debounceTimer);
                     const q = $(this).val();
@@ -329,7 +322,6 @@
                 });
             }
 
-            // Global delete confirmation
             $(document).on('click', '.delete-btn', function(e) {
                 e.preventDefault();
                 const form = $(this).closest('form');
@@ -342,7 +334,6 @@
                     });
             });
 
-            // Global Select2 for AJAX Merchants
             $('.select2-ajax-merchant').each(function() {
                 $(this).select2({
                     ajax: {
@@ -360,7 +351,6 @@
                 });
             });
 
-            // Global Select2 for AJAX Users
             $('.select2-users').each(function() {
                 $(this).select2({
                     ajax: {
@@ -380,9 +370,7 @@
 
             supportForm.on('submit', function(e) {
                 e.preventDefault();
-
                 btnSend.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Sending...');
-
                 $.ajax({
                     url: "{{ route('support.send') }}",
                     method: "POST",
@@ -391,7 +379,6 @@
                         supportForm[0].reset();
                         const modal = bootstrap.Modal.getInstance(document.getElementById('supportModal'));
                         if (modal) modal.hide();
-                        // Show success message with delay
                         setTimeout(() => {
                             showAlert(response.message || 'Support request sent successfully');
                         }, 500);
@@ -407,6 +394,6 @@
             });
         });
     </script>
+    @stack('page-js')
 </body>
-
 </html>

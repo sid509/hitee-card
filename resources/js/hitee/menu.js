@@ -74,7 +74,7 @@ class Menu {
         }
       }
     }
-    if (window.Helpers.isMobileDevice()) this._el.addEventListener('click', this._evntElClick)
+    this._el.addEventListener('click', this._evntElClick)
 
     this._evntWindowResize = () => {
       this.update()
