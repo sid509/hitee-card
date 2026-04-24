@@ -23,6 +23,8 @@ use App\Http\Controllers\RouteFinderController;
 use App\Http\Controllers\ParkingAttributeController;
 use App\Http\Controllers\RideController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\BannerController;
+use App\Http\Controllers\SettingController;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -105,6 +107,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Administration (Super Admin Only)
     Route::middleware(['role:super-admin'])->group(function () {
+        // Global Settings
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+
         Route::post('/users/bulk-toggle-status', [UserController::class, 'bulkToggleStatus'])->name('users.bulk-toggle-status');
         Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::resource('users', UserController::class);
@@ -117,8 +123,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/cards/bulk-toggle-status', [CardController::class, 'bulkToggleStatus'])->name('cards.bulk-toggle-status');
         Route::post('/cards/{card}/toggle-status', [CardController::class, 'toggleStatus'])->name('cards.toggle-status');
 
+        // Banner Management
+        Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
+        Route::post('/banners/{position}', [BannerController::class, 'update'])->name('banners.update');
+        Route::post('/banners/{position}/toggle-status', [BannerController::class, 'toggleStatus'])->name('banners.toggle-status');
+
         // Support Management
         Route::controller(SupportController::class)->group(function () {
+            // Note: Api\SupportController handles app requests, this handles admin web view
             Route::get('/supports', 'index')->name('supports.index');
             Route::get('/supports/{support}', 'show')->name('supports.show');
             Route::post('/supports/{support}/close', 'close')->name('supports.close');

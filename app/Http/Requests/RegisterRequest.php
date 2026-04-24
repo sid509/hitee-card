@@ -17,6 +17,7 @@ class RegisterRequest extends BaseRequest
             'phone_number' => 'required|string|regex:/^9\d{9}$/|unique:users',
             'card_number' => 'nullable|string|exists:cards,card_number',
             'password' => 'required|string|min:8|confirmed',
+            'fcm_token' => 'nullable|string',
         ];
     }
 }

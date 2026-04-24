@@ -28,6 +28,9 @@ class User extends Authenticatable
         'email',
         'phone_number',
         'avatar',
+        'fcm_token',
+        'preferred_language',
+        'notification_enabled',
         'password',
         'status',
     ];
@@ -57,6 +60,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notification_enabled' => 'boolean',
         ];
     }
 

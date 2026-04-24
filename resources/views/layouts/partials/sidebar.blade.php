@@ -72,6 +72,22 @@
                 <div class="text-truncate">{{ __('messages.parking_attributes') }}</div>
             </a>
         </li>
+        <li class="menu-item {{ request()->routeIs('banners.*') ? 'active' : '' }}">
+            <a href="{{ route('banners.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-image"></i>
+                <div class="text-truncate">Banners</div>
+            </a>
+        </li>
+
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">{{ __('messages.system') }}</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+            <a href="{{ route('settings.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-cog"></i>
+                <div class="text-truncate">{{ __('messages.settings') }}</div>
+            </a>
+        </li>
         @endif
 
         @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))

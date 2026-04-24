@@ -65,7 +65,7 @@ class TapController extends Controller
         // If user is null, check card balance
         $balance = $user ? $user->balance() : $card->balance();
         if ($balance < 20) {
-            return apiResponse(false, 'Insufficient balance (Min Rs. 20 required)', '', 402);
+            return apiResponse(false, 'Insufficient balance (Min 20 pts required to start a journey)', '', 402);
         }
 
         // Normalize Location (find nearest stop name)
@@ -167,17 +167,17 @@ class TapController extends Controller
             'status' => 'completed'
         ]);
 
-        logActivity('ride_completed', "Ride finished. Paid Rs. {$fareAmount}", [
+        logActivity('ride_completed', "Ride finished. Fare: {$fareAmount} pts", [
             'ride_id' => $ride->id,
-            'fare' => $fareAmount,
+            'fare_pts' => $fareAmount,
             'start' => $ride->tapIn->resolved_location_name,
             'end' => $location['name']
         ], $user?->id);
 
-        return apiResponse(true, "Tap Out successful at {$location['name']}. Fare: Rs. {$fareAmount}", [
-            'type' => 'out',
-            'fare' => $fareAmount,
-            'new_balance' => $user ? $user->balance() : $card->balance()
+        return apiResponse(true, "Tap Out successful at {$location['name']}. Fare: {$fareAmount} pts", [
+            'type'        => 'out',
+            'fare_pts'    => (float) $fareAmount,
+            'new_balance_pts' => (float) ($user ? $user->balance() : $card->balance()),
         ]);
     }
 

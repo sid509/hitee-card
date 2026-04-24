@@ -62,4 +62,6 @@ return [
     'type_to_search' => 'Type to search...',
     'no_results' => 'No results found',
     'loading' => 'Loading...',
+    'system' => 'System',
+    'settings' => 'Settings',
 ];

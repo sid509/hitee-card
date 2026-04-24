@@ -21,12 +21,6 @@ class UpdateProfileRequest extends BaseRequest
                 'max:255',
                 Rule::unique('users')->ignore(auth()->id()),
             ],
-            'phone_number' => [
-                'required',
-                'string',
-                'max:20',
-                Rule::unique('users')->ignore(auth()->id()),
-            ],
         ];
     }
 }

@@ -86,3 +86,24 @@ if (!function_exists('logActivity')) {
         }
     }
 }
+
+if (!function_exists('formatPts')) {
+    /**
+     * Format an amount as Hitee Points (pts).
+     * 1 Rs = 1 Hitee Point (pts).
+     *
+     * Use this everywhere in the system EXCEPT on top-up receipts,
+     * where real money (Rs.) is involved and should be labelled as such.
+     *
+     * @param float|int $amount
+     * @param bool $showLabel Whether to append " pts" suffix
+     * @return string|float
+     */
+    function formatPts(float|int $amount, bool $showLabel = true): string|float
+    {
+        if (!$showLabel) {
+            return (float) $amount;
+        }
+        return number_format($amount, 0) . ' pts';
+    }
+}

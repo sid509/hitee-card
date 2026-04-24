@@ -35,6 +35,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
+            'fcm_token' => $request->fcm_token,
             'status' => 'active',
         ]);
 
@@ -73,6 +74,10 @@ class AuthController extends Controller
         }
 
         $user = User::where('phone_number', $request->phone_number)->with(['roles', 'cards'])->firstOrFail();
+        
+        if ($request->fcm_token) {
+            $user->update(['fcm_token' => $request->fcm_token]);
+        }
         
         // Revoke old tokens
         $user->tokens()->delete();
