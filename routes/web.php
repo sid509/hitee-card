@@ -59,6 +59,11 @@ Route::get('/email/verify', function () {
 })->middleware('auth')->name('verification.notice');
 
 Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
+    if ($request->user()->hasVerifiedEmail()) {
+        auth()->logout();
+        return redirect()->route('login')->with('info', 'Email already verified. Please wait for admin approval if your account is not yet active.');
+    }
+
     $request->fulfill();
     auth()->logout();
     return redirect()->route('login')->with('success', 'Email verified successfully! Your account is now pending admin approval.');
