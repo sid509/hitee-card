@@ -48,16 +48,34 @@ $(function () {
 
     $(document).on('click', '.approve-user-btn', function() {
         const id = $(this).data('id');
-        if (confirm('Are you sure you want to approve and activate this user?')) {
-            $.post("{{ url('users') }}/" + id + "/approve", { _token: "{{ csrf_token() }}" }, function(res) {
-                if (res.status) {
-                    showAlert(res.message, 'success');
-                    table.ajax.reload();
-                } else {
-                    showAlert(res.message, 'error');
-                }
-            });
-        }
+        const btn = $(this);
+        
+        Swal.fire({
+            title: 'Approve User?',
+            text: "This will activate the user account and allow them to login.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Approve!',
+            customClass: {
+                confirmButton: 'btn btn-success me-3',
+                cancelButton: 'btn btn-label-secondary'
+            },
+            buttonsStyling: false
+        }).then(function(result) {
+            if (result.value) {
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                $.post("{{ url('users') }}/" + id + "/approve", { _token: "{{ csrf_token() }}" }, function(res) {
+                    if (res.status) {
+                        showToast(res.message, 'Approved', 'success');
+                        table.ajax.reload(null, false);
+                    } else {
+                        showAlert(res.message, 'error');
+                    }
+                }).always(function() {
+                    btn.prop('disabled', false).html('<i class="bx bx-check-shield me-1"></i> Approve');
+                });
+            }
+        });
     });
 });
 </script>

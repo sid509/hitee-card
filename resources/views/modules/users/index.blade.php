@@ -226,6 +226,45 @@
             $('.row-checkbox').prop('checked', this.checked);
         });
 
+        // Approve User
+        $(document).on('click', '.approve-user-btn', function() {
+            const id = $(this).data('id');
+            const btn = $(this);
+            
+            Swal.fire({
+                title: 'Approve User?',
+                text: "This will activate the user account.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Approve!',
+                customClass: {
+                    confirmButton: 'btn btn-success me-3',
+                    cancelButton: 'btn btn-label-secondary'
+                },
+                buttonsStyling: false
+            }).then(function(result) {
+                if (result.value) {
+                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                    $.ajax({
+                        url: `/users/${id}/approve`,
+                        method: "POST",
+                        data: { _token: "{{ csrf_token() }}" },
+                        success: function(response) {
+                            if (response.status) {
+                                showToast(response.message, 'Approved', 'success');
+                                table.ajax.reload(null, false);
+                            } else {
+                                showAlert(response.message, 'error');
+                            }
+                        },
+                        complete: function() {
+                            btn.prop('disabled', false).html('<i class="bx bx-check-shield"></i>');
+                        }
+                    });
+                }
+            });
+        });
+
         // Toggle User Status
         $(document).on('click', '.toggle-user-status', function() {
             const id = $(this).data('id');

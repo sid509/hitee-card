@@ -266,4 +266,27 @@ class UserController extends Controller
             'new_status' => $newStatus
         ]);
     }
+
+    /**
+     * Approve user (Super Admin only)
+     */
+    public function approve(User $user)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+
+        if (!$user->email_verified_at) {
+            return response()->json(['status' => false, 'message' => 'User email is not verified yet.']);
+        }
+
+        $user->update(['status' => User::STATUS_ACTIVE]);
+
+        logActivity('user_approved', "User {$user->email} approved by admin", [
+            'target_user_id' => $user->id
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => "User {$user->name} has been approved and activated."
+        ]);
+    }
 }
