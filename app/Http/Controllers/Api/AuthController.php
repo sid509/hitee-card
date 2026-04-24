@@ -62,62 +62,65 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request)
     {
-        if (!Auth::attempt($request->only('phone_number', 'password'))) {
-            return apiResponse(false, 'Invalid login credentials', '', 401);
-        }
+        $user = User::where('phone_number', $request->phone_number)->first();
 
-        $user = User::where('phone_number', $request->phone_number)->with(['roles', 'cards'])->firstOrFail();
-        
-        // 1. Check if email is verified
-        if (!$user->hasVerifiedEmail()) {
-            return apiResponse(false, 'Please verify your email address before logging in.', ['needs_verification' => true], 403);
-        }
-
-        // 2. Check for active status (1)
-        if ($user->status != User::STATUS_ACTIVE) {
-            if ($user->status == User::STATUS_PENDING) {
-                return apiResponse(false, 'Your account is pending admin approval. You will be notified once activated.', ['pending_approval' => true], 403);
+        // 1. Check if user exists and password is correct
+        if ($user && Hash::check($request->password, $user->password)) {
+            
+            // 2. Check if email is verified
+            if (!$user->hasVerifiedEmail()) {
+                return apiResponse(false, 'Please verify your email address before logging in.', ['needs_verification' => true], 403);
             }
-            return apiResponse(false, 'Your account has been deactivated. Please contact support.', '', 403);
+
+            // 3. Check account activation status (1 = Active)
+            if ($user->status != User::STATUS_ACTIVE) {
+                if ($user->status == User::STATUS_PENDING) {
+                    return apiResponse(false, 'Your account is pending admin approval. You will be notified once activated.', ['pending_approval' => true], 403);
+                }
+                return apiResponse(false, 'Your account has been deactivated. Please contact support.', '', 403);
+            }
+
+            if ($request->fcm_token) {
+                $user->update(['fcm_token' => $request->fcm_token]);
+            }
+            
+            // 4. All checks passed, revoke old tokens and create new ones
+            $user->tokens()->delete();
+
+            $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
+            $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
+
+            logActivity('login', 'User logged in via API', [], $user->id);
+
+            return apiResponse(true, 'Login successful', [
+                'access_token' => $accessToken,
+                'refresh_token' => $refreshToken,
+                'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone_number' => $user->phone_number,
+                    'avatar_url' => $user->avatar_url,
+                    'status' => $user->status,
+                    'balance' => $user->balance(),
+                    'roles' => $user->roles->pluck('name'),
+                    'cards' => $user->cards->map(function($card) {
+                        return [
+                            'id' => $card->id,
+                            'card_number' => $card->card_number,
+                            'hwid' => $card->hwid,
+                            'status' => $card->status,
+                            'balance' => $card->balance(),
+                            'is_active' => (bool)$card->is_currently_active
+                        ];
+                    })
+                ]
+            ]);
         }
 
-        if ($request->fcm_token) {
-            $user->update(['fcm_token' => $request->fcm_token]);
-        }
-        
-        // Revoke old tokens
-        $user->tokens()->delete();
-
-        $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
-        $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
-
-        logActivity('login', 'User logged in via API', [], $user->id);
-
-        return apiResponse(true, 'Login successful', [
-            'access_token' => $accessToken,
-            'refresh_token' => $refreshToken,
-            'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone_number' => $user->phone_number,
-                'avatar_url' => $user->avatar_url,
-                'status' => $user->status,
-                'balance' => $user->balance(),
-                'roles' => $user->roles->pluck('name'),
-                'cards' => $user->cards->map(function($card) {
-                    return [
-                        'id' => $card->id,
-                        'card_number' => $card->card_number,
-                        'hwid' => $card->hwid,
-                        'status' => $card->status,
-                        'balance' => $card->balance(),
-                        'is_active' => (bool)$card->is_currently_active
-                    ];
-                })
-            ]
-        ]);
+        // Authentication failed
+        return apiResponse(false, 'Invalid login credentials', '', 401);
     }
 
     /**

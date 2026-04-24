@@ -33,6 +33,8 @@ use App\Models\Card;
 use App\Models\BalanceIn;
 use App\Models\BalanceOut;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Http\Request;
 
 /**
  * Public Routes
@@ -58,18 +60,40 @@ Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
 
-Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
-    if ($request->user()->hasVerifiedEmail()) {
-        auth()->logout();
-        return redirect()->route('login')->with('info', 'Email already verified. Please wait for admin approval if your account is not yet active.');
+Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) {
+    $user = User::findOrFail($id);
+
+    // 1. Validate Hash
+    if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        return redirect()->route('login')->with('error', 'The verification link is invalid.');
     }
 
-    $request->fulfill();
-    auth()->logout();
-    return redirect()->route('login')->with('success', 'Email verified successfully! Your account is now pending admin approval.');
-})->middleware(['auth', 'signed'])->name('verification.verify');
+    // 2. Already Verified
+    if ($user->hasVerifiedEmail()) {
+        return redirect()->route('login')->with('info', 'Your email is already verified. You can sign in once your account is approved by an administrator.');
+    }
 
-Route::post('/email/verification-notification', function (\Illuminate\Http\Request $request) {
+    // 3. Mark as Verified
+    if ($user->markEmailAsVerified()) {
+        event(new Verified($user));
+    }
+
+    return redirect()->route('login')->with('success', 'Thank you! Your email has been verified. Your account is now awaiting administrative approval, and you will be notified once activated.');
+})->middleware(['signed'])->name('verification.verify');
+
+Route::post('/email/resend', function (Request $request) {
+    $request->validate(['phone_number' => 'required|string']);
+    $user = User::where('phone_number', $request->phone_number)->first();
+    
+    if ($user && !$user->hasVerifiedEmail()) {
+        $user->sendEmailVerificationNotification();
+        return back()->with('success', 'Verification link sent to your registered email!');
+    }
+    
+    return back()->with('info', 'If the account exists and is unverified, a new link has been sent.');
+})->middleware(['throttle:6,1'])->name('verification.resend');
+
+Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
     return back()->with('message', 'Verification link sent!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
@@ -166,7 +190,6 @@ Route::middleware(['auth'])->group(function () {
 
         // Support Management
         Route::controller(SupportController::class)->group(function () {
-            // Note: Api\SupportController handles app requests, this handles admin web view
             Route::get('/supports', 'index')->name('supports.index');
             Route::get('/supports/{support}', 'show')->name('supports.show');
             Route::post('/supports/{support}/close', 'close')->name('supports.close');
@@ -201,7 +224,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Business Logic Resources
     Route::middleware(['role:merchant'])->group(function () {
-        // Staff logic
         Route::get('/staff/search', [StaffController::class, 'search'])->name('staff.search');
         Route::post('/staff/{staff}/detach', [StaffController::class, 'detach'])->name('staff.detach');
         Route::resource('staff', StaffController::class);
