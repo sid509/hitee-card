@@ -22,6 +22,15 @@
         </li>
 
         @if(auth()->user()->hasRole('super-admin'))
+        <li class="menu-item {{ request()->routeIs('audit.*') ? 'active' : '' }}">
+            <a href="{{ route('audit.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-analyse"></i>
+                <div class="text-truncate">System Audit</div>
+            </a>
+        </li>
+        @endif
+
+        @if(auth()->user()->hasRole('super-admin'))
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">{{ __('messages.administration') }}</span>
         </li>
@@ -29,6 +38,12 @@
             <a href="{{ route('users.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-user"></i>
                 <div class="text-truncate">{{ __('messages.users') }}</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('cards.*') ? 'active' : '' }}">
+            <a href="{{ route('cards.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-credit-card"></i>
+                <div class="text-truncate">{{ __('messages.cards') }}</div>
             </a>
         </li>
         <li class="menu-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
@@ -181,12 +196,6 @@
             <a href="{{ route('rides.my-rides') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-trip"></i>
                 <div class="text-truncate">{{ __('messages.my_rides') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('cards.*') ? 'active' : '' }}">
-            <a href="{{ route('cards.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-credit-card"></i>
-                <div class="text-truncate">{{ __('messages.cards') }}</div>
             </a>
         </li>
         <li class="menu-item {{ request()->routeIs('transactions.*') ? 'active' : '' }}">

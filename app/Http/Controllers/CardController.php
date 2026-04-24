@@ -23,11 +23,6 @@ class CardController extends Controller
         if ($request->ajax()) {
             $query = Card::with('user')->latest();
 
-            // Limit to own cards if customer
-            if (auth()->user()->hasRole('customers')) {
-                $query->where('user_id', auth()->id());
-            }
-
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function($row){

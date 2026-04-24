@@ -8,15 +8,15 @@ use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
  * @group Authentication
- * 
- * APIs for managing authentication
+ *
+ * APIs for user registration, login, and token management.
  */
 class AuthController extends Controller
 {
@@ -25,8 +25,10 @@ class AuthController extends Controller
      * 
      * @bodyParam name string required The name of the user. Example: John Doe
      * @bodyParam email string required The email of the user. Example: john@example.com
-     * @bodyParam password string required The password of the user. Example: password123
-     * @bodyParam password_confirmation string required The confirmation of the password. Example: password123
+     * @bodyParam phone_number string required The phone number (98XXXXXXXX). Example: 9841234567
+     * @bodyParam password string required The password (min 8 chars). Example: password
+     * @bodyParam password_confirmation string required The password confirmation. Example: password
+     * @bodyParam fcm_token string (optional) FCM token for notifications.
      */
     public function register(RegisterRequest $request)
     {
@@ -36,36 +38,27 @@ class AuthController extends Controller
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'fcm_token' => $request->fcm_token,
-            'status' => 'active',
+            'status' => User::STATUS_PENDING,
         ]);
+
+        $user->sendEmailVerificationNotification();
 
         $customerRole = Role::where('slug', 'customers')->first();
         if ($customerRole) {
             $user->roles()->attach($customerRole);
         }
 
-        if ($request->card_number) {
-            $card = \App\Models\Card::where('card_number', $request->card_number)->first();
-            if ($card) {
-                // If the card is already linked to someone else, we might want to handle it.
-                // For now, following the instruction to "link to the correct card".
-                $card->update([
-                    'user_id' => $user->id,
-                    'is_currently_active' => true
-                ]);
-            }
-        }
-
         logActivity('registration', 'New user registered via API', [], $user->id);
 
-        return apiResponse(true, 'User registered successfully. Please log in.', [], 201);
+        return apiResponse(true, 'User registered successfully. Please verify your email.', [], 201);
     }
 
     /**
      * Login user and create tokens
      * 
-     * @bodyParam email string required The email of the user. Example: admin@example.com
-     * @bodyParam password string required The password of the user. Example: password
+     * @bodyParam phone_number string required The phone number. Example: 9841234567
+     * @bodyParam password string required The password. Example: password
+     * @bodyParam fcm_token string (optional) FCM token for notifications.
      */
     public function login(LoginRequest $request)
     {
@@ -75,6 +68,17 @@ class AuthController extends Controller
 
         $user = User::where('phone_number', $request->phone_number)->with(['roles', 'cards'])->firstOrFail();
         
+        if ($user->status == User::STATUS_INACTIVE) {
+            return apiResponse(false, 'Your account has been deactivated. Please contact support.', '', 403);
+        }
+
+        if ($user->status == User::STATUS_PENDING) {
+            if (!$user->email_verified_at) {
+                return apiResponse(false, 'Please verify your email address before logging in.', ['needs_verification' => true], 403);
+            }
+            return apiResponse(false, 'Your account is pending admin approval. You will be notified once activated.', ['pending_approval' => true], 403);
+        }
+
         if ($request->fcm_token) {
             $user->update(['fcm_token' => $request->fcm_token]);
         }
@@ -96,6 +100,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
+                'avatar_url' => $user->avatar_url,
                 'status' => $user->status,
                 'balance' => $user->balance(),
                 'roles' => $user->roles->pluck('name'),
@@ -111,6 +116,88 @@ class AuthController extends Controller
                 })
             ]
         ]);
+    }
+
+    /**
+     * Social Login via Provider Token
+     * 
+     * Handles login/registration via social providers (google, facebook).
+     * 
+     * @bodyParam provider string required The provider name (google, facebook).
+     * @bodyParam access_token string required The token from provider.
+     */
+    public function socialLogin(Request $request)
+    {
+        $request->validate([
+            'provider' => 'required|in:google,facebook',
+            'access_token' => 'required|string',
+        ]);
+
+        $provider = $request->provider;
+        $token = $request->access_token;
+
+        try {
+            $socialUser = Socialite::driver($provider)->userFromToken($token);
+            $user = User::where('email', $socialUser->getEmail())->first();
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => $socialUser->getName() ?? $socialUser->getNickname(),
+                    'email' => $socialUser->getEmail(),
+                    'password' => Hash::make(Str::random(24)),
+                    'status' => User::STATUS_ACTIVE, // Social logins are pre-verified
+                    'email_verified_at' => now(),
+                ]);
+
+                $customerRole = Role::where('slug', 'customers')->first();
+                if ($customerRole) {
+                    $user->roles()->attach($customerRole);
+                }
+            }
+
+            if ($user->status == User::STATUS_INACTIVE) {
+                return apiResponse(false, 'Your account has been deactivated.', '', 403);
+            }
+
+            // Revoke old tokens
+            $user->tokens()->delete();
+
+            $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
+            $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
+
+            logActivity('login', 'User logged in via social login (' . $provider . ')', [], $user->id);
+
+            $user->load(['roles', 'cards']);
+
+            return apiResponse(true, 'Social login successful', [
+                'access_token' => $accessToken,
+                'refresh_token' => $refreshToken,
+                'token_type' => 'Bearer',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone_number' => $user->phone_number,
+                    'avatar_url' => $user->avatar_url,
+                    'status' => $user->status,
+                    'balance' => $user->balance(),
+                    'roles' => $user->roles->pluck('name'),
+                    'cards' => $user->cards->map(function($card) {
+                        return [
+                            'id' => $card->id,
+                            'card_number' => $card->card_number,
+                            'hwid' => $card->hwid,
+                            'status' => $card->status,
+                            'balance' => $card->balance(),
+                            'is_active' => (bool)$card->is_currently_active
+                        ];
+                    })
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return apiResponse(false, 'Social login failed: ' . $e->getMessage(), '', 400);
+        }
     }
 
     /**
@@ -139,83 +226,6 @@ class AuthController extends Controller
             'refresh_token' => $refreshToken,
             'token_type' => 'Bearer',
         ]);
-    }
-
-    /**
-     * Social Login via Provider Token
-     * 
-     * This endpoint handles login/registration via Google or Facebook access tokens.
-     * 
-     * @bodyParam provider string required The social provider (google or facebook). Example: google
-     * @bodyParam access_token string required The access token received from the provider.
-     */
-    public function socialLogin(Request $request)
-    {
-        $request->validate([
-            'provider' => 'required|in:google,facebook',
-            'access_token' => 'required|string',
-        ]);
-
-        $provider = $request->provider;
-        $token = $request->access_token;
-
-        try {
-            $socialUser = Socialite::driver($provider)->userFromToken($token);
-            
-            $user = User::where('email', $socialUser->getEmail())->first();
-
-            if (!$user) {
-                $user = User::create([
-                    'name' => $socialUser->getName() ?? $socialUser->getNickname(),
-                    'email' => $socialUser->getEmail(),
-                    'password' => Hash::make(Str::random(24)),
-                    'status' => 'active',
-                ]);
-
-                $customerRole = Role::where('slug', 'customers')->first();
-                if ($customerRole) {
-                    $user->roles()->attach($customerRole);
-                }
-            }
-
-            // Revoke old tokens
-            $user->tokens()->delete();
-
-            $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
-            $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
-
-            logActivity('login', 'User logged in via social login (' . $provider . ')', [], $user->id);
-
-            $user->load(['roles', 'cards']);
-
-            return apiResponse(true, 'Social login successful', [
-                'access_token' => $accessToken,
-                'refresh_token' => $refreshToken,
-                'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone_number' => $user->phone_number,
-                    'status' => $user->status,
-                    'balance' => $user->balance(),
-                    'roles' => $user->roles->pluck('name'),
-                    'cards' => $user->cards->map(function($card) {
-                        return [
-                            'id' => $card->id,
-                            'card_number' => $card->card_number,
-                            'hwid' => $card->hwid,
-                            'status' => $card->status,
-                            'balance' => $card->balance(),
-                            'is_active' => (bool)$card->is_currently_active
-                        ];
-                    })
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            return apiResponse(false, 'Social login failed: ' . $e->getMessage(), '', 400);
-        }
     }
 
     /**

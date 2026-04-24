@@ -67,24 +67,37 @@ class UserController extends Controller
                     // View Button
                     $actions .= '<a href="'.route('users.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
 
-                    // Toggle Status Button
                     if (auth()->user()->hasRole('super-admin') && $row->id !== auth()->id()) {
-                        $isActive = $row->status === 'active';
-                        $btnClass = $isActive ? 'btn-success' : 'btn-secondary';
-                        $btnIcon = $isActive ? 'bx-user-check' : 'bx-user-x';
-                        $btnTitle = $isActive ? 'Deactivate Account' : 'Activate Account';
+                        $s = (int)$row->status;
 
-                        $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-user-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
+                        // 1. Pending Approval State
+                        if ($s === -1) {
+                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 approve-user-btn" data-id="'.$row->id.'" title="Approve & Activate"><i class="bx bx-check-shield"></i></button>';
+                        } 
+                        // 2. Active State -> Show Deactivate Button
+                        elseif ($s === 1) {
+                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-danger me-1 toggle-user-status" data-id="'.$row->id.'" title="Deactivate Account"><i class="bx bx-user-x"></i></button>';
+                        } 
+                        // 3. Inactive State -> Show Activate Button
+                        else {
+                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 toggle-user-status" data-id="'.$row->id.'" title="Activate Account"><i class="bx bx-user-check"></i></button>';
+                        }
                     }
 
                     // Edit Button
                     $actions .= '<a href="'.route('users.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
 
-                    // Balance Button
+                    // Balance Management Button
                     if (auth()->user()->hasRole('super-admin')) {
                         $activeCardId = $row->activeCard?->id;
-                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-warning me-1 deduct-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" data-card-id="'.$activeCardId.'" title="Deduct Balance"><i class="bx bx-minus-circle"></i></button>';
-                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-secondary me-1 add-balance-btn" data-id="'.$row->id.'" data-name="'.$row->name.'" data-balance="'.$row->balance().'" data-card-id="'.$activeCardId.'" title="Add Balance"><i class="bx bx-wallet"></i></button>';
+                        $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 manage-balance-btn" 
+                                        data-id="'.$row->id.'" 
+                                        data-name="'.$row->name.'" 
+                                        data-balance="'.$row->balance().'" 
+                                        data-card-id="'.$activeCardId.'" 
+                                        title="Manage Balance">
+                                        <i class="bx bx-wallet"></i>
+                                     </button>';
                     }
 
                     // Impersonate Button for super-admins
@@ -235,17 +248,21 @@ class UserController extends Controller
             return response()->json(['status' => false, 'message' => 'You cannot disable your own account.']);
         }
 
-        $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+        // If status is -1 (pending), we don't toggle, we expect explicit approval.
+        // Toggling only happens between 0 (inactive) and 1 (active).
+        $newStatus = $user->status == User::STATUS_ACTIVE ? User::STATUS_INACTIVE : User::STATUS_ACTIVE;
         $user->update(['status' => $newStatus]);
 
-        logActivity('user_status_toggle', "User {$user->email} status changed to {$newStatus}", [
+        $statusText = $newStatus == User::STATUS_ACTIVE ? 'active' : 'inactive';
+
+        logActivity('user_status_toggle', "User {$user->email} status changed to {$statusText}", [
             'target_user_id' => $user->id,
             'new_status' => $newStatus
         ]);
 
         return response()->json([
             'status' => true,
-            'message' => "User account is now {$newStatus}.",
+            'message' => "User account is now {$statusText}.",
             'new_status' => $newStatus
         ]);
     }

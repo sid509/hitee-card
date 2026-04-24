@@ -1,79 +1,46 @@
 @extends('layouts.app')
 
-@section('title', 'Users')
+@section('title', 'User Management')
 
 @section('content')
 <h4 class="py-3 mb-4">
-    <span class="text-muted fw-light">Users /</span> List
+    <span class="text-muted fw-light">Administration /</span> Users
 </h4>
 
-<!-- Basic Bootstrap Table -->
+<!-- User List Table -->
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Users List</h5>
+        <h5 class="mb-0">All Registered Users</h5>
+        @if(auth()->user()->hasRole('super-admin'))
         <div class="d-flex gap-2">
-            @if(auth()->user()->hasRole('super-admin'))
             <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button" id="bulkActions" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bx bx-check-square me-1"></i> Bulk Actions
+                <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="bulkActions" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Bulk Actions
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="bulkActions">
-                    <li><a class="dropdown-item bulk-status-change" href="javascript:void(0);" data-status="active">Activate Selected</a></li>
-                    <li><a class="dropdown-item bulk-status-change" href="javascript:void(0);" data-status="inactive">Deactivate Selected</a></li>
-                </ul>
+                <div class="dropdown-menu" aria-labelledby="bulkActions">
+                    <a class="dropdown-item bulk-status-change" href="javascript:void(0);" data-status="active">Activate Selected</a>
+                    <a class="dropdown-item bulk-status-change" href="javascript:void(0);" data-status="inactive">Deactivate Selected</a>
+                </div>
             </div>
-            @endif
             <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm">
-                <i class="bx bx-plus me-1"></i> Add User
+                <i class="bx bx-plus me-1"></i> Add New User
             </a>
         </div>
+        @endif
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
-            <style>
-                /* Force absolute stability across pagination */
-                table.data-table {
-                    table-layout: fixed !important;
-                    width: 100% !important;
-                    margin: 0 !important;
-                }
-                table.data-table th, table.data-table td {
-                    overflow: hidden;
-                    white-space: nowrap;
-                }
-                /* Apply ellipsis only to columns with potential long text */
-                table.data-table td.column-ellipsis {
-                    text-overflow: ellipsis;
-                }
-                
-                /* Explicit column widths */
-                table.data-table th:nth-child(1) { width: 40px; }  /* Checkbox */
-                table.data-table th:nth-child(2) { width: 50px; }  /* ID */
-                table.data-table th:nth-child(3) { width: 220px; } /* User Details */
-                table.data-table th:nth-child(4) { width: 140px; } /* Card Details */
-                table.data-table th:nth-child(5) { width: 80px; text-align: center; }  /* Roles */
-                table.data-table th:nth-child(6) { width: 130px; } /* Balance */
-                table.data-table th:nth-child(7) { width: 90px; text-align: center; }  /* Status */
-                table.data-table th:nth-child(8) { width: 160px; } /* Created At */
-                table.data-table th:nth-child(9) { width: 220px; } /* Actions */
-
-                /* Cell specific styling */
-                table.data-table td:nth-child(5), 
-                table.data-table td:nth-child(7) { text-align: center; }
-
-                .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
-            </style>
             <table class="table table-hover data-table">
                 <thead>
                     <tr>
-                        <th width="10" class="text-start"><input type="checkbox" class="form-check-input" id="select-all"></th>
-                        <th>#</th>
-                        <th>User Details</th>
-                        <th>Card Details</th>
+                        <th width="10"><input type="checkbox" class="form-check-input" id="select-all"></th>
+                        <th width="10">#</th>
+                        <th>User</th>
+                        <th>Card Info</th>
                         <th>Roles</th>
                         <th>Balance</th>
                         <th>Status</th>
-                        <th>Created At</th>
+                        <th>Joined</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -85,111 +52,107 @@
 
 @push('modals')
 @if(auth()->user()->hasRole('super-admin'))
-<!-- Load Funds Modal -->
-<div class="modal fade" id="addBalanceModal" tabindex="-1" aria-hidden="true">
+<!-- Unified Balance Management Modal -->
+<div class="modal fade" id="manageBalanceModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="balanceModalTitle">Load Funds</h5>
+                <h5 class="modal-title">Manage Balance: <span id="manage_user_name" class="text-primary"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('transactions.manual-add') }}" method="POST">
-                @csrf
-                <input type="hidden" name="user_id" id="balance_user_id">
-                <input type="hidden" name="card_id" id="balance_card_id">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">User</label>
-                        <input type="text" class="form-control" id="balance_user_name" readonly disabled>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Current Balance</label>
-                        <input type="text" class="form-control" id="balance_current_amount" readonly disabled>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Amount (Rs.)</label>
-                        <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" min="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select name="type" class="form-select" required>
-                            <option value="manual">Manual Load</option>
-                            <option value="cashback">Cashback</option>
-                            <option value="penalty_reversal">Penalty Reversal</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Remarks</label>
-                        <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for loading funds"></textarea>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 mb-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bx bx-wallet me-2"></i>
+                        <span>Current Balance: <strong id="manage_current_balance">Rs. 0.00</strong></span>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Load Funds</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
-<!-- Deduct Balance Modal -->
-<div class="modal fade" id="deductBalanceModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deductModalTitle">Deduct Balance</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="nav-align-top mb-4">
+                    <ul class="nav nav-tabs nav-fill" role="tablist">
+                        <li class="nav-item">
+                            <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#tab-add-balance" aria-controls="tab-add-balance" aria-selected="true">
+                                <i class="tf-icons bx bx-plus-circle me-1"></i> Add Funds
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#tab-deduct-balance" aria-controls="tab-deduct-balance" aria-selected="false">
+                                <i class="tf-icons bx bx-minus-circle me-1"></i> Deduct Funds
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content border-0 px-0 pb-0">
+                        <!-- Tab: Add Balance -->
+                        <div class="tab-pane fade show active" id="tab-add-balance" role="tabpanel">
+                            <form action="{{ route('transactions.manual-add') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="user_id" class="target_user_id">
+                                <input type="hidden" name="card_id" class="target_card_id">
+                                <div class="mb-3">
+                                    <label class="form-label">Amount (Rs.)</label>
+                                    <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" min="1" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Type</label>
+                                    <select name="type" class="form-select" required>
+                                        <option value="manual">Manual Load</option>
+                                        <option value="cashback">Cashback</option>
+                                        <option value="penalty_reversal">Penalty Reversal</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Remarks</label>
+                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for adding balance"></textarea>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Add Balance</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Tab: Deduct Balance -->
+                        <div class="tab-pane fade" id="tab-deduct-balance" role="tabpanel">
+                            <form action="{{ route('transactions.manual-deduct') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="user_id" class="target_user_id">
+                                <input type="hidden" name="card_id" class="target_card_id">
+                                <div class="mb-3">
+                                    <label class="form-label">Deduction Amount (Rs.)</label>
+                                    <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" min="1" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Type</label>
+                                    <select name="type" id="deduct_type" class="form-select" required>
+                                        <option value="fare_deduction">Bus Fare</option>
+                                        <option value="parking">Parking Fee</option>
+                                        <option value="penalty">Penalty</option>
+                                        <option value="manual_deduction">Manual Deduction</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Merchant (Optional)</label>
+                                    <select name="merchant_id" id="merchant_search" class="form-select select2-ajax-merchant">
+                                        <option value="">Search Merchant...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="reference_container" style="display: none;">
+                                    <label class="form-label" id="reference_label">Reference</label>
+                                    <select name="reference_id" id="reference_search" class="form-select select2-ajax-references">
+                                        <option value="">Search...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Remarks</label>
+                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for deduction"></textarea>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-danger">Deduct Balance</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <form action="{{ route('transactions.manual-deduct') }}" method="POST">
-                @csrf
-                <input type="hidden" name="user_id" id="deduct_user_id">
-                <input type="hidden" name="card_id" id="deduct_card_id">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">User</label>
-                        <input type="text" class="form-control" id="deduct_user_name" readonly disabled>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Current Balance</label>
-                        <input type="text" class="form-control" id="deduct_current_amount" readonly disabled>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Deduction Amount (Rs.)</label>
-                        <input type="number" name="amount" class="form-control" placeholder="0.00" step="0.01" min="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select name="type" id="deduct_type" class="form-select" required>
-                            <option value="fare_deduction">Bus Fare</option>
-                            <option value="parking">Parking Fee</option>
-                            <option value="penalty">Penalty</option>
-                            <option value="manual_deduction">Manual Deduction</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Merchant (Optional)</label>
-                        <select name="merchant_id" id="merchant_search" class="form-select select2-ajax-merchant">
-                            <option value="">Search Merchant...</option>
-                        </select>
-                        <div class="form-text">Credit this amount as merchant income.</div>
-                    </div>
-                    <div class="mb-3" id="reference_container" style="display: none;">
-                        <label class="form-label" id="reference_label">Reference (Bus/Parking)</label>
-                        <select name="reference_id" id="reference_search" class="form-select select2-ajax-references">
-                            <option value="">Search...</option>
-                        </select>
-                        <div class="form-text">Specific Bus or Parking to track income.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Remarks</label>
-                        <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for deduction"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-danger">Deduct Balance</button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -221,9 +184,15 @@
                 {data: 'role_icons', name: 'role_icons', orderable: false},
                 {data: 'balance', name: 'balance', orderable: false, searchable: false},
                 {data: 'status', name: 'status', render: function(data) {
-                    if (!data) return '-';
-                    let classMap = { active: 'bg-label-success', inactive: 'bg-label-secondary' };
-                    return `<span class="badge ${classMap[data] || 'bg-label-info'}">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;
+                    if (data === undefined || data === null) return '-';
+                    const s = String(data);
+                    let classMap = { 'active': 'bg-label-success', 'inactive': 'bg-label-secondary', '1': 'bg-label-success', '0': 'bg-label-secondary' };
+                    let label = s.charAt(0).toUpperCase() + s.slice(1);
+                    if (s === '1') label = 'Active';
+                    if (s === '0') label = 'Inactive';
+                    if (s === '-1') label = 'Pending';
+                    
+                    return `<span class="badge ${classMap[s] || 'bg-label-info'}">${label}</span>`;
                 }},
                 {data: 'created_at', name: 'created_at', orderable: true},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
@@ -237,54 +206,25 @@
             }
         });
 
+        // Manage Balance Button
+        $(document).on('click', '.manage-balance-btn', function() {
+            const id = $(this).data('id');
+            const name = $(this).data('name');
+            const balance = $(this).data('balance');
+            const cardId = $(this).data('card-id');
+
+            $('.target_user_id').val(id);
+            $('.target_card_id').val(cardId);
+            $('#manage_user_name').text(name);
+            $('#manage_current_balance').text('Rs. ' + parseFloat(balance).toLocaleString(undefined, {minimumFractionDigits: 2}));
+            
+            new bootstrap.Modal(document.getElementById('manageBalanceModal')).show();
+        });
+
         // Select All Checkbox
         $('#select-all').on('click', function() {
             $('.row-checkbox').prop('checked', this.checked);
         });
-
-        // Bulk Status Change
-        $(document).on('click', '.bulk-status-change', function() {
-            const status = $(this).data('status');
-            const ids = $('.row-checkbox:checked').map(function() { return $(this).val(); }).get();
-
-            if (ids.length === 0) {
-                showAlert('Please select at least one user.', 'warning');
-                return;
-            }
-
-            Swal.fire({
-                title: 'Are you sure?',
-                text: `You want to change status of ${ids.length} users to ${status}?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, change it!',
-                customClass: {
-                    confirmButton: 'btn btn-primary me-3',
-                    cancelButton: 'btn btn-label-secondary'
-                },
-                buttonsStyling: false
-            }).then(function(result) {
-                if (result.value) {
-                    $.ajax({
-                        url: "{{ route('users.bulk-toggle-status') }}",
-                        method: "POST",
-                        data: {
-                            _token: "{{ csrf_token() }}",
-                            ids: ids,
-                            status: status
-                        },
-                        success: function(response) {
-                            if (response.status) {
-                                showToast(response.message, 'Success', 'success');
-                                table.ajax.reload(null, false);
-                                $('#select-all').prop('checked', false);
-                            }
-                        }
-                    });
-                }
-            });
-        });
-
 
         // Toggle User Status
         $(document).on('click', '.toggle-user-status', function() {
@@ -301,7 +241,7 @@
                 success: function(response) {
                     if (response.status) {
                         showToast(response.message, 'Success', 'success');
-                        table.ajax.reload(null, false); // Reload without resetting pagination
+                        table.ajax.reload(null, false);
                     } else {
                         showAlert(response.message, 'error');
                     }
@@ -311,47 +251,14 @@
                 },
                 complete: function() {
                     btn.prop('disabled', false);
-                    // The icon/color will be updated by table.ajax.reload()
                 }
             });
-        });
-
-        // Add Balance Button
-        $(document).on('click', '.add-balance-btn', function() {
-            const id = $(this).data('id');
-            const name = $(this).data('name');
-            const balance = $(this).data('balance');
-            const cardId = $(this).data('card-id');
-
-            $('#balance_user_id').val(id);
-            $('#balance_card_id').val(cardId);
-            $('#balance_user_name').val(name);
-            $('#balance_current_amount').val('Rs. ' + parseFloat(balance).toLocaleString(undefined, {minimumFractionDigits: 2}));
-            $('#balanceModalTitle').text('Load Funds for ' + name);
-            
-            new bootstrap.Modal(document.getElementById('addBalanceModal')).show();
-        });
-
-        // Deduct Balance Button
-        $(document).on('click', '.deduct-balance-btn', function() {
-            const id = $(this).data('id');
-            const name = $(this).data('name');
-            const balance = $(this).data('balance');
-            const cardId = $(this).data('card-id');
-
-            $('#deduct_user_id').val(id);
-            $('#deduct_card_id').val(cardId);
-            $('#deduct_user_name').val(name);
-            $('#deduct_current_amount').val('Rs. ' + parseFloat(balance).toLocaleString(undefined, {minimumFractionDigits: 2}));
-            $('#deductModalTitle').text('Deduct Balance for ' + name);
-            
-            new bootstrap.Modal(document.getElementById('deductBalanceModal')).show();
         });
 
         // Select2 Merchant Search
         if ($.fn.select2) {
             $('#merchant_search').select2({
-                dropdownParent: $('#deductBalanceModal'),
+                dropdownParent: $('#manageBalanceModal'),
                 ajax: {
                     url: "{{ route('search.merchants') }}",
                     dataType: 'json',
@@ -376,9 +283,8 @@
                 checkReferenceVisibility();
             });
 
-            // Select2 Reference Search
             $('#reference_search').select2({
-                dropdownParent: $('#deductBalanceModal'),
+                dropdownParent: $('#manageBalanceModal'),
                 ajax: {
                     url: "{{ route('search.references') }}",
                     dataType: 'json',
@@ -432,5 +338,6 @@
 </script>
 <style>
     .select2-container--open { z-index: 9999 !important; }
+    .nav-tabs .nav-link.active { background-color: transparent !important; border-bottom: 2px solid #696cff !important; }
 </style>
 @endpush

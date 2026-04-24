@@ -30,12 +30,15 @@ class RegisterController extends Controller
             'email' => $request->email,
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
+            'status' => User::STATUS_PENDING,
         ]);
+
+        $user->sendEmailVerificationNotification();
 
         logActivity('registration', 'New user registered', [], $user->id);
 
         Auth::login($user);
 
-        return redirect()->route('dashboard');
+        return redirect()->route('verification.notice');
     }
 }

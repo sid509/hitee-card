@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -13,10 +13,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 use App\Traits\HasMedia;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, Impersonate, HasApiTokens, SoftDeletes, HasMedia;
+
+    const STATUS_PENDING = -1;
+    const STATUS_INACTIVE = 0;
+    const STATUS_ACTIVE = 1;
 
     /**
      * The attributes that are mass assignable.
@@ -31,6 +35,7 @@ class User extends Authenticatable
         'fcm_token',
         'preferred_language',
         'notification_enabled',
+        'last_notified_at',
         'password',
         'status',
     ];
@@ -38,6 +43,36 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute()
     {
         return $this->getFirstMediaUrl('avatar', asset('assets/img/no_image.png'));
+    }
+
+    /**
+     * Get the status as a human-readable string.
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match ((int)$this->status) {
+            self::STATUS_ACTIVE => 'active',
+            self::STATUS_INACTIVE => 'inactive',
+            self::STATUS_PENDING => 'pending',
+            default => 'unknown',
+        };
+    }
+
+    /**
+     * Ensure status is always stored as an integer.
+     */
+    public function setStatusAttribute($value)
+    {
+        if (is_numeric($value)) {
+            $this->attributes['status'] = (int)$value;
+        } else {
+            $this->attributes['status'] = match ($value) {
+                'active' => self::STATUS_ACTIVE,
+                'inactive' => self::STATUS_INACTIVE,
+                'pending' => self::STATUS_PENDING,
+                default => self::STATUS_PENDING,
+            };
+        }
     }
 
     /**
@@ -61,6 +96,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'notification_enabled' => 'boolean',
+            'last_notified_at' => 'datetime',
         ];
     }
 

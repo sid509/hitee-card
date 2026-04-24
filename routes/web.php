@@ -25,6 +25,7 @@ use App\Http\Controllers\RideController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\AuditController;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -52,6 +53,22 @@ Route::controller(RegisterController::class)->group(function () {
     Route::post('/register', 'register');
 });
 
+// Email Verification Routes
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', function (\Illuminate\Foundation\Auth\EmailVerificationRequest $request) {
+    $request->fulfill();
+    auth()->logout();
+    return redirect()->route('login')->with('success', 'Email verified successfully! Your account is now pending admin approval.');
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+Route::post('/email/verification-notification', function (\Illuminate\Http\Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+    return back()->with('message', 'Verification link sent!');
+})->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+
 // Forgot Password Routes
 Route::controller(\App\Http\Controllers\Auth\ForgotPasswordController::class)->group(function () {
     Route::get('/forgot-password', 'showLinkRequestForm')->name('password.request');
@@ -72,6 +89,11 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', function () {
         $user = auth()->user();
+
+        if ($user->status != User::STATUS_ACTIVE) {
+            auth()->logout();
+            return redirect()->route('login')->with('warning', 'Your account is not active.');
+        }
 
         $userCount = User::count();
         $cardCount = Card::count();
@@ -107,12 +129,21 @@ Route::middleware(['auth'])->group(function () {
 
     // Administration (Super Admin Only)
     Route::middleware(['role:super-admin'])->group(function () {
+        // Audit & Reports
+        Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+        Route::get('/audit/pending-approval', [AuditController::class, 'pendingApproval'])->name('audit.pending-approval');
+        Route::get('/audit/without-cards',    [AuditController::class, 'withoutCards'])->name('audit.without-cards');
+        Route::get('/audit/low-balance',      [AuditController::class, 'lowBalance'])->name('audit.low-balance');
+        Route::get('/audit/unverified-email', [AuditController::class, 'unverifiedEmail'])->name('audit.unverified-email');
+        Route::get('/audit/orphan-cards',     [AuditController::class, 'orphanCards'])->name('audit.orphan-cards');
+
         // Global Settings
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
 
         Route::post('/users/bulk-toggle-status', [UserController::class, 'bulkToggleStatus'])->name('users.bulk-toggle-status');
         Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::post('/users/{user}/approve', [UserController::class, 'approve'])->name('users.approve');
         Route::resource('users', UserController::class);
         Route::resource('roles', RoleController::class);
         Route::resource('permissions', PermissionController::class);
@@ -165,6 +196,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Business Logic Resources
     Route::middleware(['role:merchant'])->group(function () {
+        // Staff logic
         Route::get('/staff/search', [StaffController::class, 'search'])->name('staff.search');
         Route::post('/staff/{staff}/detach', [StaffController::class, 'detach'])->name('staff.detach');
         Route::resource('staff', StaffController::class);

@@ -51,7 +51,16 @@
                         </li>
                         <li class="mb-3">
                             <span class="fw-medium me-2">Status:</span>
-                            <span class="badge bg-label-{{ $user->status == 'active' ? 'success' : 'danger' }}">{{ ucfirst($user->status) }}</span>
+                            @php
+                                $statusLabel = $user->status_label;
+                                $badgeClass = match($statusLabel) {
+                                    'active' => 'success',
+                                    'inactive' => 'danger',
+                                    'pending' => 'warning',
+                                    default => 'secondary'
+                                };
+                            @endphp
+                            <span class="badge bg-label-{{ $badgeClass }}">{{ ucfirst($statusLabel) }}</span>
                         </li>
                         <li class="mb-3">
                             <span class="fw-medium me-2">Joined:</span>
