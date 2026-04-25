@@ -21,10 +21,7 @@ class ParkingAttributeController extends Controller
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->editColumn('icon', function($row){
-                    if ($row->icon) {
-                        return '<img src="'.asset('storage/'.$row->icon).'" alt="'.$row->name.'" height="24" width="24" class="me-2">';
-                    }
-                    return '<span class="text-muted small">No Icon</span>';
+                    return '<img src="'.$row->icon_url.'" alt="'.$row->name.'" height="24" width="24" class="me-2">';
                 })
                 ->editColumn('created_at', function($row){
                     return formatDate($row->created_at);

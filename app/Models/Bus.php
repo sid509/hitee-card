@@ -13,6 +13,8 @@ class Bus extends Model
     use SoftDeletes, HasMedia;
     protected $fillable = ['name', 'bus_number', 'hwid', 'status', 'merchant_id', 'latitude', 'longitude', 'route_id', 'active_fare_id'];
 
+    protected $appends = ['featured_image_url'];
+
     public function getFeaturedImageUrlAttribute()
     {
         return $this->getFirstMediaUrl('featured', asset('assets/img/no_image.png'));

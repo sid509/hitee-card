@@ -40,6 +40,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'status',
     ];
 
+    protected $appends = ['avatar_url'];
+
     public function getAvatarUrlAttribute()
     {
         return $this->getFirstMediaUrl('avatar', asset('assets/img/no_image.png'));

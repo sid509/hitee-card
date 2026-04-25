@@ -29,28 +29,10 @@ class BannerController extends Controller
         }
 
         $banners = $query->get()->map(function($banner) {
-            $items = [];
-
-            if ($banner->type === 'single') {
-                $items[] = [
-                    'title'     => $banner->title,
-                    'image_url' => $banner->image_path ? asset('storage/' . $banner->image_path) : null,
-                    'link'      => $banner->link,
-                ];
-            } elseif ($banner->type === 'carousel' && is_array($banner->images)) {
-                foreach ($banner->images as $item) {
-                    $items[] = [
-                        'title'     => $item['title'] ?? null,
-                        'image_url' => isset($item['image_path']) ? asset('storage/' . $item['image_path']) : null,
-                        'link'      => $item['link'] ?? null,
-                    ];
-                }
-            }
-
             return [
                 'position' => $banner->position,
-                'type'     => $banner->type, // 'single' | 'carousel'
-                'items'    => $items,
+                'type'     => $banner->type,
+                'items'    => $banner->items,
             ];
         });
 

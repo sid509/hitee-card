@@ -11,6 +11,8 @@ class ParkingAttribute extends Model
     use SoftDeletes;
     protected $fillable = ['name', 'icon'];
 
+    protected $appends = ['icon_url'];
+
     public function parkings()
     {
         return $this->belongsToMany(Parking::class);
@@ -18,6 +20,6 @@ class ParkingAttribute extends Model
 
     public function getIconUrlAttribute()
     {
-        return $this->icon ? asset('storage/' . $this->icon) : null;
+        return $this->icon ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->icon) : asset('assets/img/no_image.png');
     }
 }

@@ -172,7 +172,7 @@ class HomepageController extends Controller
             'merchant'         => $p->merchant?->name,
             'attributes'       => $p->attributes->map(fn($a) => [
                 'name' => $a->name,
-                'icon' => $a->icon,
+                'icon' => $a->icon_url,
             ]),
             'image_url'        => $p->featured_image_url,
             'gallery'          => $p->media->where('collection_name', 'gallery')->map(fn($m) => [
@@ -270,7 +270,7 @@ class HomepageController extends Controller
             'merchant'         => $parking->merchant?->name,
             'attributes'       => $parking->attributes->map(fn($a) => [
                 'name' => $a->name,
-                'icon' => $a->icon,
+                'icon' => $a->icon_url,
             ]),
             'image_url'        => $parking->featured_image_url,
             'gallery'          => $parking->media->where('collection_name', 'gallery')->map(fn($m) => [

@@ -13,6 +13,8 @@ class Parking extends Model
     use SoftDeletes, HasMedia;
     protected $fillable = ['name', 'location', 'status', 'merchant_id', 'latitude', 'longitude', 'first_hour_fee', 'onwards_hour_fee'];
 
+    protected $appends = ['featured_image_url'];
+
     public function getFeaturedImageUrlAttribute()
     {
         return $this->getFirstMediaUrl('featured', asset('assets/img/no_image.png'));

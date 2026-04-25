@@ -29,10 +29,43 @@ class Banner extends Model
         'is_active',
     ];
 
+    protected $appends = [
+        'image_url',
+        'items',
+    ];
+
     protected $casts = [
         'is_active' => 'boolean',
         'images' => 'array',
     ];
+
+    public function getImageUrlAttribute()
+    {
+        return $this->image_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->image_path) : asset('assets/img/no_image.png');
+    }
+
+    public function getItemsAttribute()
+    {
+        $items = [];
+
+        if ($this->type === 'single') {
+            $items[] = [
+                'title'     => $this->title,
+                'image_url' => $this->image_url,
+                'link'      => $this->link,
+            ];
+        } elseif ($this->type === 'carousel' && is_array($this->images)) {
+            foreach ($this->images as $item) {
+                $items[] = [
+                    'title'     => $item['title'] ?? null,
+                    'image_url' => isset($item['image_path']) ? \Illuminate\Support\Facades\Storage::disk('public')->url($item['image_path']) : asset('assets/img/no_image.png'),
+                    'link'      => $item['link'] ?? null,
+                ];
+            }
+        }
+
+        return $items;
+    }
 
     /**
      * Scope: active banners only.

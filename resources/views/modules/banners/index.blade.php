@@ -169,7 +169,7 @@
         container.empty();
 
         if (type === 'single') {
-            const imageUrl = row.image_path ? `/storage/${row.image_path}` : '{{ asset("assets/img/no_image.png") }}';
+            const imageUrl = row.image_url;
             container.append(`
                 <div class="col-12">
                     <div class="card shadow-none border">
@@ -182,12 +182,12 @@
                 </div>
             `);
         } else {
-            const items = row.images || [];
+            const items = row.items || [];
             if (items.length === 0) {
                 container.append('<div class="col-12 text-center py-4 text-muted">No images found in carousel</div>');
             } else {
                 items.forEach(item => {
-                    const imageUrl = item.image_path ? `/storage/${item.image_path}` : '{{ asset("assets/img/no_image.png") }}';
+                    const imageUrl = item.image_url;
                     container.append(`
                         <div class="col-md-6">
                             <div class="card shadow-none border h-100">
@@ -224,7 +224,7 @@
             index = carouselContainer.children().length;
         }
         
-        const imageUrl = data && data.image_path ? '/storage/' + data.image_path : '{{ asset("assets/img/no_image.png") }}';
+        const imageUrl = data && data.image_url ? data.image_url : '{{ asset("assets/img/no_image.png") }}';
         
         const itemHtml = `
             <div class="carousel-item-row border rounded p-3 mb-3 position-relative">

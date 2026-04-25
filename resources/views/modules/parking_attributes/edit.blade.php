@@ -28,7 +28,7 @@
                         @if($attribute->icon)
                             <div class="mb-2">
                                 <p class="small text-muted mb-1">Current Icon:</p>
-                                <img src="{{ asset('storage/' . $attribute->icon) }}" alt="{{ $attribute->name }}" height="40" width="40" class="border p-1">
+                                <img src="{{ $attribute->icon_url }}" alt="{{ $attribute->name }}" height="40" width="40" class="border p-1">
                             </div>
                         @endif
                         <input type="file" class="form-control @error('icon') is-invalid @enderror" id="icon" name="icon" 

@@ -20,6 +20,8 @@ class Media extends Model
         'custom_properties' => 'array',
     ];
 
+    protected $appends = ['url'];
+
     public function mediable()
     {
         return $this->morphTo();

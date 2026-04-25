@@ -67,7 +67,7 @@
                         @forelse($parking->attributes as $attr)
                             <div class="d-flex align-items-center bg-label-primary px-3 py-2 rounded">
                                 @if($attr->icon)
-                                    <img src="{{ asset('storage/' . $attr->icon) }}" alt="{{ $attr->name }}" height="20" width="20" class="me-2">
+                                    <img src="{{ $attr->icon_url }}" alt="{{ $attr->name }}" height="20" width="20" class="me-2">
                                 @else
                                     <i class="bx bx-check-circle me-2"></i>
                                 @endif

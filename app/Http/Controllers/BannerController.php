@@ -32,7 +32,7 @@ class BannerController extends Controller
                     if (!$row->image_path) return '<span class="text-muted italic">No image</span>';
                     
                     return '<div class="preview-trigger cursor-pointer" data-position="'.$row->position.'" data-type="single">
-                                <img src="'.asset('storage/'.$row->image_path).'" class="rounded" style="height: 50px; width: 100px; object-fit: cover;">
+                                <img src="'.$row->image_url.'" class="rounded" style="height: 50px; width: 100px; object-fit: cover;">
                             </div>';
                 })
                 ->editColumn('is_active', function($row){
@@ -50,8 +50,8 @@ class BannerController extends Controller
                                 data-title="'.$row->title.'" 
                                 data-link="'.$row->link.'" 
                                 data-active="'.$row->is_active.'" 
-                                data-image="'.($row->image_path ? asset('storage/'.$row->image_path) : '').'"
-                                data-items=\''.json_encode($row->images).'\'>
+                                data-image="'.$row->image_url.'" 
+                                data-items=\''.json_encode($row->items).'\'>
                                 <i class="bx bx-edit-alt"></i>
                             </button>';
                 })
