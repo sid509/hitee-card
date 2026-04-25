@@ -56,7 +56,7 @@ class LogController extends Controller
 
         if (File::exists($logPath)) {
             File::put($logPath, '');
-            return back()->with('success', "Log file '$fileName' cleared successfully.");
+            return back()->with('success', "The {$fileName} log has been cleared successfully.");
         }
         return back()->with('error', 'Log file not found.');
     }
