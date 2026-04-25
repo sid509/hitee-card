@@ -27,7 +27,7 @@ if (!function_exists('apiResponse')) {
      * @param mixed $metaContent The metadata to be included in the response. Defaults to empty array.
      * @return \Illuminate\Http\JsonResponse The JSON response.
      */
-    function apiResponse(bool $status = false, string $message = 'Something Went Wrong', mixed $content = '', int $http_code = 200, mixed $metaContent = []): \Illuminate\Http\JsonResponse
+    function apiResponse(bool $status = false, string $message = 'Something Went Wrong', mixed $content = '', int $http_code = 200, mixed $metaContent = [], mixed $paginate = null): \Illuminate\Http\JsonResponse
     {
         if (!$status && $http_code === 200) {
             $http_code = 500;
@@ -43,8 +43,11 @@ if (!function_exists('apiResponse')) {
                 'current_page' => $content->currentPage(),
                 'last_page' => $content->lastPage(),
             ];
-            $response['paginate'] = $paginate;
             $content = $content->items();
+        }
+
+        if ($paginate) {
+            $response['paginate'] = $paginate;
         }
 
         $response['content'] = $content;

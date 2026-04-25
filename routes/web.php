@@ -26,6 +26,7 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\LogController;
 use App\Models\User;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -179,6 +180,11 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('stops', StopController::class);
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
         Route::post('/activity-logs/sync', [ActivityLogController::class, 'sync'])->name('activity-logs.sync');
+
+        // Laravel Log Viewer
+        Route::get('/logs', [LogController::class, 'index'])->name('logs.index');
+        Route::post('/logs/clear', [LogController::class, 'clear'])->name('logs.clear');
+
         Route::resource('parking-attributes', ParkingAttributeController::class);
         Route::post('/cards/bulk-toggle-status', [CardController::class, 'bulkToggleStatus'])->name('cards.bulk-toggle-status');
         Route::post('/cards/{card}/toggle-status', [CardController::class, 'toggleStatus'])->name('cards.toggle-status');

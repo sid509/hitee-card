@@ -229,6 +229,12 @@
                 <div class="text-truncate">{{ __('messages.settings') }}</div>
             </a>
         </li>
+        <li class="menu-item {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+            <a href="{{ route('logs.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-terminal"></i>
+                <div class="text-truncate">Server Logs</div>
+            </a>
+        </li>
         @endif
     </ul>
 </aside>

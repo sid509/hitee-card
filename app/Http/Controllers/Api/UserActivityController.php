@@ -209,17 +209,13 @@ class UserActivityController extends Controller
             'started_at'   => $ride->created_at?->toISOString(),
         ]);
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Rides fetched successfully',
-            'meta'    => ['disclaimer' => 'Fare is charged in Hitee Points (pts). 1 Rs = 1 pt.'],
-            'paginate' => [
-                'total'        => $rides->total(),
-                'per_page'     => $rides->perPage(),
-                'current_page' => $rides->currentPage(),
-                'last_page'    => $rides->lastPage(),
-            ],
-            'content' => $mapped,
+        return apiResponse(true, 'Rides fetched successfully', $mapped, 200, [
+            'disclaimer' => 'Fare is charged in Hitee Points (pts). 1 Rs = 1 pt.'
+        ], [
+            'total'        => $rides->total(),
+            'per_page'     => $rides->perPage(),
+            'current_page' => $rides->currentPage(),
+            'last_page'    => $rides->lastPage(),
         ]);
     }
 
