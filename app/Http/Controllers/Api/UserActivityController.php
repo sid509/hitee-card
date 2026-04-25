@@ -43,8 +43,8 @@ class UserActivityController extends Controller
         $perPage  = max(1, min($perPage, 100)); // clamp 1–100
 
         // Build both queries
-        $inQuery  = $user->balanceIns()->getQuery();
-        $outQuery = $user->balanceOuts()->getQuery();
+        $inQuery  = $user->balanceIns();
+        $outQuery = $user->balanceOuts();
 
         // Category filtering
         if ($category) {

@@ -78,8 +78,8 @@ class WalletController extends Controller
         $category = $request->get('category');
         $perPage  = (int) $request->get('perPage', 10);
 
-        $inQuery  = $user->balanceIns()->getQuery();
-        $outQuery = $user->balanceOuts()->getQuery();
+        $inQuery  = $user->balanceIns();
+        $outQuery = $user->balanceOuts();
 
         if ($category) {
             if ($category === 'topup') {
