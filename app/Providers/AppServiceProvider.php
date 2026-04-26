@@ -72,13 +72,13 @@ class AppServiceProvider extends ServiceProvider
 
         Scramble::configure()
             ->withOperationTransformers(function (\Dedoc\Scramble\Support\Generator\Operation $operation) {
-                $operation->addParameter(
+                $operation->addParameters([
                     \Dedoc\Scramble\Support\Generator\Parameter::make('x-app-lang', 'header')
                         ->setSchema(\Dedoc\Scramble\Support\Generator\Schema::fromType(
                             (new \Dedoc\Scramble\Support\Generator\Types\StringType)->default('en')
                         ))
                         ->description('Application language preference. Use "en" for English, "ne" or "np" for Nepali.')
-                );
+                ]);
             });
 
         // View Composer for Sidebar and Dashboard
