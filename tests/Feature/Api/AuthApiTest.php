@@ -235,7 +235,7 @@ class AuthApiTest extends TestCase
 
         $response->assertStatus(200);
 
-        $this->assertDatabaseMissing('fcm_tokens', [
+        $this->assertSoftDeleted('fcm_tokens', [
             'token' => 'sample-fcm-token',
         ]);
     }

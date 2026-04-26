@@ -70,17 +70,16 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        Scramble::afterOpenApiGenerated(function (OpenApi $openApi) {
-            foreach ($openApi->getPaths() as $path) {
-                foreach ($path->getOperations() as $operation) {
-                    $operation->addParameter(
-                        \Dedoc\Scramble\Support\Generator\Parameter::header('x-app-lang')
-                            ->setSchema(\Dedoc\Scramble\Support\Generator\Schema::string()->setDefault('en'))
-                            ->description('Application language preference. Use "en" for English, "ne" or "np" for Nepali.')
-                    );
-                }
-            }
-        });
+        Scramble::configure()
+            ->withOperationTransformers(function (\Dedoc\Scramble\Support\Generator\Operation $operation) {
+                $operation->addParameter(
+                    \Dedoc\Scramble\Support\Generator\Parameter::make('x-app-lang', 'header')
+                        ->setSchema(\Dedoc\Scramble\Support\Generator\Schema::fromType(
+                            (new \Dedoc\Scramble\Support\Generator\Types\StringType)->default('en')
+                        ))
+                        ->description('Application language preference. Use "en" for English, "ne" or "np" for Nepali.')
+                );
+            });
 
         // View Composer for Sidebar and Dashboard
         View::composer('*', function ($view) {
