@@ -20,7 +20,7 @@ class ProfileController extends Controller
         
         // Ensure we are using an access token, not a refresh token
         if (!$request->user()->currentAccessToken()->can('access')) {
-            return apiResponse(false, 'Invalid token type for this action', '', 403);
+            return apiResponse(false, __('messages.invalid_token_type'), '', 403);
         }
 
         $user->load(['roles', 'activeCard']);
@@ -81,7 +81,7 @@ class ProfileController extends Controller
             ]
         ];
 
-        return apiResponse(true, 'Profile fetched successfully', $data);
+        return apiResponse(true, __('messages.profile_fetched'), $data);
     }
 
     /**
@@ -93,7 +93,7 @@ class ProfileController extends Controller
         
         // Ensure we are using an access token, not a refresh token
         if (!$request->user()->currentAccessToken()->can('access')) {
-            return apiResponse(false, 'Invalid token type for this action', '', 403);
+            return apiResponse(false, __('messages.invalid_token_type'), '', 403);
         }
 
         // Phone update not allowed as per requirement
@@ -101,11 +101,11 @@ class ProfileController extends Controller
 
         logActivity('profile_update', 'User updated profile details via API', [], $user->id);
 
-        return apiResponse(true, 'Profile updated successfully', [
+        return apiResponse(true, __('messages.profile_updated'), [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'phone_number' => $user->phone_number,
+            'avatar_url' => $user->avatar_url,
         ]);
     }
 
@@ -142,7 +142,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         if (!Hash::check($request->current_password, $user->password)) {
-            return apiResponse(false, 'Current password does not match', '', 400);
+            return apiResponse(false, __('messages.current_password_mismatch'), '', 400);
         }
 
         $user->update([
@@ -151,7 +151,7 @@ class ProfileController extends Controller
 
         logActivity('password_update', 'User updated password via API', [], $user->id);
 
-        return apiResponse(true, 'Password updated successfully');
+        return apiResponse(true, __('messages.password_updated'));
     }
 
     /**
@@ -219,7 +219,7 @@ class ProfileController extends Controller
             'total'        => $taps->total(),
             'per_page'     => $taps->perPage(),
             'current_page' => $taps->currentPage(),
-            'last_page'    => (int) ceil($total / $perPage),
+            'last_page'    => $taps->lastPage(),
         ]);
         }
 
@@ -236,7 +236,7 @@ class ProfileController extends Controller
 
         $request->user()->update(['preferred_language' => $request->language]);
 
-        return apiResponse(true, 'Preferred language updated successfully');
+        return apiResponse(true, __('messages.language_updated'));
         }
 
         /**
@@ -252,7 +252,7 @@ class ProfileController extends Controller
 
         $request->user()->update(['notification_enabled' => $request->enabled]);
 
-        return apiResponse(true, 'Notification preference updated successfully');
+        return apiResponse(true, __('messages.notifications_updated'));
         }
         }
 

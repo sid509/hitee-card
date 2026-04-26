@@ -34,11 +34,11 @@ class TapController extends Controller
         $card = Card::where('card_number', $request->card_number)->with('user')->firstOrFail();
         $asset = $this->resolveAsset($request->hw_id);
 
-        if (!$asset) return apiResponse(false, 'Scanner (Asset) not found', '', 404);
+        if (!$asset) return apiResponse(false, __('messages.asset_not_found'), '', 404);
 
         $user = $card->user;
         // if (!$user) return apiResponse(false, 'Card is not assigned to a user', '', 400); // Allow orphan cards
-        if ($card->status !== 'active') return apiResponse(false, 'Card is blocked or inactive', '', 403);
+        if ($card->status !== 'active') return apiResponse(false, __('messages.card_inactive'), '', 403);
 
         // Check for an ongoing journey for this card on ANY asset
         $ongoingRide = Ride::where('card_id', $card->id)
@@ -65,7 +65,7 @@ class TapController extends Controller
         // If user is null, check card balance
         $balance = $user ? $user->balance() : $card->balance();
         if ($balance < 20) {
-            return apiResponse(false, 'Insufficient balance (Min 20 pts required to start a journey)', '', 402);
+            return apiResponse(false, __('messages.insufficient_balance'), '', 402);
         }
 
         // Normalize Location (find nearest stop name)
@@ -98,7 +98,7 @@ class TapController extends Controller
 
         logActivity('tap_in', "Tapped in at {$location['name']} on {$asset->name}", ['ride_id' => $ride->id], $user?->id);
 
-        return apiResponse(true, "Tap In successful at {$location['name']}", [
+        return apiResponse(true, __('messages.tap_in_success', ['location' => $location['name']]), [
             'type' => 'in',
             'ride_id' => $ride->id,
             'location' => $location['name']
@@ -174,7 +174,7 @@ class TapController extends Controller
             'end' => $location['name']
         ], $user?->id);
 
-        return apiResponse(true, "Tap Out successful at {$location['name']}. Fare: {$fareAmount} pts", [
+        return apiResponse(true, __('messages.tap_out_success', ['location' => $location['name'], 'amount' => $fareAmount]), [
             'type'        => 'out',
             'fare_pts'    => (float) $fareAmount,
             'new_balance_pts' => (float) ($user ? $user->balance() : $card->balance()),

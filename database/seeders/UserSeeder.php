@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
         $admin = User::create([
             'name' => 'Sudip Dahal',
             'email' => 'admin@hitee.ai',
-            'phone_number' => '9801234567',
+            'phone_number' => '9841273250',
             'password' => Hash::make('Admin@Hitee2026'),
             'status' => 'active',
         ]);

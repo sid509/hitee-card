@@ -10,7 +10,7 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
@@ -37,9 +37,15 @@ class AuthController extends Controller
             'email' => $request->email,
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
-            'fcm_token' => $request->fcm_token,
             'status' => User::STATUS_PENDING,
         ]);
+
+        if ($request->fcm_token) {
+            \App\Models\FcmToken::updateOrCreate(
+                ['token' => $request->fcm_token],
+                ['user_id' => $user->id]
+            );
+        }
 
         $user->sendEmailVerificationNotification();
 
@@ -50,7 +56,7 @@ class AuthController extends Controller
 
         logActivity('registration', 'New user registered via API', [], $user->id);
 
-        return apiResponse(true, 'User registered successfully. Please verify your email.', [], 201);
+        return apiResponse(true, __('messages.registration_success'), [], 201);
     }
 
     /**
@@ -69,19 +75,22 @@ class AuthController extends Controller
             
             // 2. Check if email is verified
             if (!$user->hasVerifiedEmail()) {
-                return apiResponse(false, 'Please verify your email address before logging in.', ['needs_verification' => true], 403);
+                return apiResponse(false, __('messages.verify_email_first'), ['needs_verification' => true], 403);
             }
 
             // 3. Check account activation status (1 = Active)
             if ($user->status != User::STATUS_ACTIVE) {
                 if ($user->status == User::STATUS_PENDING) {
-                    return apiResponse(false, 'Your account is pending admin approval. You will be notified once activated.', ['pending_approval' => true], 403);
+                    return apiResponse(false, __('messages.account_pending'), ['pending_approval' => true], 403);
                 }
-                return apiResponse(false, 'Your account has been deactivated. Please contact support.', '', 403);
+                return apiResponse(false, __('messages.account_deactivated'), '', 403);
             }
 
             if ($request->fcm_token) {
-                $user->update(['fcm_token' => $request->fcm_token]);
+                \App\Models\FcmToken::updateOrCreate(
+                    ['token' => $request->fcm_token],
+                    ['user_id' => $user->id]
+                );
             }
             
             // 4. All checks passed, revoke old tokens and create new ones
@@ -92,7 +101,7 @@ class AuthController extends Controller
 
             logActivity('login', 'User logged in via API', [], $user->id);
 
-            return apiResponse(true, 'Login successful', [
+            return apiResponse(true, __('messages.login_success'), [
                 'access_token' => $accessToken,
                 'refresh_token' => $refreshToken,
                 'token_type' => 'Bearer',
@@ -120,7 +129,7 @@ class AuthController extends Controller
         }
 
         // Authentication failed
-        return apiResponse(false, 'Invalid login credentials', '', 401);
+        return apiResponse(false, __('messages.invalid_credentials'), '', 401);
     }
 
     /**
@@ -136,6 +145,7 @@ class AuthController extends Controller
         $request->validate([
             'provider' => 'required|in:google,facebook',
             'access_token' => 'required|string',
+            'fcm_token' => 'nullable|string',
         ]);
 
         $provider = $request->provider;
@@ -161,7 +171,14 @@ class AuthController extends Controller
             }
 
             if ($user->status == User::STATUS_INACTIVE) {
-                return apiResponse(false, 'Your account has been deactivated.', '', 403);
+                return apiResponse(false, __('messages.account_deactivated'), '', 403);
+            }
+
+            if ($request->fcm_token) {
+                \App\Models\FcmToken::updateOrCreate(
+                    ['token' => $request->fcm_token],
+                    ['user_id' => $user->id]
+                );
             }
 
             // Revoke old tokens
@@ -174,7 +191,7 @@ class AuthController extends Controller
 
             $user->load(['roles', 'cards']);
 
-            return apiResponse(true, 'Social login successful', [
+            return apiResponse(true, __('messages.social_login_success'), [
                 'access_token' => $accessToken,
                 'refresh_token' => $refreshToken,
                 'token_type' => 'Bearer',
@@ -201,7 +218,7 @@ class AuthController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return apiResponse(false, 'Social login failed: ' . $e->getMessage(), '', 400);
+            return apiResponse(false, __('messages.social_login_failed') . ': ' . $e->getMessage(), '', 400);
         }
     }
 
@@ -217,7 +234,7 @@ class AuthController extends Controller
 
         // Check if the current token has the refresh ability
         if (!$currentToken->can('refresh')) {
-            return apiResponse(false, 'Invalid token type for refresh', '', 403);
+            return apiResponse(false, __('messages.invalid_refresh_token'), '', 403);
         }
 
         // Revoke all current tokens for security on refresh
@@ -226,7 +243,7 @@ class AuthController extends Controller
         $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
         $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
 
-        return apiResponse(true, 'Tokens refreshed successfully', [
+        return apiResponse(true, __('messages.tokens_refreshed'), [
             'access_token' => $accessToken,
             'refresh_token' => $refreshToken,
             'token_type' => 'Bearer',
@@ -240,9 +257,13 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        if ($request->fcm_token) {
+            \App\Models\FcmToken::where('token', $request->fcm_token)->delete();
+        }
+
         logActivity('logout', 'User logged out via API');
         $request->user()->tokens()->delete();
 
-        return apiResponse(true, 'Logged out successfully');
+        return apiResponse(true, __('messages.logout_success'));
     }
 }

@@ -185,7 +185,8 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        return view('modules.users.show', compact('user'));
+        $notifications = $user->notifications()->with('template')->latest()->paginate(10);
+        return view('modules.users.show', compact('user', 'notifications'));
     }
 
     /**

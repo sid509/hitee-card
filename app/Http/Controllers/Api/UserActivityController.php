@@ -87,8 +87,8 @@ class UserActivityController extends Controller
         $total   = $merged->count();
         $items   = $merged->slice(($page - 1) * $perPage, $perPage)->values();
 
-        return apiResponse(true, 'Transactions fetched successfully', $items, 200, [
-            'disclaimer' => '1 Rs = 1 Hitee Point (pts). top-up amounts reflect real money paid.',
+        return apiResponse(true, __('messages.transactions_fetched'), $items, 200, [
+            'disclaimer' => __('messages.wallet_disclaimer'),
         ], [
             'total'        => $total,
             'per_page'     => $perPage,
@@ -142,7 +142,7 @@ class UserActivityController extends Controller
 
         return response()->json([
             'status'  => true,
-            'message' => 'Tap logs fetched successfully',
+            'message' => __('messages.taps_fetched'),
             'meta'    => [],
             'paginate' => [
                 'total'        => $taps->total(),
@@ -209,8 +209,8 @@ class UserActivityController extends Controller
             'started_at'   => $ride->created_at?->toISOString(),
         ]);
 
-        return apiResponse(true, 'Rides fetched successfully', $mapped, 200, [
-            'disclaimer' => 'Fare is charged in Hitee Points (pts). 1 Rs = 1 pt.'
+        return apiResponse(true, __('messages.rides_fetched'), $mapped, 200, [
+            'disclaimer' => __('messages.ride_disclaimer')
         ], [
             'total'        => $rides->total(),
             'per_page'     => $rides->perPage(),

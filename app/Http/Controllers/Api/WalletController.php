@@ -35,11 +35,11 @@ class WalletController extends Controller
             ->take(5)
             ->values();
 
-        return apiResponse(true, 'Wallet details fetched successfully', [
+        return apiResponse(true, __('messages.wallet_fetched'), [
             'current_balance_pts' => (float) $user->balance(),
             'active_cards'        => $cards,
             'latest_transactions' => $latestTransactions,
-            'disclaimer'          => '1 Rs = 1 Hitee Point (pts). Top-up amounts reflect real money paid.',
+            'disclaimer'          => __('messages.wallet_disclaimer'),
         ]);
     }
 
@@ -51,13 +51,14 @@ class WalletController extends Controller
     public function categories()
     {
         $categories = [
-            ['id' => 'topup',   'name' => 'Direct Top-up'],
-            ['id' => 'khalti',  'name' => 'Khalti Payment'],
-            ['id' => 'parking', 'name' => 'Parking Fee'],
-            ['id' => 'travel',  'name' => 'Travel Fare'],
+            ['id' => 'all',     'name' => __('messages.all')],
+            ['id' => 'topup',   'name' => __('messages.direct_topup')],
+            ['id' => 'khalti',  'name' => __('messages.khalti_payment')],
+            ['id' => 'parking', 'name' => __('messages.parking_fee')],
+            ['id' => 'travel',  'name' => __('messages.travel_fare')],
         ];
 
-        return apiResponse(true, 'Categories fetched successfully', $categories);
+        return apiResponse(true, __('messages.categories_fetched'), $categories);
     }
 
     /**
@@ -68,7 +69,7 @@ class WalletController extends Controller
     public function transactions(Request $request)
     {
         $request->validate([
-            'category'  => 'nullable|string|in:topup,khalti,parking,travel',
+            'category'  => 'nullable|string|in:all,topup,khalti,parking,travel',
             'date_from' => 'nullable|date',
             'date_to'   => 'nullable|date',
             'perPage'   => 'nullable|integer|min:1|max:100',
@@ -81,7 +82,7 @@ class WalletController extends Controller
         $inQuery  = $user->balanceIns();
         $outQuery = $user->balanceOuts();
 
-        if ($category) {
+        if ($category && $category !== 'all') {
             if ($category === 'topup') {
                 $inQuery->where('type', 'manual');
                 $outQuery->whereRaw('1=0');
@@ -114,7 +115,7 @@ class WalletController extends Controller
         $total   = $merged->count();
         $items   = $merged->slice(($page - 1) * $perPage, $perPage)->values();
 
-        return apiResponse(true, 'Transactions fetched successfully', $items, 200, [], [
+        return apiResponse(true, __('messages.transactions_fetched'), $items, 200, [], [
             'total'        => $total,
             'per_page'     => $perPage,
             'current_page' => $page,

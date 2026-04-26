@@ -31,10 +31,55 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('super-admin');
         });
 
+        // Override Config from Database Settings
+        try {
+            if (\Schema::hasTable('settings')) {
+                $dbSettings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
+                
+                // Mail Config Override
+                if (isset($dbSettings['mail_host'])) config(['mail.mailers.smtp.host' => $dbSettings['mail_host']]);
+                if (isset($dbSettings['mail_port'])) config(['mail.mailers.smtp.port' => $dbSettings['mail_port']]);
+                if (isset($dbSettings['mail_username'])) config(['mail.mailers.smtp.username' => $dbSettings['mail_username']]);
+                if (isset($dbSettings['mail_password'])) config(['mail.mailers.smtp.password' => $dbSettings['mail_password']]);
+                if (isset($dbSettings['mail_encryption'])) config(['mail.mailers.smtp.encryption' => $dbSettings['mail_encryption']]);
+                if (isset($dbSettings['mail_from_address'])) config(['mail.from.address' => $dbSettings['mail_from_address']]);
+
+                // Services (Khalti, FB, Google)
+                if (isset($dbSettings['khalti_secret_key'])) config(['services.khalti.secret_key' => $dbSettings['khalti_secret_key']]);
+                if (isset($dbSettings['khalti_public_key'])) config(['services.khalti.public_key' => $dbSettings['khalti_public_key']]);
+                if (isset($dbSettings['facebook_client_id'])) config(['services.facebook.client_id' => $dbSettings['facebook_client_id']]);
+                if (isset($dbSettings['facebook_client_secret'])) config(['services.facebook.client_secret' => $dbSettings['facebook_client_secret']]);
+                if (isset($dbSettings['facebook_redirect_url'])) config(['services.facebook.redirect' => $dbSettings['facebook_redirect_url']]);
+                if (isset($dbSettings['google_client_id'])) config(['services.google.client_id' => $dbSettings['google_client_id']]);
+                if (isset($dbSettings['google_client_secret'])) config(['services.google.client_secret' => $dbSettings['google_client_secret']]);
+                if (isset($dbSettings['google_redirect_url'])) config(['services.google.redirect' => $dbSettings['google_redirect_url']]);
+                
+                // AWS
+                if (isset($dbSettings['aws_access_key_id'])) config(['filesystems.disks.s3.key' => $dbSettings['aws_access_key_id']]);
+                if (isset($dbSettings['aws_secret_access_key'])) config(['filesystems.disks.s3.secret' => $dbSettings['aws_secret_access_key']]);
+                if (isset($dbSettings['aws_default_region'])) config(['filesystems.disks.s3.region' => $dbSettings['aws_default_region']]);
+                if (isset($dbSettings['aws_bucket'])) config(['filesystems.disks.s3.bucket' => $dbSettings['aws_bucket']]);
+            }
+        } catch (\Exception $e) {
+            // Table might not exist yet during migration
+        }
+
         Scramble::extendOpenApi(function (OpenApi $openApi) {
             $openApi->secure(
                 SecurityScheme::http('bearer')
             );
+        });
+
+        Scramble::afterOpenApiGenerated(function (OpenApi $openApi) {
+            foreach ($openApi->getPaths() as $path) {
+                foreach ($path->getOperations() as $operation) {
+                    $operation->addParameter(
+                        \Dedoc\Scramble\Support\Generator\Parameter::header('x-app-lang')
+                            ->setSchema(\Dedoc\Scramble\Support\Generator\Schema::string()->setDefault('en'))
+                            ->description('Application language preference. Use "en" for English, "ne" or "np" for Nepali.')
+                    );
+                }
+            }
         });
 
         // View Composer for Sidebar and Dashboard

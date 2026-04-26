@@ -95,6 +95,11 @@
                 </button>
             </li>
             <li class="nav-item">
+                <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-notifications" aria-controls="navs-pills-notifications" aria-selected="false">
+                    <i class="bx bx-bell me-1"></i>{{ __('messages.broadcasts') }}
+                </button>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('transactions.logs') }}?user_id={{ $user->id }}"><i class="bx bx-list-ul me-1"></i>Transactions</a>
             </li>
         </ul>
@@ -178,6 +183,63 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Notifications Tab -->
+            <div class="tab-pane fade" id="navs-pills-notifications" role="tabpanel">
+                <div class="card mb-4">
+                    <h5 class="card-header">{{ __('messages.broadcast_history') }}</h5>
+                    <div class="table-responsive text-nowrap">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('messages.date') }} & {{ __('messages.time') }}</th>
+                                    <th>{{ __('messages.notification_templates') }}</th>
+                                    <th>{{ __('messages.type') }}</th>
+                                    <th>{{ __('messages.language') }}</th>
+                                    <th>{{ __('messages.status') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($notifications as $notif)
+                                    <tr>
+                                        <td>{{ $notif->created_at->format('M d, Y H:i') }}</td>
+                                        <td>{{ $notif->template ? $notif->template->name : 'Custom / Deleted' }}</td>
+                                        <td>
+                                            @php
+                                                $badgeClass = match($notif->type) {
+                                                    'email' => 'info',
+                                                    'fcm' => 'warning',
+                                                    'sms' => 'success',
+                                                    default => 'secondary'
+                                                };
+                                            @endphp
+                                            <span class="badge bg-label-{{ $badgeClass }}">{{ strtoupper($notif->type) }}</span>
+                                        </td>
+                                        <td>{{ strtoupper($notif->language) }}</td>
+                                        <td>
+                                            <span class="badge bg-label-{{ $notif->status == 'sent' ? 'success' : 'danger' }}">
+                                                {{ ucfirst($notif->status) }}
+                                            </span>
+                                            @if($notif->error_message)
+                                                <i class="bx bx-help-circle text-danger" data-bs-toggle="tooltip" title="{{ $notif->error_message }}"></i>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">No notification history.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    @if($notifications->hasPages())
+                        <div class="card-footer">
+                            {{ $notifications->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

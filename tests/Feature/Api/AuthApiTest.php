@@ -1,0 +1,282 @@
+<?php
+
+namespace Tests\Feature\Api;
+
+use App\Models\User;
+use App\Models\Role;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+class AuthApiTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Create the customers role as it's required during registration
+        Role::create([
+            'name' => 'Customers',
+            'slug' => 'customers',
+        ]);
+    }
+
+    /**
+     * Test user registration successfully.
+     */
+    public function test_user_can_register()
+    {
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'phone_number' => '9812345678',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => true,
+                'message' => 'User registered successfully. Please verify your email.',
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'phone_number' => '9812345678',
+            'status' => User::STATUS_PENDING,
+        ]);
+    }
+
+    /**
+     * Test registration validation errors.
+     */
+    public function test_registration_validation_errors()
+    {
+        $response = $this->postJson('/api/auth/register', []);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'status' => false,
+            ])
+            ->assertJsonStructure([
+                'content' => ['name', 'email', 'phone_number', 'password']
+            ]);
+    }
+
+    /**
+     * Test user login successfully.
+     */
+    public function test_user_can_login()
+    {
+        $user = User::factory()->create([
+            'phone_number' => '9812345678',
+            'password' => Hash::make('password'),
+            'status' => User::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'phone_number' => '9812345678',
+            'password' => 'password',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+                'message' => 'Login successful',
+            ])
+            ->assertJsonStructure([
+                'content' => [
+                    'access_token',
+                    'refresh_token',
+                    'user' => [
+                        'id', 'name', 'email', 'phone_number', 'balance'
+                    ]
+                ]
+            ]);
+    }
+
+    /**
+     * Test user login successfully and FCM token storage.
+     */
+    public function test_user_can_login_with_fcm_token()
+    {
+        $user = User::factory()->create([
+            'phone_number' => '9812345678',
+            'password' => Hash::make('password'),
+            'status' => User::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'phone_number' => '9812345678',
+            'password' => 'password',
+            'fcm_token' => 'sample-fcm-token',
+        ]);
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseHas('fcm_tokens', [
+            'user_id' => $user->id,
+            'token' => 'sample-fcm-token',
+        ]);
+    }
+
+    /**
+     * Test login failure with invalid credentials.
+     */
+    public function test_login_failure_invalid_credentials()
+    {
+        $user = User::factory()->create([
+            'phone_number' => '9812345678',
+            'password' => Hash::make('password'),
+            'status' => User::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'phone_number' => '9812345678',
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertStatus(401)
+            ->assertJson([
+                'status' => false,
+                'message' => 'Invalid login credentials',
+            ]);
+    }
+
+    /**
+     * Test login failure when email is not verified.
+     */
+    public function test_login_failure_unverified_email()
+    {
+        $user = User::factory()->create([
+            'phone_number' => '9812345678',
+            'password' => Hash::make('password'),
+            'status' => User::STATUS_ACTIVE,
+            'email_verified_at' => null,
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'phone_number' => '9812345678',
+            'password' => 'password',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'status' => false,
+                'message' => 'Please verify your email address before logging in.',
+            ]);
+    }
+
+    /**
+     * Test login failure when account is pending.
+     */
+    public function test_login_failure_pending_account()
+    {
+        $user = User::factory()->create([
+            'phone_number' => '9812345678',
+            'password' => Hash::make('password'),
+            'status' => User::STATUS_PENDING,
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'phone_number' => '9812345678',
+            'password' => 'password',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'status' => false,
+                'message' => 'Your account is pending admin approval. You will be notified once activated.',
+            ]);
+    }
+
+    /**
+     * Test logout successfully.
+     */
+    public function test_user_can_logout()
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/auth/logout');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+                'message' => 'Logged out successfully',
+            ]);
+
+        $this->assertCount(0, $user->tokens);
+    }
+
+    /**
+     * Test logout successfully and FCM token removal.
+     */
+    public function test_user_can_logout_and_clear_fcm_token()
+    {
+        $user = User::factory()->create();
+        \App\Models\FcmToken::create([
+            'user_id' => $user->id,
+            'token' => 'sample-fcm-token',
+        ]);
+        
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/auth/logout', [
+            'fcm_token' => 'sample-fcm-token',
+        ]);
+
+        $response->assertStatus(200);
+
+        $this->assertDatabaseMissing('fcm_tokens', [
+            'token' => 'sample-fcm-token',
+        ]);
+    }
+
+    /**
+     * Test token refresh.
+     */
+    public function test_user_can_refresh_token()
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['refresh']);
+
+        $response = $this->postJson('/api/auth/refresh');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+                'message' => 'Tokens refreshed successfully',
+            ])
+            ->assertJsonStructure([
+                'content' => [
+                    'access_token',
+                    'refresh_token',
+                ]
+            ]);
+    }
+
+    /**
+     * Test refresh failure with access token instead of refresh token.
+     */
+    public function test_refresh_fails_with_access_token()
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['access']);
+
+        $response = $this->postJson('/api/auth/refresh');
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'status' => false,
+                'message' => 'Invalid token type for refresh',
+            ]);
+    }
+}

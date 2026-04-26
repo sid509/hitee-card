@@ -25,18 +25,14 @@ class SettingController extends Controller
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
-        $data = $request->validate([
-            'support_email'           => 'required|email',
-            'support_phone'           => 'required|string',
-            'terms_url'               => 'required|url',
-            'policy_url'              => 'required|url',
-            'negative_allowed_point'  => 'required|numeric|min:0',
-        ]);
+        $data = $request->except(['_token', '_method']);
 
         foreach ($data as $key => $value) {
+            // Only update if value is provided, allows partial updates per tab if needed
+            // although usually we submit all visible fields
             Setting::set($key, $value);
         }
 
-        return redirect()->back()->with('success', 'Global settings updated successfully.');
+        return redirect()->back()->with('success', 'System settings updated successfully.');
     }
 }

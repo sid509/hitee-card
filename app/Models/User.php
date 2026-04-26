@@ -32,7 +32,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'phone_number',
         'avatar',
-        'fcm_token',
         'preferred_language',
         'notification_enabled',
         'last_notified_at',
@@ -100,6 +99,16 @@ class User extends Authenticatable implements MustVerifyEmail
             'notification_enabled' => 'boolean',
             'last_notified_at' => 'datetime',
         ];
+    }
+
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(UserNotification::class);
     }
 
     public function balanceIns()

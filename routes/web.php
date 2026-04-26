@@ -201,6 +201,17 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/supports/{support}/close', 'close')->name('supports.close');
         });
 
+        // Broadcast Management
+        Route::controller(\App\Http\Controllers\BroadcastController::class)->group(function () {
+            Route::get('/broadcast', 'index')->name('broadcast.index');
+            Route::get('/broadcast/create', 'create')->name('broadcast.create');
+            Route::post('/broadcast/store', 'store')->name('broadcast.store');
+            Route::get('/broadcast/send', 'sendForm')->name('broadcast.send-form');
+            Route::post('/broadcast/send', 'send')->name('broadcast.send');
+            Route::get('/broadcast/{broadcast}/show', 'show')->name('broadcast.show');
+            Route::delete('/broadcast/{template}', 'destroy')->name('broadcast.destroy');
+        });
+
         // User Impersonation
         Route::get('/impersonate/take/{id}', function($id) {
             auth()->user()->impersonate(User::findOrFail($id));
