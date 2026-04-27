@@ -302,26 +302,15 @@
 @push('page-js')
 <script type="module">
     $(function() {
-    $(function() {
         // Fullscreen Toggle
-        let isMapExpanded = false;
         $('#toggleMapSize').on('click', function() {
             const container = $('#map-container');
             const mapEl = $('#map');
-            
-            isMapExpanded = !isMapExpanded;
-            
-            container.toggleClass('fixed-top vh-100 vw-100 bg-white p-3', isMapExpanded);
-            
-            container.css({
-                'z-index': isMapExpanded ? 1050 : '',
-                'top': isMapExpanded ? '60px' : '',
-                'left': isMapExpanded ? '260px' : '',
-                'width': isMapExpanded ? 'calc(100vw - 260px)' : ''
-            });
-            mapEl.css('height', isMapExpanded ? 'calc(90vh - 80px)' : '400px');
+            container.toggleClass('fixed-top vh-100 vw-100 bg-white p-3');
+            container.css('z-index', container.hasClass('fixed-top') ? 1050 : '');
+            mapEl.css('height', container.hasClass('fixed-top') ? '90vh' : '400px');
             map.invalidateSize();
-            $(this).find('i').toggleClass('bx-fullscreen', !isMapExpanded).toggleClass('bx-exit-fullscreen', isMapExpanded);
+            $(this).find('i').toggleClass('bx-fullscreen bx-exit-fullscreen');
         });
 
         // Initialize Map
