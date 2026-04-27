@@ -24,6 +24,28 @@ class RouteController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->addColumn('bus_info', function($row) {
+                    $user = auth()->user();
+                    $busesQuery = $row->buses();
+                    
+                    if ($user->hasRole('merchant')) {
+                        $busesQuery->where('merchant_id', $user->id);
+                    }
+                    
+                    $buses = $busesQuery->get();
+                    $count = $buses->count();
+                    $names = $buses->pluck('bus_number')->implode(', ');
+                    
+                    if ($count > 0) {
+                        return '<span class="badge bg-label-info cursor-help d-inline-flex align-items-center" 
+                                    data-bs-toggle="tooltip" 
+                                    data-bs-placement="top" 
+                                    title="' . $names . '">
+                                    <i class="bx bx-bus me-1"></i>' . $count . ' ' . ($count == 1 ? 'Bus' : 'Buses') . '
+                                </span>';
+                    }
+                    return '<span class="text-muted small">No buses</span>';
+                })
                 ->addColumn('stops_count', function($row) {
                     $count = $row->stops->count();
                     return '<span class="badge bg-label-info d-inline-flex align-items-center"><i class="bx bx-map-pin me-1"></i>' . $count . ' Stops</span>';
@@ -47,7 +69,7 @@ class RouteController extends Controller
                 ->addColumn('created_at', function($row){
                     return formatDate($row->created_at);
                 })
-                ->rawColumns(['merchant_names', 'stops_count', 'action'])
+                ->rawColumns(['bus_info', 'stops_count', 'action'])
                 ->make(true);
         }
 
