@@ -302,24 +302,26 @@
 @push('page-js')
 <script type="module">
     $(function() {
+    $(function() {
         // Fullscreen Toggle
+        let isMapExpanded = false;
         $('#toggleMapSize').on('click', function() {
             const container = $('#map-container');
             const mapEl = $('#map');
             
-            container.toggleClass('fixed-top vh-100 vw-100 bg-white p-3');
-            const isFullscreen = container.hasClass('fixed-top');
+            isMapExpanded = !isMapExpanded;
             
-            // Adjust top to account for header (approx 60px) and left for sidebar (approx 260px)
+            container.toggleClass('fixed-top vh-100 vw-100 bg-white p-3', isMapExpanded);
+            
             container.css({
-                'z-index': isFullscreen ? 1050 : '',
-                'top': isFullscreen ? '60px' : '',
-                'left': isFullscreen ? '260px' : '',
-                'width': isFullscreen ? 'calc(100vw - 260px)' : ''
+                'z-index': isMapExpanded ? 1050 : '',
+                'top': isMapExpanded ? '60px' : '',
+                'left': isMapExpanded ? '260px' : '',
+                'width': isMapExpanded ? 'calc(100vw - 260px)' : ''
             });
-            mapEl.css('height', isFullscreen ? 'calc(90vh - 80px)' : '400px');
+            mapEl.css('height', isMapExpanded ? 'calc(90vh - 80px)' : '400px');
             map.invalidateSize();
-            $(this).find('i').toggleClass('bx-fullscreen bx-exit-fullscreen');
+            $(this).find('i').toggleClass('bx-fullscreen', !isMapExpanded).toggleClass('bx-exit-fullscreen', isMapExpanded);
         });
 
         // Initialize Map
