@@ -10,7 +10,8 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Str;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
@@ -265,5 +266,57 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
 
         return apiResponse(true, __('messages.logout_success'));
+    }
+
+    /**
+     * Forgot Password
+     * 
+     * Send a password reset link to the user's email.
+     * 
+     * @bodyParam email string required The user's email. Example: john@example.com
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $status = Password::sendResetLink($request->only('email'));
+
+        return $status === Password::RESET_LINK_SENT
+            ? apiResponse(true, __($status))
+            : apiResponse(false, __($status), '', 400);
+    }
+
+    /**
+     * Reset Password
+     * 
+     * Reset the user's password using the token received in email.
+     * 
+     * @bodyParam token string required The reset token.
+     * @bodyParam email string required The user's email.
+     * @bodyParam password string required The new password.
+     * @bodyParam password_confirmation string required The new password confirmation.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
+            }
+        );
+
+        return $status === Password::PASSWORD_RESET
+            ? apiResponse(true, __($status))
+            : apiResponse(false, __($status), '', 400);
     }
 }
