@@ -52,7 +52,7 @@
 
             <!-- Assigned Buses -->
             <div class="card mb-4">
-                <h6 class="card-header"><i class="bx bx-bus me-2 text-primary"></i> Buses on this route</h6>
+                <h6 class="card-header">Buses on this route</h6>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         @forelse($route->buses as $bus)
