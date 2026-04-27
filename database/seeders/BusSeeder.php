@@ -14,38 +14,49 @@ class BusSeeder extends Seeder
     public function run(): void
     {
         $merchants = User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->get();
-
-        if ($merchants->isEmpty()) return;
-
-        $kathmanduBuses = [
-            ['name' => 'Sajha Yatayat', 'no' => 'BA 2 KA 1234', 'lat' => 27.700769, 'lng' => 85.313957], // Ratnapark
-            ['name' => 'Mahanagar Yatayat', 'no' => 'BA 3 KA 5678', 'lat' => 27.694684, 'lng' => 85.320481], // Kalimati
-            ['name' => 'Mayur Yatayat', 'no' => 'BA 4 KA 9012', 'lat' => 27.675571, 'lng' => 85.345919], // Koteshwor
-            ['name' => 'Nepal Yatayat', 'no' => 'BA 1 KA 3344', 'lat' => 27.717245, 'lng' => 85.323960], // Lazimpat
-            ['name' => 'City Yatayat', 'no' => 'BA 5 KA 7788', 'lat' => 27.686382, 'lng' => 85.289123], // Kalanki
-        ];
-
         $routes = \App\Models\Route::all();
 
-        foreach ($kathmanduBuses as $index => $data) {
-            $bus = Bus::create([
-                'name' => $data['name'],
-                'bus_number' => $data['no'],
-                'hwid' => 'HW_' . uniqid(),
-                'status' => 'active',
-                'merchant_id' => $merchants->random()->id,
-                'latitude' => $data['lat'],
-                'longitude' => $data['lng'],
-                'route_id' => $routes->isNotEmpty() ? $routes->random()->id : null,
-            ]);
+        if ($merchants->isEmpty() || $routes->isEmpty()) {
+            $this->command->warn('Merchants or Routes missing. Skipping Bus seeding.');
+            return;
+        }
 
-            // Assign an active fare based on the route
-            if ($bus->route_id) {
-                $fare = \App\Models\Fare::where('route_id', $bus->route_id)->first();
+        $busCompanies = [
+            'Sajha Yatayat', 'Mahanagar Yatayat', 'Mayur Yatayat', 'Nepal Yatayat', 'City Yatayat',
+            'Digo Yatayat', 'Orange Bus', 'Blue Sky Transport', 'Valley Connect'
+        ];
+
+        $prefixes = ['BA 2 KA', 'BA 3 KA', 'BA 4 KA', 'BA 1 KA', 'BA 5 KA'];
+
+        foreach ($merchants as $merchant) {
+            // Create 5-10 buses for each merchant
+            $busCount = rand(5, 10);
+            
+            for ($i = 0; $i < $busCount; $i++) {
+                $company = $busCompanies[array_rand($busCompanies)];
+                $prefix = $prefixes[array_rand($prefixes)];
+                $number = rand(1000, 9999);
+                $route = $routes->random();
+
+                $bus = Bus::create([
+                    'name' => $company . ' #' . ($i + 1),
+                    'bus_number' => $prefix . ' ' . $number,
+                    'hwid' => 'HW_' . strtoupper(bin2hex(random_bytes(4))),
+                    'status' => 'active',
+                    'merchant_id' => $merchant->id,
+                    'latitude' => 27.7 + (rand(-100, 100) / 1000),
+                    'longitude' => 85.3 + (rand(-100, 100) / 1000),
+                    'route_id' => $route->id,
+                ]);
+
+                // Assign an active fare based on the route
+                $fare = \App\Models\Fare::where('route_id', $route->id)->first();
                 if ($fare) {
                     $bus->update(['active_fare_id' => $fare->id]);
                 }
             }
         }
+
+        $this->command->info('Buses seeded successfully.');
     }
 }
