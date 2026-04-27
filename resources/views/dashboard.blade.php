@@ -306,17 +306,18 @@
         $('#toggleMapSize').on('click', function() {
             const container = $('#map-container');
             const mapEl = $('#map');
-            const isFullscreen = container.hasClass('fixed-top');
             
             container.toggleClass('fixed-top vh-100 vw-100 bg-white p-3');
+            const isFullscreen = container.hasClass('fixed-top');
+            
             // Adjust top to account for header (approx 60px) and left for sidebar (approx 260px)
             container.css({
-                'z-index': isFullscreen ? '' : 1050,
-                'top': isFullscreen ? '' : '60px',
-                'left': isFullscreen ? '' : '260px',
-                'width': isFullscreen ? '' : 'calc(100vw - 260px)'
+                'z-index': isFullscreen ? 1050 : '',
+                'top': isFullscreen ? '60px' : '',
+                'left': isFullscreen ? '260px' : '',
+                'width': isFullscreen ? 'calc(100vw - 260px)' : ''
             });
-            mapEl.css('height', isFullscreen ? '400px' : 'calc(90vh - 80px)');
+            mapEl.css('height', isFullscreen ? 'calc(90vh - 80px)' : '400px');
             map.invalidateSize();
             $(this).find('i').toggleClass('bx-fullscreen bx-exit-fullscreen');
         });
