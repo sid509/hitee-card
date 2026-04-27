@@ -33,7 +33,7 @@
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">{{ __('messages.operations') }}</span>
         </li>
-        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
+        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff', 'customers'))
         <li class="menu-item {{ request()->routeIs('rides.index', 'rides.tap-ledger') ? 'active open' : '' }}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-git-commit"></i>
