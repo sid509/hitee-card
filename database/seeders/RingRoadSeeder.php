@@ -22,7 +22,6 @@ class RingRoadSeeder extends Seeder
             'description' => 'Complete circuit of Kathmandu\'s Ring Road.',
         ]);
 
-        $route->merchants()->attach($merchant->id);
 
         // More realistic, circular coordinates for Ring Road stops
         $stopsData = [

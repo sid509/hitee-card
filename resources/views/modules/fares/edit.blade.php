@@ -26,16 +26,6 @@
                             <input type="text" class="form-control" value="{{ $fare->route->name }}" disabled>
                             <input type="hidden" name="route_id" id="route_select_fare" value="{{ $fare->route_id }}">
                         </div>
-                        @if(auth()->user()->hasRole('super-admin'))
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Merchants</label>
-                            <select name="merchant_ids[]" class="form-select select2-ajax-merchant" multiple required>
-                                @foreach($fare->merchants as $merchant)
-                                    <option value="{{ $merchant->id }}" selected>{{ $merchant->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        @endif
                     </div>
 
                     <div class="mt-4" id="matrix-container">

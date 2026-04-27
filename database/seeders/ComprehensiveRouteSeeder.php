@@ -138,7 +138,6 @@ class ComprehensiveRouteSeeder extends Seeder
                 'description' => "Main outbound line for {$def['name']}",
                 'direction' => 'inbound'
             ]);
-            $outbound->merchants()->attach($merchant->id);
 
             foreach ($def['path'] as $index => $stopName) {
                 RouteStop::create([
@@ -157,7 +156,6 @@ class ComprehensiveRouteSeeder extends Seeder
                 'description' => "Main inbound line for {$def['name']}",
                 'direction' => 'outbound'
             ]);
-            $inbound->merchants()->attach($merchant->id);
 
             $reversedPath = array_reverse($def['path']);
             foreach ($reversedPath as $index => $stopName) {

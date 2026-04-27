@@ -28,9 +28,17 @@
                             <li class="mb-3"><span class="fw-medium me-2">Name:</span> <span>{{ $fare->name }}</span></li>
                             <li class="mb-3">
                                 <span class="fw-medium me-2">Merchants:</span> 
-                                @foreach($fare->merchants as $merchant)
+                                @php
+                                    $fareMerchants = \App\Models\User::whereHas('buses', function($q) use ($fare) {
+                                        $q->where('active_fare_id', $fare->id);
+                                    })->get();
+                                @endphp
+                                @foreach($fareMerchants as $merchant)
                                     <span class="badge bg-label-secondary me-1">{{ $merchant->name }}</span>
                                 @endforeach
+                                @if($fareMerchants->isEmpty())
+                                    <span class="text-muted small">No merchants yet</span>
+                                @endif
                             </li>
                             <li class="mb-3"><span class="fw-medium me-2">Route:</span> <span>{{ $fare->route->name }}</span></li>
                             <li class="mb-3">

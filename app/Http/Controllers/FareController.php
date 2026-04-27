@@ -16,10 +16,11 @@ class FareController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Fare::with(['merchants', 'route', 'buses'])->latest();
+            $query = Fare::with(['route', 'buses'])->latest();
 
-            if (auth()->user()->hasRole('merchant')) {                $query->whereHas('merchants', function($q) {
-                    $q->where('users.id', auth()->id());
+            if (auth()->user()->hasRole('merchant')) {
+                $query->whereHas('buses', function($q) {
+                    $q->where('merchant_id', auth()->id());
                 });
             }
 
@@ -58,7 +59,9 @@ class FareController extends Controller
                     if (auth()->user()->hasRole('super-admin', 'merchant', 'staff')) {
                         $canManage = false;
                         if (auth()->user()->hasRole('super-admin')) $canManage = true;
-                        elseif (auth()->user()->hasRole('merchant') && $row->merchants->contains(auth()->id())) $canManage = true;
+                        elseif (auth()->user()->hasRole('merchant')) {
+                             $canManage = $row->buses()->where('merchant_id', auth()->id())->exists();
+                        }
                         elseif (auth()->user()->hasRole('staff')) {
                             $canManage = auth()->user()->assignedBuses()->where('route_id', $row->route_id)->exists();
                         }
@@ -95,8 +98,8 @@ class FareController extends Controller
     {
         $routesQuery = Route::query();
         if (auth()->user()->hasRole('merchant')) {
-            $routesQuery->whereHas('merchants', function($q) {
-                $q->where('users.id', auth()->id());
+            $routesQuery->whereHas('buses', function($q) {
+                $q->where('merchant_id', auth()->id());
             });
         }
         return view('modules.fares.create', [
@@ -109,8 +112,6 @@ class FareController extends Controller
     {
         $request->validate([
             'route_id' => 'required|exists:routes,id',
-            'merchant_ids' => 'required|array',
-            'merchant_ids.*' => 'exists:users,id',
             'name' => 'required|string|max:255',
             'matrix' => 'required|array',
         ]);
@@ -121,9 +122,6 @@ class FareController extends Controller
                 'name' => $request->name,
                 'status' => 'proposed',
             ]);
-
-            // Sync Merchants
-            $fare->merchants()->sync($request->merchant_ids);
 
             foreach ($request->matrix as $fromStopId => $toStops) {
                 foreach ($toStops as $toStopId => $amount) {
@@ -144,29 +142,24 @@ class FareController extends Controller
 
     public function edit(Fare $fare)
     {
-        if (auth()->user()->hasRole('merchant') && !$fare->merchants->contains(auth()->id())) abort(403);
-        $fare->load(['route.stops', 'matrices', 'merchants']);
+        if (auth()->user()->hasRole('merchant') && !$fare->buses()->where('merchant_id', auth()->id())->exists()) abort(403);
+        $fare->load(['route.stops', 'matrices']);
         $routes = Route::all();
         return view('modules.fares.edit', compact('fare', 'routes'));
     }
 
     public function update(Request $request, Fare $fare)
     {
-        if (auth()->user()->hasRole('merchant') && !$fare->merchants->contains(auth()->id())) abort(403);
+        if (auth()->user()->hasRole('merchant') && !$fare->buses()->where('merchant_id', auth()->id())->exists()) abort(403);
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'merchant_ids' => 'required|array',
-            'merchant_ids.*' => 'exists:users,id',
         ]);
 
         DB::transaction(function() use ($request, $fare) {
             $fare->update([
                 'name' => $request->name,
             ]);
-
-            // Sync Merchants
-            $fare->merchants()->sync($request->merchant_ids);
         });
 
         return redirect()->route('fares.index')->with('success', 'Fare details updated successfully.');
@@ -181,7 +174,7 @@ class FareController extends Controller
 
     public function show(Fare $fare)
     {
-        $fare->load(['route.stops', 'matrices', 'merchants']);
+        $fare->load(['route.stops', 'matrices']);
         return view('modules.fares.show', compact('fare'));
     }
 
@@ -204,8 +197,8 @@ class FareController extends Controller
 
         if (!auth()->user()->hasRole('super-admin')) {
             if (auth()->user()->hasRole('merchant')) {
-                // Bus must belong to merchant AND merchant must be associated with the fare
-                if ($bus->merchant_id != auth()->id() || !$fare->merchants->contains(auth()->id())) abort(403);
+                // Bus must belong to merchant
+                if ($bus->merchant_id != auth()->id()) abort(403);
             } elseif (auth()->user()->hasRole('staff')) {
                 if (!auth()->user()->assignedBuses->contains($bus->id)) abort(403);
             } else {

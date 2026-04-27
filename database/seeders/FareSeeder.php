@@ -35,12 +35,10 @@ class FareSeeder extends Seeder
             ]);
 
             // Link to the route's primary merchants
-            $fare->merchants()->attach($route->merchants->pluck('id'));
 
             // For realism, occasionally attach a random extra merchant to simulate shared fare agreements
             if (rand(0, 1) && $allMerchants->count() > 3) {
                 $extraMerchants = $allMerchants->random(rand(1, 2))->toArray();
-                $fare->merchants()->syncWithoutDetaching($extraMerchants);
             }
 
             $stops = $route->stops;

@@ -24,22 +24,10 @@
                     @if($route->id) @method('PUT') @endif
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-12 mb-3">
                             <label class="form-label">Route Name</label>
                             <input type="text" name="name" class="form-control" value="{{ old('name', $route->name) }}" placeholder="e.g. Kalanki - Ratnapark Ring Road" required>
                         </div>
-                        @if(auth()->user()->hasRole('super-admin'))
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Merchants</label>
-                            <select name="merchant_ids[]" class="form-select select2-ajax-merchant" multiple required>
-                                @if($route->id)
-                                    @foreach($route->merchants as $merchant)
-                                        <option value="{{ $merchant->id }}" selected>{{ $merchant->name }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                        </div>
-                        @endif
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Description</label>
                             <textarea name="description" class="form-control" rows="2">{{ old('description', $route->description) }}</textarea>

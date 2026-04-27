@@ -123,7 +123,8 @@ class BusController extends Controller
         
         $bus = new Bus();
         $merchants = User::whereHas('roles', function($q){ $q->where('slug', 'merchant'); })->get();
-        return view('modules.buses.create', compact('bus', 'merchants'));
+        $routes = \App\Models\Route::all();
+        return view('modules.buses.create', compact('bus', 'merchants', 'routes'));
     }
 
     /**
@@ -164,7 +165,8 @@ class BusController extends Controller
         if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
         
         $merchants = User::whereHas('roles', function($q){ $q->where('slug', 'merchant'); })->get();
-        return view('modules.buses.edit', compact('bus', 'merchants'));
+        $routes = \App\Models\Route::all();
+        return view('modules.buses.edit', compact('bus', 'merchants', 'routes'));
     }
 
     /**
@@ -181,6 +183,7 @@ class BusController extends Controller
         $data = [
             'name' => $request->name,
             'status' => $request->status,
+            'route_id' => $request->route_id,
         ];
 
         // Super-admin can update sensitive fields

@@ -52,7 +52,6 @@ class JsonDataSeeder extends Seeder
                 'description' => "Official route code: " . $data['route_code'],
                 'direction' => 'inbound'
             ]);
-            $outbound->merchants()->attach($merchant->id);
 
             $outRouteStops = [];
             foreach ($data['stops'] as $index => $stopName) {
@@ -80,7 +79,6 @@ class JsonDataSeeder extends Seeder
                 'description' => "Official route code: " . $data['route_code'],
                 'direction' => 'outbound'
             ]);
-            $inbound->merchants()->attach($merchant->id);
 
             $inRouteStops = [];
             $reversedStops = array_reverse($data['stops']);
@@ -114,7 +112,6 @@ class JsonDataSeeder extends Seeder
         ]);
 
         // Link the same merchants as the route
-        $fare->merchants()->attach($route->merchants->pluck('id'));
 
         // Populate Matrix
         foreach ($routeStops as $from) {

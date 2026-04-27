@@ -29,12 +29,6 @@
                                 @endforeach
                             </select>
                         </div>
-                        @if(auth()->user()->hasRole('super-admin'))
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Merchants</label>
-                            <select name="merchant_ids[]" class="form-select select2-ajax-merchant" multiple required></select>
-                        </div>
-                        @endif
                     </div>
 
                     <div class="mt-4" id="matrix-container" style="display: none;">

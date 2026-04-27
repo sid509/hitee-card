@@ -17,6 +17,7 @@ class UpdateBusRequest extends BaseRequest
         $rules = [
             'name' => 'required|string|max:255',
             'status' => 'required|in:active,inactive',
+            'route_id' => 'nullable|exists:routes,id',
             'featured_image' => 'nullable|image|max:2048',
             'gallery_images.*' => 'nullable|image|max:2048',
         ];

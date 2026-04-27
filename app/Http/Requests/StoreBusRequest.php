@@ -14,6 +14,7 @@ class StoreBusRequest extends BaseRequest
             'bus_number' => 'required|string|unique:buses',
             'hwid' => 'required|string|unique:buses',
             'merchant_id' => 'nullable|exists:users,id',
+            'route_id' => 'nullable|exists:routes,id',
             'status' => 'required|in:active,inactive',
             'featured_image' => 'nullable|image|max:2048',
             'gallery_images.*' => 'nullable|image|max:2048',

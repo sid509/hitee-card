@@ -22,7 +22,6 @@ class NepalYatayatSeeder extends Seeder
             'description' => 'Connects the Airport to the western entry point of the valley.',
         ]);
 
-        $route->merchants()->attach($merchant->id);
 
         $stopsData = [
             ['name' => 'Airport'], ['name' => 'Gaushala'], ['name' => 'Ratnapark'], ['name' => 'Tripureshwor'], ['name' => 'Kalimati'], ['name' => 'Kalanki'],

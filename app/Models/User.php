@@ -174,7 +174,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function merchantRoutes()
     {
-        return $this->belongsToMany(Route::class, 'merchant_route', 'merchant_id', 'route_id')->withTimestamps();
+        // Get unique route IDs from the merchant's buses
+        $routeIds = $this->buses()->whereNotNull('route_id')->pluck('route_id')->unique();
+        return Route::whereIn('id', $routeIds);
     }
 
     public function fares()

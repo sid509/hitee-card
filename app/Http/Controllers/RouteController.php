@@ -14,19 +14,22 @@ class RouteController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Route::with(['merchants', 'stops'])->latest();
+            $query = Route::with(['stops'])->latest();
             
             if (auth()->user()->hasRole('merchant')) {
-                $query->whereHas('merchants', function($q) {
-                    $q->where('users.id', auth()->id());
+                $query->whereHas('buses', function($q) {
+                    $q->where('merchant_id', auth()->id());
                 });
             }
 
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('merchant_names', function($row) {
-                    $count = $row->merchants->count();
-                    $names = $row->merchants->pluck('name')->implode(', ');
+                    $merchants = User::whereHas('buses', function($q) use ($row) {
+                        $q->where('route_id', $row->id);
+                    })->get();
+                    $count = $merchants->count();
+                    $names = $merchants->pluck('name')->implode(', ');
                     return '<span class="badge bg-label-secondary cursor-help d-inline-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $names . '">
                                 <i class="bx bx-store-alt me-1"></i>' . $count . ' ' . ($count == 1 ? 'Merchant' : 'Merchants') . '
                             </span>';
@@ -38,7 +41,7 @@ class RouteController extends Controller
                 ->addColumn('action', function($row) {
                     $actions = '<div class="d-flex justify-content-center">';
                     $actions .= '<a href="'.route('routes.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
-                    if (auth()->user()->hasRole('super-admin', 'merchant')) {
+                    if (auth()->user()->hasRole('super-admin')) {
                         $actions .= '<a href="'.route('routes.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
                     }
                     if (auth()->user()->hasRole('super-admin')) {
@@ -63,15 +66,16 @@ class RouteController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
         return view('modules.routes.create', ['route' => new Route()]);
     }
 
     public function store(Request $request)
     {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'merchant_ids' => 'required|array',
-            'merchant_ids.*' => 'exists:users,id',
             'stops' => 'required|array|min:2',
             'stops.*.id' => 'required|exists:stops,id',
         ]);
@@ -81,9 +85,6 @@ class RouteController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
             ]);
-
-            // Attach Merchants
-            $route->merchants()->sync($request->merchant_ids);
 
             foreach ($request->stops as $index => $stopData) {
                 $stop = \App\Models\Stop::find($stopData['id']);
@@ -103,25 +104,23 @@ class RouteController extends Controller
 
     public function show(Route $route)
     {
-        $route->load(['stops.stop', 'buses.merchant', 'merchants']);
+        $route->load(['stops.stop', 'buses.merchant']);
         return view('modules.routes.show', compact('route'));
     }
 
     public function edit(Route $route)
     {
-        if (auth()->user()->hasRole('merchant') && !$route->merchants->contains(auth()->id())) abort(403);
-        $route->load(['stops.stop', 'merchants']);
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $route->load(['stops.stop']);
         return view('modules.routes.edit', compact('route'));
     }
 
     public function update(Request $request, Route $route)
     {
-        if (auth()->user()->hasRole('merchant') && !$route->merchants->contains(auth()->id())) abort(403);
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'merchant_ids' => 'required|array',
-            'merchant_ids.*' => 'exists:users,id',
             'stops' => 'required|array|min:2',
             'stops.*.id' => 'required|exists:stops,id',
         ]);
@@ -131,9 +130,6 @@ class RouteController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
             ]);
-
-            // Sync Merchants
-            $route->merchants()->sync($request->merchant_ids);
 
             $route->stops()->delete();
 

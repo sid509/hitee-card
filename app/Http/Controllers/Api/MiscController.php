@@ -81,7 +81,7 @@ class MiscController extends Controller
     private function findJourneyOptions($startStopId, $endStopId): Collection
     {
         $allStops = Stop::all();
-        $allRoutes = Route::with(['stops', 'fares.matrices', 'merchants'])->get();
+        $allRoutes = Route::with(['stops', 'fares.matrices'])->get();
 
         // 1. Find DIRECT paths
         $directPaths = [];

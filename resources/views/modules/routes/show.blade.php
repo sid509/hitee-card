@@ -40,9 +40,17 @@
                             <li class="mb-3">
                                 <span class="fw-medium me-2">Merchants:</span>
                                 <div>
-                                    @foreach($route->merchants as $merchant)
+                                    @php
+                                        $routeMerchants = \App\Models\User::whereHas('buses', function($q) use ($route) {
+                                            $q->where('route_id', $route->id);
+                                        })->get();
+                                    @endphp
+                                    @foreach($routeMerchants as $merchant)
                                         <span class="badge bg-label-secondary mb-1">{{ $merchant->name }}</span>
                                     @endforeach
+                                    @if($routeMerchants->isEmpty())
+                                        <span class="text-muted small">No merchants yet</span>
+                                    @endif
                                 </div>
                             </li>
                             <li class="mb-3">

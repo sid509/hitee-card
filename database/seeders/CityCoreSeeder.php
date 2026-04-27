@@ -23,7 +23,6 @@ class CityCoreSeeder extends Seeder
         ]);
 
         // Link multiple merchants to this route for simulation
-        $route->merchants()->attach($merchants->pluck('id')->take(3));
 
         $stopsData = [
             ['name' => 'Ratnapark', 'lat' => 27.7062, 'lng' => 85.3149],

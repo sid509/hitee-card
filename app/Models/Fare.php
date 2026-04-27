@@ -11,17 +11,7 @@ class Fare extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['merchant_id', 'route_id', 'name', 'status', 'effective_from'];
-
-    public function merchant()
-    {
-        return $this->belongsTo(User::class, 'merchant_id');
-    }
-
-    public function merchants()
-    {
-        return $this->belongsToMany(User::class, 'fare_merchant', 'fare_id', 'merchant_id')->withTimestamps();
-    }
+    protected $fillable = ['route_id', 'name', 'status', 'effective_from'];
 
     public function route()
     {

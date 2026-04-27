@@ -13,11 +13,6 @@ class Route extends Model
 
     protected $fillable = ['name', 'description', 'direction'];
 
-    public function merchants()
-    {
-        return $this->belongsToMany(User::class, 'merchant_route', 'route_id', 'merchant_id')->withTimestamps();
-    }
-
     public function stops()
     {
         return $this->hasMany(RouteStop::class)->orderBy('order');

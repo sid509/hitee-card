@@ -22,7 +22,6 @@ class MayurYatayatSeeder extends Seeder
             'description' => 'Route from Ring Road to Suryabinayak, Bhaktapur.',
         ]);
 
-        $route->merchants()->attach($merchant->id);
 
         $stopsData = [
             ['name' => 'Koteshwor'], ['name' => 'Jadibuti'], ['name' => 'Lokanthali'], ['name' => 'Kaushaltar'], ['name' => 'Gatthaghar'], ['name' => 'Thimi'], ['name' => 'Suryabinayak'],

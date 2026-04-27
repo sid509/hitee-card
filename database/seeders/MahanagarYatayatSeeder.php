@@ -22,7 +22,6 @@ class MahanagarYatayatSeeder extends Seeder
             'description' => 'Route covering central Kathmandu areas.',
         ]);
 
-        $route->merchants()->attach($merchant->id);
 
         $stopsData = [
             ['name' => 'Ratnapark'], ['name' => 'Jamal'], ['name' => 'Lainchaur'], ['name' => 'Lazimpat'], ['name' => 'Maharajgunj'],
