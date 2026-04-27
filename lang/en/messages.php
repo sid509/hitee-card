@@ -130,4 +130,5 @@ return [
     'current_password_mismatch' => 'Current password does not match',
     'language_updated' => 'Language preference updated successfully',
     'notifications_updated' => 'Notification preference updated successfully',
+    'wallet_topup_success' => 'Wallet topped up successfully',
 ];

@@ -123,6 +123,41 @@ class WalletController extends Controller
         ]);
     }
 
+    /**
+     * Wallet Top-up
+     *
+     * Adds balance to the authenticated user's wallet.
+     * This endpoint supports manual top-ups and Khalti (KPG) payments.
+     * The amount is added as Hitee Points (pts), where 1 Rs = 1 pt.
+     */
+    public function topup(Request $request)
+    {
+        $request->validate([
+            'amount'         => 'required|numeric|min:1',
+            'type'           => 'nullable|string|in:manual,khalti',
+            'transaction_id' => 'nullable|string',
+            'remarks'        => 'nullable|string|max:255',
+        ]);
+
+        $user = $request->user();
+
+        $balanceIn = BalanceIn::create([
+            'user_id'        => $user->id,
+            'amount'         => $request->amount,
+            'type'           => $request->get('type', 'manual'),
+            'status'         => 'completed',
+            'gateway_name'   => $request->get('type', 'manual') === 'khalti' ? 'Khalti' : 'App Manual',
+            'transaction_id' => $request->transaction_id ?? 'TXN-' . strtoupper(uniqid()),
+            'remarks'        => $request->remarks ?? 'Top-up from app',
+            'created_by'     => $user->id,
+        ]);
+
+        return apiResponse(true, __('messages.wallet_topup_success'), [
+            'transaction'     => $this->mapTopup($balanceIn),
+            'current_balance' => (float) $user->balance(),
+        ]);
+    }
+
     private function mapTopup(BalanceIn $tx): array
     {
         return [

@@ -130,4 +130,5 @@ return [
     'current_password_mismatch' => 'हालको पासवर्ड मिलेन',
     'language_updated' => 'भाषा प्राथमिकता सफलतापूर्वक अपडेट गरियो',
     'notifications_updated' => 'सूचना प्राथमिकता सफलतापूर्वक अपडेट गरियो',
+    'wallet_topup_success' => 'वालेट सफलतापूर्वक टप-अप भयो',
 ];

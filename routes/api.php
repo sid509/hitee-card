@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Wallet Group
     Route::prefix('wallet')->group(function () {
         Route::get('/',             [WalletController::class, 'show']);
+        Route::post('/topup',       [WalletController::class, 'topup']);
         Route::get('/categories',   [WalletController::class, 'categories']);
         Route::get('/transactions', [WalletController::class, 'transactions']);
     });

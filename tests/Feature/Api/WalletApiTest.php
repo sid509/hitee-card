@@ -145,4 +145,38 @@ class WalletApiTest extends TestCase
         $response->assertStatus(200);
         $this->assertCount(5, $response->json('content'));
     }
+
+    /**
+     * Test topping up wallet.
+     */
+    public function test_user_can_topup_wallet()
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['access']);
+
+        $payload = [
+            'amount' => 100,
+            'type' => 'manual',
+            'remarks' => 'Test Topup',
+        ];
+
+        $response = $this->postJson('/api/wallet/topup', $payload);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+                'message' => 'Wallet topped up successfully',
+            ])
+            ->assertJsonFragment([
+                'amount_pts' => 100.0,
+                'current_balance' => 100.0,
+            ]);
+
+        $this->assertDatabaseHas('balance_ins', [
+            'user_id' => $user->id,
+            'amount' => 100,
+            'type' => 'manual',
+            'status' => 'completed',
+        ]);
+    }
 }
