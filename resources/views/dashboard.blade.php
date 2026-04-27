@@ -239,9 +239,12 @@
 <div class="row">
     <!-- Map View for Admin and Merchant -->
     @if(auth()->user()->hasRole('super-admin', 'merchant'))
-    <div class="col-12 mb-4">
+    <div class="col-12 mb-4" id="map-container">
         <div class="card">
-            <h5 class="card-header">Fleet & Asset Locations</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Fleet & Asset Locations</h5>
+                <button id="toggleMapSize" class="btn btn-sm btn-outline-primary"><i class="bx bx-fullscreen"></i> Toggle Fullscreen</button>
+            </div>
             <div class="card-body">
                 <div id="map"></div>
             </div>
@@ -299,6 +302,17 @@
 @push('page-js')
 <script type="module">
     $(function() {
+        // Fullscreen Toggle
+        $('#toggleMapSize').on('click', function() {
+            const container = $('#map-container');
+            const mapEl = $('#map');
+            container.toggleClass('fixed-top vh-100 vw-100 bg-white p-3');
+            container.css('z-index', container.hasClass('fixed-top') ? 1050 : '');
+            mapEl.css('height', container.hasClass('fixed-top') ? '90vh' : '400px');
+            map.invalidateSize();
+            $(this).find('i').toggleClass('bx-fullscreen bx-exit-fullscreen');
+        });
+
         // Initialize Map
         const isCustomer = {{ auth()->user()->hasRole('customers') ? 'true' : 'false' }};
         const buses = @json($buses);
