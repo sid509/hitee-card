@@ -24,8 +24,6 @@ class FareSeeder extends Seeder
 
         $this->command->info('Seeding Fares and Matrices for ' . $routes->count() . ' routes...');
 
-        $allMerchants = \App\Models\User::whereHas('roles', fn($q) => $q->where('slug', 'merchant'))->pluck('id');
-
         foreach ($routes as $route) {
             $fare = Fare::create([
                 'route_id' => $route->id,
@@ -33,13 +31,6 @@ class FareSeeder extends Seeder
                 'status' => 'approved',
                 'effective_from' => now()->subMonths(3),
             ]);
-
-            // Link to the route's primary merchants
-
-            // For realism, occasionally attach a random extra merchant to simulate shared fare agreements
-            if (rand(0, 1) && $allMerchants->count() > 3) {
-                $extraMerchants = $allMerchants->random(rand(1, 2))->toArray();
-            }
 
             $stops = $route->stops;
             foreach ($stops as $from) {

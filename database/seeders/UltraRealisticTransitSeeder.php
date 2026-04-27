@@ -104,22 +104,16 @@ class UltraRealisticTransitSeeder extends Seeder
                     'created_at' => $completionDate,
                 ]);
 
-                // Credit to merchant(s) associated with the fare
-                $merchants = $bus->activeFare->merchants;
-                $count = $merchants->count() ?: 1;
-                $splitAmount = $fareAmount / $count;
-
-                foreach ($merchants as $m) {
-                    MerchantIncome::create([
-                        'merchant_id' => $m->id,
-                        'balance_out_id' => $balanceOut->id,
-                        'reference_id' => $bus->id,
-                        'reference_type' => 'App\Models\Bus',
-                        'amount' => $splitAmount,
-                        'type' => 'fare',
-                        'created_at' => $completionDate,
-                    ]);
-                }
+                // Credit to the merchant who owns the bus
+                MerchantIncome::create([
+                    'merchant_id' => $bus->merchant_id,
+                    'balance_out_id' => $balanceOut->id,
+                    'reference_id' => $bus->id,
+                    'reference_type' => 'App\Models\Bus',
+                    'amount' => $fareAmount,
+                    'type' => 'fare',
+                    'created_at' => $completionDate,
+                ]);
             });
         }
     }
@@ -127,7 +121,7 @@ class UltraRealisticTransitSeeder extends Seeder
     public function run(): void
     {
         $customers = User::whereHas('roles', fn($q) => $q->where('slug', 'customers'))->with('cards')->get();
-        $buses = Bus::whereNotNull('route_id')->whereNotNull('active_fare_id')->with(['route.stops', 'activeFare.matrices', 'activeFare.merchants'])->get();
+        $buses = Bus::whereNotNull('route_id')->whereNotNull('active_fare_id')->with(['route.stops', 'activeFare.matrices'])->get();
         $admin = User::whereHas('roles', fn($q) => $q->where('slug', 'super-admin'))->first();
 
         $this->command->info('Customers count: ' . $customers->count());
