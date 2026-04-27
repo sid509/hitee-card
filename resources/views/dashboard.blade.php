@@ -306,9 +306,22 @@
         $('#toggleMapSize').on('click', function() {
             const container = $('#map-container');
             const mapEl = $('#map');
-            container.toggleClass('fixed-top vh-100 vw-100 bg-white p-3');
-            container.css('z-index', container.hasClass('fixed-top') ? 1050 : '');
-            mapEl.css('height', container.hasClass('fixed-top') ? '90vh' : '400px');
+            const isFullscreen = container.hasClass('fixed-top');
+            
+            // Toggle visibility of layout components
+            $('.layout-navbar, .layout-menu').toggle(isFullscreen);
+            
+            // Toggle fullscreen classes on container
+            container.toggleClass('fixed-top vh-100 vw-100 bg-white p-0 m-0');
+            
+            container.css({
+                'z-index': isFullscreen ? '' : 10000,
+                'top': isFullscreen ? '' : '0',
+                'left': isFullscreen ? '' : '0',
+                'width': isFullscreen ? '' : '100vw'
+            });
+            
+            mapEl.css('height', isFullscreen ? '400px' : '100vh');
             map.invalidateSize();
             $(this).find('i').toggleClass('bx-fullscreen bx-exit-fullscreen');
         });
