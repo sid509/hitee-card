@@ -33,7 +33,9 @@ class RideController extends Controller
                 $query->where('status', $request->status);
             }
 
-            if (auth()->user()->hasRole('merchant')) {
+            if (auth()->user()->hasRole('customers')) {
+                $query->where('user_id', auth()->id());
+            } elseif (auth()->user()->hasRole('merchant')) {
                 $query->where('merchant_id', auth()->id());
             } elseif (auth()->user()->hasRole('staff')) {
                 $user = auth()->user();
@@ -129,7 +131,9 @@ class RideController extends Controller
                 $query->where('type', $request->type);
             }
 
-            if (auth()->user()->hasRole('merchant')) {
+            if (auth()->user()->hasRole('customers')) {
+                $query->where('user_id', auth()->id());
+            } elseif (auth()->user()->hasRole('merchant')) {
                 $query->where('merchant_id', auth()->id());
             } elseif (auth()->user()->hasRole('staff')) {
                 $user = auth()->user();

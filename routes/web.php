@@ -226,7 +226,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('impersonate.leave');
 
     // Journey Ledger
-    Route::middleware(['role:super-admin,merchant,staff'])->group(function () {
+    Route::middleware(['role:super-admin,merchant,staff,customers'])->group(function () {
         Route::get('/rides', [RideController::class, 'index'])->name('rides.index');
         Route::get('/tap-ledger', [RideController::class, 'tapLedger'])->name('rides.tap-ledger');
     });
