@@ -97,11 +97,13 @@
                         <div class="text-truncate">{{ __('messages.fares') }}</div>
                     </a>
                 </li>
+                @if(auth()->user()->hasRole('super-admin'))
                 <li class="menu-item {{ request()->routeIs('stops.*') ? 'active' : '' }}">
                     <a href="{{ route('stops.index') }}" class="menu-link">
                         <div class="text-truncate">{{ __('messages.stops') }}</div>
                     </a>
                 </li>
+                @endif
             </ul>
         </li>
         @endif
