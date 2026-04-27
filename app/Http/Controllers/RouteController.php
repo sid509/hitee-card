@@ -24,16 +24,6 @@ class RouteController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('merchant_names', function($row) {
-                    $merchants = User::whereHas('buses', function($q) use ($row) {
-                        $q->where('route_id', $row->id);
-                    })->get();
-                    $count = $merchants->count();
-                    $names = $merchants->pluck('name')->implode(', ');
-                    return '<span class="badge bg-label-secondary cursor-help d-inline-flex align-items-center" data-bs-toggle="tooltip" data-bs-placement="top" title="' . $names . '">
-                                <i class="bx bx-store-alt me-1"></i>' . $count . ' ' . ($count == 1 ? 'Merchant' : 'Merchants') . '
-                            </span>';
-                })
                 ->addColumn('stops_count', function($row) {
                     $count = $row->stops->count();
                     return '<span class="badge bg-label-info d-inline-flex align-items-center"><i class="bx bx-map-pin me-1"></i>' . $count . ' Stops</span>';

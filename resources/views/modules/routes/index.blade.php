@@ -30,14 +30,13 @@
                     text-overflow: ellipsis;
                 }
                 table.data-table th:nth-child(1) { width: 50px; }
-                table.data-table th:nth-child(2) { width: 250px; }
-                table.data-table th:nth-child(3) { width: 200px; }
-                table.data-table th:nth-child(4) { width: 120px; text-align: center; }
-                table.data-table th:nth-child(5) { width: 150px; }
-                table.data-table th:nth-child(6) { width: 180px; text-align: center; }
+                table.data-table th:nth-child(2) { width: 350px; }
+                table.data-table th:nth-child(3) { width: 120px; text-align: center; }
+                table.data-table th:nth-child(4) { width: 150px; }
+                table.data-table th:nth-child(5) { width: 180px; text-align: center; }
 
-                table.data-table td:nth-child(4),
-                table.data-table td:nth-child(6) { text-align: center; }
+                table.data-table td:nth-child(3),
+                table.data-table td:nth-child(5) { text-align: center; }
                 .dark-style table.data-table td { border-color: rgba(255,255,255,0.05) !important; }
             </style>
             <table class="table table-hover data-table">
@@ -45,7 +44,6 @@
                     <tr>
                         <th>#</th>
                         <th>Route Name</th>
-                        <th>Assigned Merchants</th>
                         <th>Stops Count</th>
                         <th>Created At</th>
                         <th>Action</th>
@@ -71,7 +69,6 @@
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'name', name: 'name'},
-                {data: 'merchant_names', name: 'merchant_names', orderable: false, searchable: false},
                 {data: 'stops_count', name: 'stops_count', orderable: false, searchable: false, className: 'text-center'},
                 {data: 'created_at', name: 'created_at'},
                 {data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center'},
