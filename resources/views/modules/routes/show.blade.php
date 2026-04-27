@@ -60,7 +60,7 @@
                                 <i class="bx bx-bus fs-3 text-primary me-3"></i>
                                 <div>
                                     <div class="fw-medium">{{ $bus->bus_number }}</div>
-                                    <small class="text-muted">{{ $bus->name }}</small>
+                                    <small class="text-muted">{{ $bus->name }} ({{ $bus->merchant?->name ?? 'N/A' }})</small>
                                 </div>
                             </a>
                         @empty
