@@ -9,10 +9,12 @@
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Fare Proposals</h5>
+        <h5 class="mb-0">Fare Plans</h5>
+        @if(auth()->user()->hasRole('super-admin'))
         <a href="{{ route('fares.create') }}" class="btn btn-primary">
-            <i class="bx bx-plus me-1"></i> Propose New Fare
+            <i class="bx bx-plus me-1"></i> Add New Fare
         </a>
+        @endif
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">

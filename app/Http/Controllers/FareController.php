@@ -56,25 +56,29 @@ class FareController extends Controller
                     $actions = '<div class="d-flex justify-content-center">';
                     $actions .= '<a href="'.route('fares.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     
+                    if (auth()->user()->hasRole('super-admin')) {
+                        $actions .= '<a href="'.route('fares.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
+                        if ($row->status == 'proposed') {
+                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 approve-fare" data-id="'.$row->id.'" title="Approve"><i class="bx bx-check"></i></button>';
+                        }
+                    }
+
                     if (auth()->user()->hasRole('super-admin', 'merchant', 'staff')) {
-                        $canManage = false;
-                        if (auth()->user()->hasRole('super-admin')) $canManage = true;
+                        $canAssign = false;
+                        if (auth()->user()->hasRole('super-admin')) $canAssign = true;
                         elseif (auth()->user()->hasRole('merchant')) {
-                             $canManage = $row->buses()->where('merchant_id', auth()->id())->exists();
+                             $canAssign = $row->buses()->where('merchant_id', auth()->id())->exists();
                         }
                         elseif (auth()->user()->hasRole('staff')) {
-                            $canManage = auth()->user()->assignedBuses()->where('route_id', $row->route_id)->exists();
+                            $canAssign = auth()->user()->assignedBuses()->where('route_id', $row->route_id)->exists();
                         }
 
-                        if ($canManage) {
-                            $actions .= '<a href="'.route('fares.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
-                            if ($row->status == 'proposed' && auth()->user()->hasRole('super-admin')) {
-                                $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 approve-fare" data-id="'.$row->id.'" title="Approve"><i class="bx bx-check"></i></button>';
-                            }
+                        if ($canAssign) {
                             $actions .= '<button type="button" class="btn btn-icon btn-sm btn-info me-1 assign-bus" data-id="'.$row->id.'" data-route-id="'.$row->route_id.'" title="Assign to Bus"><i class="bx bx-bus"></i></button>';
                         }
                     }
-                     if (auth()->user()->hasRole('super-admin')) {
+
+                    if (auth()->user()->hasRole('super-admin')) {
                         $actions .= '<form action="'.route('fares.destroy', $row->id).'" method="POST" style="display:inline-block">
                                         '.csrf_field().'
                                         '.method_field('DELETE').'
@@ -96,20 +100,18 @@ class FareController extends Controller
 
     public function create()
     {
-        $routesQuery = Route::query();
-        if (auth()->user()->hasRole('merchant')) {
-            $routesQuery->whereHas('buses', function($q) {
-                $q->where('merchant_id', auth()->id());
-            });
-        }
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        
         return view('modules.fares.create', [
             'fare' => new Fare(),
-            'routes' => $routesQuery->get()
+            'routes' => Route::all()
         ]);
     }
 
     public function store(Request $request)
     {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+
         $request->validate([
             'route_id' => 'required|exists:routes,id',
             'name' => 'required|string|max:255',
@@ -120,7 +122,8 @@ class FareController extends Controller
             $fare = Fare::create([
                 'route_id' => $request->route_id,
                 'name' => $request->name,
-                'status' => 'proposed',
+                'status' => 'approved', // Admin creates approved fares directly
+                'effective_from' => now(),
             ]);
 
             foreach ($request->matrix as $fromStopId => $toStops) {
@@ -137,12 +140,13 @@ class FareController extends Controller
             }
         });
 
-        return redirect()->route('fares.index')->with('success', 'Fare proposal submitted successfully.');
+        return redirect()->route('fares.index')->with('success', 'Fare created successfully.');
     }
 
     public function edit(Fare $fare)
     {
-        if (auth()->user()->hasRole('merchant') && !$fare->buses()->where('merchant_id', auth()->id())->exists()) abort(403);
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        
         $fare->load(['route.stops', 'matrices']);
         $routes = Route::all();
         return view('modules.fares.edit', compact('fare', 'routes'));
@@ -150,7 +154,7 @@ class FareController extends Controller
 
     public function update(Request $request, Fare $fare)
     {
-        if (auth()->user()->hasRole('merchant') && !$fare->buses()->where('merchant_id', auth()->id())->exists()) abort(403);
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -162,7 +166,7 @@ class FareController extends Controller
             ]);
         });
 
-        return redirect()->route('fares.index')->with('success', 'Fare details updated successfully.');
+        return redirect()->route('fares.index')->with('success', 'Fare updated successfully.');
     }
 
     public function destroy(Fare $fare)

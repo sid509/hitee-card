@@ -10,9 +10,11 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Routes List</h5>
+        @if(auth()->user()->hasRole('super-admin'))
         <a href="{{ route('routes.create') }}" class="btn btn-primary">
             <i class="bx bx-plus me-1"></i> Add Route
         </a>
+        @endif
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
