@@ -345,6 +345,7 @@
 
                     L.marker([bus.latitude, bus.longitude], {icon: busIcon})
                         .bindPopup(popupContent)
+                        .on('mouseover', function(e) { this.openPopup(); })
                         .addTo(markers);
                     bounds.push([bus.latitude, bus.longitude]);
                 }
@@ -353,6 +354,7 @@
                 if (p.latitude && p.longitude) {
                     L.marker([p.latitude, p.longitude], {icon: parkingIcon})
                         .bindPopup(`<strong>Parking: ${p.name}</strong><br>${p.location}`)
+                        .on('mouseover', function(e) { this.openPopup(); })
                         .addTo(markers);
                     bounds.push([p.latitude, p.longitude]);
                 }
