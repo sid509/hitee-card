@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('misc')->group(function () {
         Route::get('/stops',            [MiscController::class, 'searchStops']);
         Route::get('/route-finder',     [MiscController::class, 'routeFinder']);
+        Route::get('/nearby',           [MiscController::class, 'nearby']);
     });
 
     // Admin-only routes (inline role check inside controllers)

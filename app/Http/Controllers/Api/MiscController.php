@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bus;
+use App\Models\Parking;
 use App\Models\Route;
 use App\Models\Stop;
 use Illuminate\Http\Request;
@@ -10,6 +12,113 @@ use Illuminate\Support\Collection;
 
 class MiscController extends Controller
 {
+    /**
+     * GET /api/misc/nearby
+     * 
+     * Find nearby buses and/or parkings based on lat, long, and radius.
+     * Returns a combined or filtered list of items within the specified radius.
+     * 
+     * @queryParam lat float required Latitude for proximity search.
+     * @queryParam long float required Longitude for proximity search.
+     * @queryParam radius float (optional) Search radius in km. Defaults to 10.
+     * @queryParam type string (optional) Filter by type: 'bus' or 'parking'.
+     */
+    public function nearby(Request $request)
+    {
+        $request->validate([
+            'lat'    => 'required|numeric',
+            'long'   => 'required|numeric',
+            'radius' => 'nullable|numeric',
+            'type'   => 'nullable|string|in:bus,parking',
+        ]);
+
+        $lat = $request->lat;
+        $lng = $request->long;
+        $radius = (float) $request->get('radius', 10);
+        $type = $request->get('type');
+        $perPage = 25;
+
+        $haversine = "(6371 * acos(cos(radians({$lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$lng})) + sin(radians({$lat})) * sin(radians(latitude))))";
+
+        $results = [];
+        $pagination = [];
+
+        // 1. Fetch Buses if requested or no type specified
+        if (!$type || $type === 'bus') {
+            $busQuery = Bus::with(['merchant:id,name', 'route:id,name,direction'])
+                ->where('status', 'active')
+                ->selectRaw("*, {$haversine} AS distance")
+                ->having('distance', '<=', $radius)
+                ->orderBy('distance');
+
+            $buses = $busQuery->paginate($perPage, ['*'], 'bus_page');
+
+            $results['buses'] = collect($buses->items())->map(fn($bus) => [
+                'id'          => $bus->id,
+                'name'        => $bus->name,
+                'bus_number'  => $bus->bus_number,
+                'status'      => $bus->status,
+                'latitude'    => $bus->latitude,
+                'longitude'   => $bus->longitude,
+                'distance_km' => round((float) $bus->distance, 2),
+                'merchant'    => $bus->merchant?->name,
+                'route'       => $bus->route ? [
+                    'id'        => $bus->route->id,
+                    'name'      => $bus->route->name,
+                    'direction' => $bus->route->direction,
+                ] : null,
+                'image_url'   => $bus->featured_image_url,
+                'type'        => 'bus',
+            ]);
+
+            $pagination['buses'] = [
+                'total'        => $buses->total(),
+                'per_page'     => $buses->perPage(),
+                'current_page' => $buses->currentPage(),
+                'last_page'    => $buses->lastPage(),
+            ];
+        }
+
+        // 2. Fetch Parkings if requested or no type specified
+        if (!$type || $type === 'parking') {
+            $parkingQuery = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
+                ->where('status', 'opened')
+                ->selectRaw("*, {$haversine} AS distance")
+                ->having('distance', '<=', $radius)
+                ->orderBy('distance');
+
+            $parkings = $parkingQuery->paginate($perPage, ['*'], 'parking_page');
+
+            $results['parkings'] = collect($parkings->items())->map(fn($p) => [
+                'id'               => $p->id,
+                'name'             => $p->name,
+                'location'         => $p->location,
+                'status'           => $p->status,
+                'latitude'         => $p->latitude,
+                'longitude'        => $p->longitude,
+                'distance_km'      => round((float) $p->distance, 2),
+                'first_hour_pts'   => (float) $p->first_hour_fee,
+                'onwards_hour_pts' => (float) $p->onwards_hour_fee,
+                'merchant'         => $p->merchant?->name,
+                'attributes'       => $p->attributes->map(fn($a) => [
+                    'name' => $a->name,
+                    'icon' => $a->icon_url,
+                ]),
+                'image_url'        => $p->featured_image_url,
+                'type'             => 'parking',
+            ]);
+
+            $pagination['parkings'] = [
+                'total'        => $parkings->total(),
+                'per_page'     => $parkings->perPage(),
+                'current_page' => $parkings->currentPage(),
+                'last_page'    => $parkings->lastPage(),
+            ];
+        }
+
+        return apiResponse(true, 'Nearby items fetched successfully', $results, 200, [], $pagination);
+    }
+
     /**
      * GET /api/misc/stops
      * 

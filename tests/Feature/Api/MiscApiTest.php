@@ -90,4 +90,70 @@ class MiscApiTest extends TestCase
         $response = $this->getJson("/api/misc/route-finder?from_stop_id={$stop->id}&to_stop_id={$stop->id}");
         $response->assertStatus(400);
     }
+
+    /**
+     * Test nearby API endpoint.
+     * 
+     * @return void
+     */
+    public function test_can_fetch_nearby_items()
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        // Create a bus nearby (Kalanki)
+        \App\Models\Bus::create([
+            'name' => 'Kalanki Express',
+            'bus_number' => 'BA 1 PA 1234',
+            'hwid' => 'BUS-001',
+            'status' => 'active',
+            'latitude' => 27.6939,
+            'longitude' => 85.2817
+        ]);
+
+        // Create a parking nearby (Kalanki)
+        \App\Models\Parking::create([
+            'name' => 'Kalanki Parking',
+            'location' => 'Kalanki Chowk',
+            'status' => 'opened',
+            'latitude' => 27.6940,
+            'longitude' => 85.2818,
+            'first_hour_fee' => 20,
+            'onwards_hour_fee' => 10
+        ]);
+
+        // Create a bus far away (Koteshwor - ~6km away)
+        \App\Models\Bus::create([
+            'name' => 'Koteshwor Bus',
+            'bus_number' => 'BA 2 PA 5678',
+            'hwid' => 'BUS-002',
+            'status' => 'active',
+            'latitude' => 27.6756,
+            'longitude' => 85.3460
+        ]);
+
+        // Request nearby items within 1km of Kalanki
+        $response = $this->getJson('/api/misc/nearby?lat=27.6939&long=85.2817&radius=1');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'status',
+                'content' => ['buses', 'parkings'],
+                'paginate' => ['buses', 'parkings']
+            ]);
+
+        $this->assertCount(1, $response->json('content.buses'));
+        $this->assertCount(1, $response->json('content.parkings'));
+        $this->assertEquals('Kalanki Express', $response->json('content.buses.0.name'));
+
+        // Test filtering by type=bus
+        $response = $this->getJson('/api/misc/nearby?lat=27.6939&long=85.2817&radius=1&type=bus');
+        $response->assertStatus(200)
+            ->assertJsonStructure(['content' => ['buses']])
+            ->assertJsonMissingPath('content.parkings');
+
+        // Test larger radius to include Koteshwor
+        $response = $this->getJson('/api/misc/nearby?lat=27.6939&long=85.2817&radius=10&type=bus');
+        $this->assertCount(2, $response->json('content.buses'));
+    }
 }
