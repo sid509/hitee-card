@@ -55,6 +55,12 @@
                                 <span class="fw-medium me-2">Route:</span>
                                 <span>{{ $bus->route->name ?? 'Not Assigned' }}</span>
                             </li>
+                            <li class="mb-3">
+                                <span class="fw-medium me-2">Current Occupancy:</span>
+                                <span class="badge {{ $bus->ongoing_rides_count >= $bus->total_capacity && $bus->total_capacity > 0 ? 'bg-label-danger' : 'bg-label-info' }}">
+                                    {{ $bus->ongoing_rides_count }} / {{ $bus->total_capacity ?: 'N/A' }}
+                                </span>
+                            </li>
                         </ul>
                     </div>
                 </div>

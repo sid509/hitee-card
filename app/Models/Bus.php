@@ -11,9 +11,14 @@ use App\Traits\HasMedia;
 class Bus extends Model
 {
     use SoftDeletes, HasMedia;
-    protected $fillable = ['name', 'bus_number', 'hwid', 'status', 'merchant_id', 'latitude', 'longitude', 'route_id', 'active_fare_id'];
+    protected $fillable = ['name', 'bus_number', 'total_capacity', 'hwid', 'status', 'merchant_id', 'latitude', 'longitude', 'route_id', 'active_fare_id'];
 
     protected $appends = ['featured_image_url'];
+
+    public function ongoingRides()
+    {
+        return $this->morphMany(Ride::class, 'reference')->where('status', 'ongoing');
+    }
 
     public function getFeaturedImageUrlAttribute()
     {

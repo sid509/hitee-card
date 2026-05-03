@@ -53,6 +53,12 @@
                                 <span class="fw-medium me-2 text-primary">Onwards Fee:</span>
                                 <span class="fw-bold">Rs. {{ number_format($parking->onwards_hour_fee, 2) }} /hr</span>
                             </li>
+                            <li class="mb-3">
+                                <span class="fw-medium me-2">Current Occupancy:</span>
+                                <span class="badge {{ $parking->ongoing_rides_count >= $parking->total_capacity && $parking->total_capacity > 0 ? 'bg-label-danger' : 'bg-label-info' }}">
+                                    {{ $parking->ongoing_rides_count }} / {{ $parking->total_capacity ?: 'N/A' }}
+                                </span>
+                            </li>
                         </ul>
                     </div>
                 </div>

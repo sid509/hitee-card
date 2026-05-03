@@ -41,6 +41,7 @@ class BusSeeder extends Seeder
                 $bus = Bus::create([
                     'name' => $company . ' #' . ($i + 1),
                     'bus_number' => $prefix . ' ' . $number,
+                    'total_capacity' => rand(25, 45),
                     'hwid' => 'HW_' . strtoupper(bin2hex(random_bytes(4))),
                     'status' => 'active',
                     'merchant_id' => $merchant->id,

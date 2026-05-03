@@ -13,6 +13,13 @@
 </div>
 
 <div class="mb-3">
+    <label class="form-label" for="total_capacity">Total Capacity</label>
+    <input type="number" class="form-control @error('total_capacity') is-invalid @enderror" id="total_capacity" name="total_capacity" 
+        value="{{ old('total_capacity', $bus->total_capacity) }}" required min="0" />
+    @error('total_capacity') <div class="invalid-feedback">{{ $message }}</div> @enderror
+</div>
+
+<div class="mb-3">
     <label class="form-label" for="hwid">HWID</label>
     <input type="text" class="form-control @error('hwid') is-invalid @enderror" id="hwid" name="hwid" 
         value="{{ old('hwid', $bus->hwid) }}" {{ auth()->user()->hasRole('super-admin') ? 'required' : 'readonly' }} />

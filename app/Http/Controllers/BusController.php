@@ -110,6 +110,7 @@ class BusController extends Controller
         if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
         if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
         
+        $bus->loadCount('ongoingRides');
         return view('modules.buses.show', compact('bus'));
     }
 
@@ -182,6 +183,7 @@ class BusController extends Controller
         
         $data = [
             'name' => $request->name,
+            'total_capacity' => $request->total_capacity,
             'status' => $request->status,
             'route_id' => $request->route_id,
         ];

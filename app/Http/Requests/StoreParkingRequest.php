@@ -12,6 +12,7 @@ class StoreParkingRequest extends BaseRequest
         return [
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
+            'total_capacity' => 'required|integer|min:0',
             'merchant_id' => 'nullable|exists:users,id',
             'status' => 'required|in:opened,closed',
             'first_hour_fee' => 'required|numeric|min:0',

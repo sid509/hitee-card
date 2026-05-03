@@ -12,6 +12,7 @@ class StoreBusRequest extends BaseRequest
         return [
             'name' => 'required|string|max:255',
             'bus_number' => 'required|string|unique:buses',
+            'total_capacity' => 'required|integer|min:0',
             'hwid' => 'required|string|unique:buses',
             'merchant_id' => 'nullable|exists:users,id',
             'route_id' => 'nullable|exists:routes,id',

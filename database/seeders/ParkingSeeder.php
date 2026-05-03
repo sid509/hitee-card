@@ -29,6 +29,7 @@ class ParkingSeeder extends Seeder
             Parking::create([
                 'name' => $data['name'],
                 'location' => $data['loc'],
+                'total_capacity' => rand(50, 200),
                 'status' => 'opened',
                 'merchant_id' => $merchants->random()->id,
                 'latitude' => $data['lat'],

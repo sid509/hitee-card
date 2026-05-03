@@ -46,6 +46,7 @@ class HomepageController extends Controller
         $perPage = max(1, min($perPage, 100));
 
         $query = Bus::with(['merchant:id,name', 'route:id,name,direction'])
+            ->withCount('ongoingRides')
             ->where('status', 'active');
 
         // Search by name or bus_number
@@ -88,6 +89,8 @@ class HomepageController extends Controller
                 'direction' => $bus->route->direction,
             ] : null,
             'image_url'   => $bus->featured_image_url,
+            'total_capacity' => (int) $bus->total_capacity,
+            'current_occupancy' => (int) $bus->ongoing_rides_count,
         ]);
 
         return response()->json([
@@ -132,6 +135,7 @@ class HomepageController extends Controller
         $perPage = max(1, min($perPage, 100));
 
         $query = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
+            ->withCount('ongoingRides')
             ->where('status', 'opened');
 
         // Search by name or location
@@ -175,6 +179,8 @@ class HomepageController extends Controller
                 'icon' => $a->icon_url,
             ]),
             'image_url'        => $p->featured_image_url,
+            'total_capacity'   => (int) $p->total_capacity,
+            'current_occupancy' => (int) $p->ongoing_rides_count,
             'gallery'          => $p->media->where('collection_name', 'gallery')->map(fn($m) => [
                 'id'  => $m->id,
                 'url' => $m->url,
@@ -205,7 +211,7 @@ class HomepageController extends Controller
             'route.stops', 
             'activeFare.matrices.fromStop',
             'activeFare.matrices.toStop'
-        ])->find($id);
+        ])->withCount('ongoingRides')->find($id);
 
         if (!$bus) {
             return apiResponse(false, 'Bus not found', '', 404);
@@ -215,6 +221,8 @@ class HomepageController extends Controller
             'id'          => $bus->id,
             'name'        => $bus->name,
             'bus_number'  => $bus->bus_number,
+            'total_capacity' => (int) $bus->total_capacity,
+            'current_occupancy' => (int) $bus->ongoing_rides_count,
             'status'      => $bus->status,
             'latitude'    => $bus->latitude,
             'longitude'   => $bus->longitude,
@@ -252,7 +260,8 @@ class HomepageController extends Controller
      */
     public function showParking($id)
     {
-        $parking = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])->find($id);
+        $parking = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
+            ->withCount('ongoingRides')->find($id);
 
         if (!$parking) {
             return apiResponse(false, 'Parking not found', '', 404);
@@ -262,6 +271,8 @@ class HomepageController extends Controller
             'id'               => $parking->id,
             'name'             => $parking->name,
             'location'         => $parking->location,
+            'total_capacity'   => (int) $parking->total_capacity,
+            'current_occupancy' => (int) $parking->ongoing_rides_count,
             'status'           => $parking->status,
             'latitude'         => $parking->latitude,
             'longitude'        => $parking->longitude,

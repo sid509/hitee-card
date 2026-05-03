@@ -114,6 +114,7 @@ class ParkingController extends Controller
         if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
         
         $parking->load(['attributes', 'merchant']);
+        $parking->loadCount('ongoingRides');
         return view('modules.parkings.show', compact('parking'));
     }
 

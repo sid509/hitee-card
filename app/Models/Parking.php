@@ -11,9 +11,14 @@ use App\Traits\HasMedia;
 class Parking extends Model
 {
     use SoftDeletes, HasMedia;
-    protected $fillable = ['name', 'location', 'status', 'merchant_id', 'latitude', 'longitude', 'first_hour_fee', 'onwards_hour_fee'];
+    protected $fillable = ['name', 'location', 'total_capacity', 'status', 'merchant_id', 'latitude', 'longitude', 'first_hour_fee', 'onwards_hour_fee'];
 
     protected $appends = ['featured_image_url'];
+
+    public function ongoingRides()
+    {
+        return $this->morphMany(Ride::class, 'reference')->where('status', 'ongoing');
+    }
 
     public function getFeaturedImageUrlAttribute()
     {
