@@ -131,4 +131,5 @@ return [
     'language_updated' => 'Language preference updated successfully',
     'notifications_updated' => 'Notification preference updated successfully',
     'wallet_topup_success' => 'Wallet topped up successfully',
+    'invalid_token' => 'Invalid token provided',
 ];

@@ -129,6 +129,7 @@ return [
     'invalid_token_type' => 'यस कार्यको लागि अवैध टोकन प्रकार',
     'current_password_mismatch' => 'हालको पासवर्ड मिलेन',
     'language_updated' => 'भाषा प्राथमिकता सफलतापूर्वक अपडेट गरियो',
-    'notifications_updated' => 'सूचना प्राथमिकता सफलतापूर्वक अपडेट गरियो',
-    'wallet_topup_success' => 'वालेट सफलतापूर्वक टप-अप भयो',
-];
+    'notifications_updated' => 'सूचना प्राथमिकता सफलतापूर्वक अद्यावधिक गरियो',
+    'wallet_topup_success' => 'वालेट सफलतापूर्वक टप-अप गरियो',
+    'invalid_token' => 'अवैध टोकन प्रदान गरिएको छ',
+    ];

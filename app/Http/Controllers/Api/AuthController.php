@@ -97,22 +97,22 @@ class AuthController extends Controller
     }
 
     /**
-     * Biometric Login via Refresh Token
+     * Biometric Login via Access Token
      * 
-     * @bodyParam refresh_token string required The refresh token.
+     * @bodyParam access_token string required The access token.
      * @bodyParam fcm_token string (optional) FCM token for notifications.
      */
     public function biometricLogin(Request $request)
     {
         $request->validate([
-            'refresh_token' => 'required|string',
+            'access_token' => 'required|string',
             'fcm_token' => 'nullable|string',
         ]);
 
-        $token = PersonalAccessToken::findToken($request->refresh_token);
+        $token = PersonalAccessToken::findToken($request->access_token);
 
-        if (!$token || !$token->can('refresh')) {
-            return apiResponse(false, __('messages.invalid_refresh_token'), '', 403);
+        if (!$token || !$token->can('access')) {
+            return apiResponse(false, __('messages.invalid_token'), '', 403);
         }
 
         $user = $token->tokenable;
@@ -125,7 +125,7 @@ class AuthController extends Controller
             return apiResponse(false, __('messages.account_deactivated'), '', 403);
         }
 
-        logActivity('login', 'User logged in via biometric (refresh token)', [], $user->id);
+        logActivity('login', 'User logged in via biometric (access token)', [], $user->id);
 
         return $this->respondWithToken($user, __('messages.login_success'), $request->fcm_token);
     }
