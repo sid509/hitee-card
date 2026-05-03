@@ -7,12 +7,14 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\FcmToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * @group Authentication
@@ -42,7 +44,7 @@ class AuthController extends Controller
         ]);
 
         if ($request->fcm_token) {
-            \App\Models\FcmToken::updateOrCreate(
+            FcmToken::updateOrCreate(
                 ['token' => $request->fcm_token],
                 ['user_id' => $user->id]
             );
@@ -87,50 +89,45 @@ class AuthController extends Controller
                 return apiResponse(false, __('messages.account_deactivated'), '', 403);
             }
 
-            if ($request->fcm_token) {
-                \App\Models\FcmToken::updateOrCreate(
-                    ['token' => $request->fcm_token],
-                    ['user_id' => $user->id]
-                );
-            }
-            
-            // 4. All checks passed, revoke old tokens and create new ones
-            $user->tokens()->delete();
-
-            $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
-            $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
-
-            logActivity('login', 'User logged in via API', [], $user->id);
-
-            return apiResponse(true, __('messages.login_success'), [
-                'access_token' => $accessToken,
-                'refresh_token' => $refreshToken,
-                'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone_number' => $user->phone_number,
-                    'avatar_url' => $user->avatar_url,
-                    'status' => $user->status,
-                    'balance' => $user->balance(),
-                    'roles' => $user->roles->pluck('name'),
-                    'cards' => $user->cards->map(function($card) {
-                        return [
-                            'id' => $card->id,
-                            'card_number' => $card->card_number,
-                            'hwid' => $card->hwid,
-                            'status' => $card->status,
-                            'balance' => $card->balance(),
-                            'is_active' => (bool)$card->is_currently_active
-                        ];
-                    })
-                ]
-            ]);
+            return $this->respondWithToken($user, __('messages.login_success'), $request->fcm_token);
         }
 
         // Authentication failed
         return apiResponse(false, __('messages.invalid_credentials'), '', 401);
+    }
+
+    /**
+     * Biometric Login via Refresh Token
+     * 
+     * @bodyParam refresh_token string required The refresh token.
+     * @bodyParam fcm_token string (optional) FCM token for notifications.
+     */
+    public function biometricLogin(Request $request)
+    {
+        $request->validate([
+            'refresh_token' => 'required|string',
+            'fcm_token' => 'nullable|string',
+        ]);
+
+        $token = PersonalAccessToken::findToken($request->refresh_token);
+
+        if (!$token || !$token->can('refresh')) {
+            return apiResponse(false, __('messages.invalid_refresh_token'), '', 403);
+        }
+
+        $user = $token->tokenable;
+
+        // Check account activation status (1 = Active)
+        if ($user->status != User::STATUS_ACTIVE) {
+            if ($user->status == User::STATUS_PENDING) {
+                return apiResponse(false, __('messages.account_pending'), ['pending_approval' => true], 403);
+            }
+            return apiResponse(false, __('messages.account_deactivated'), '', 403);
+        }
+
+        logActivity('login', 'User logged in via biometric (refresh token)', [], $user->id);
+
+        return $this->respondWithToken($user, __('messages.login_success'), $request->fcm_token);
     }
 
     /**
@@ -175,52 +172,60 @@ class AuthController extends Controller
                 return apiResponse(false, __('messages.account_deactivated'), '', 403);
             }
 
-            if ($request->fcm_token) {
-                \App\Models\FcmToken::updateOrCreate(
-                    ['token' => $request->fcm_token],
-                    ['user_id' => $user->id]
-                );
-            }
-
-            // Revoke old tokens
-            $user->tokens()->delete();
-
-            $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
-            $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
-
             logActivity('login', 'User logged in via social login (' . $provider . ')', [], $user->id);
 
-            $user->load(['roles', 'cards']);
-
-            return apiResponse(true, __('messages.social_login_success'), [
-                'access_token' => $accessToken,
-                'refresh_token' => $refreshToken,
-                'token_type' => 'Bearer',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone_number' => $user->phone_number,
-                    'avatar_url' => $user->avatar_url,
-                    'status' => $user->status,
-                    'balance' => $user->balance(),
-                    'roles' => $user->roles->pluck('name'),
-                    'cards' => $user->cards->map(function($card) {
-                        return [
-                            'id' => $card->id,
-                            'card_number' => $card->card_number,
-                            'hwid' => $card->hwid,
-                            'status' => $card->status,
-                            'balance' => $card->balance(),
-                            'is_active' => (bool)$card->is_currently_active
-                        ];
-                    })
-                ]
-            ]);
+            return $this->respondWithToken($user, __('messages.social_login_success'), $request->fcm_token);
 
         } catch (\Exception $e) {
             return apiResponse(false, __('messages.social_login_failed') . ': ' . $e->getMessage(), '', 400);
         }
+    }
+
+    /**
+     * Generate common authentication response
+     */
+    private function respondWithToken(User $user, string $message, ?string $fcmToken = null)
+    {
+        if ($fcmToken) {
+            FcmToken::updateOrCreate(
+                ['token' => $fcmToken],
+                ['user_id' => $user->id]
+            );
+        }
+
+        // Revoke old tokens
+        $user->tokens()->delete();
+
+        $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
+        $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
+
+        $user->load(['roles', 'cards']);
+
+        return apiResponse(true, $message, [
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'Bearer',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone_number' => $user->phone_number,
+                'avatar_url' => $user->avatar_url,
+                'status' => $user->status,
+                'balance' => $user->balance(),
+                'roles' => $user->roles->pluck('name'),
+                'cards' => $user->cards->map(function($card) {
+                    return [
+                        'id' => $card->id,
+                        'card_number' => $card->card_number,
+                        'hwid' => $card->hwid,
+                        'status' => $card->status,
+                        'balance' => $card->balance(),
+                        'is_active' => (bool)$card->is_currently_active
+                    ];
+                })
+            ]
+        ]);
     }
 
     /**

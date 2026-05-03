@@ -241,6 +241,73 @@ class AuthApiTest extends TestCase
     }
 
     /**
+     * Test biometric login successfully.
+     */
+    public function test_user_can_login_via_biometric()
+    {
+        $user = User::factory()->create([
+            'status' => User::STATUS_ACTIVE,
+            'email_verified_at' => now(),
+        ]);
+
+        $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
+
+        $response = $this->postJson('/api/auth/biometric-login', [
+            'refresh_token' => $refreshToken,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+                'message' => 'Login successful',
+            ])
+            ->assertJsonStructure([
+                'content' => [
+                    'access_token',
+                    'refresh_token',
+                    'user' => [
+                        'id', 'name', 'email'
+                    ]
+                ]
+            ]);
+    }
+
+    /**
+     * Test biometric login failure with invalid refresh token.
+     */
+    public function test_biometric_login_failure_invalid_token()
+    {
+        $response = $this->postJson('/api/auth/biometric-login', [
+            'refresh_token' => 'invalid-token',
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'status' => false,
+                'message' => 'Invalid token type for refresh',
+            ]);
+    }
+
+    /**
+     * Test biometric login failure with an access token.
+     */
+    public function test_biometric_login_failure_with_access_token()
+    {
+        $user = User::factory()->create();
+        $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
+
+        $response = $this->postJson('/api/auth/biometric-login', [
+            'refresh_token' => $accessToken,
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'status' => false,
+                'message' => 'Invalid token type for refresh',
+            ]);
+    }
+
+    /**
      * Test token refresh.
      */
     public function test_user_can_refresh_token()
