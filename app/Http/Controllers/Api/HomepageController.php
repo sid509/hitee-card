@@ -134,7 +134,7 @@ class HomepageController extends Controller
         $perPage = (int) $request->get('perPage', 2);
         $perPage = max(1, min($perPage, 100));
 
-        $query = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
+        $query = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media', 'fees'])
             ->withCount('ongoingRides')
             ->where('status', 'opened');
 
@@ -171,9 +171,13 @@ class HomepageController extends Controller
             'latitude'         => $p->latitude,
             'longitude'        => $p->longitude,
             'distance_km'      => isset($p->distance) ? round((float) $p->distance, 2) : null,
-            'first_hour_pts'   => (float) $p->first_hour_fee,    // pts, not Rs.
-            'onwards_hour_pts' => (float) $p->onwards_hour_fee,  // pts, not Rs.
             'merchant'         => $p->merchant?->name,
+            'fees'             => $p->fees->map(fn($f) => [
+                'title'     => $f->title,
+                'subtitle'  => $f->subtitle,
+                'price_rs'  => (float) $f->price_rs,
+                'price_pts' => (float) $f->price_pts,
+            ]),
             'attributes'       => $p->attributes->map(fn($a) => [
                 'name' => $a->name,
                 'icon' => $a->icon_url,
@@ -260,7 +264,7 @@ class HomepageController extends Controller
      */
     public function showParking($id)
     {
-        $parking = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
+        $parking = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media', 'fees'])
             ->withCount('ongoingRides')->find($id);
 
         if (!$parking) {
@@ -276,9 +280,13 @@ class HomepageController extends Controller
             'status'           => $parking->status,
             'latitude'         => $parking->latitude,
             'longitude'        => $parking->longitude,
-            'first_hour_pts'   => (float) $parking->first_hour_fee,
-            'onwards_hour_pts' => (float) $parking->onwards_hour_fee,
             'merchant'         => $parking->merchant?->name,
+            'fees'             => $parking->fees->map(fn($f) => [
+                'title'     => $f->title,
+                'subtitle'  => $f->subtitle,
+                'price_rs'  => (float) $f->price_rs,
+                'price_pts' => (float) $f->price_pts,
+            ]),
             'attributes'       => $parking->attributes->map(fn($a) => [
                 'name' => $a->name,
                 'icon' => $a->icon_url,

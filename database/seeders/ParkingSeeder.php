@@ -26,7 +26,7 @@ class ParkingSeeder extends Seeder
         ];
 
         foreach ($kathmanduParkings as $data) {
-            Parking::create([
+            $parking = Parking::create([
                 'name' => $data['name'],
                 'location' => $data['loc'],
                 'total_capacity' => rand(50, 200),
@@ -34,8 +34,24 @@ class ParkingSeeder extends Seeder
                 'merchant_id' => $merchants->random()->id,
                 'latitude' => $data['lat'],
                 'longitude' => $data['lng'],
-                'first_hour_fee' => rand(20, 50),
-                'onwards_hour_fee' => rand(10, 30),
+            ]);
+
+            // Add Dynamic Fees
+            $parking->fees()->createMany([
+                [
+                    'title' => 'First Hour',
+                    'subtitle' => 'Entry fee',
+                    'price_rs' => 25.00,
+                    'price_pts' => 25.00,
+                    'order' => 0
+                ],
+                [
+                    'title' => 'Subsequent Hours',
+                    'subtitle' => 'Per hour rate',
+                    'price_rs' => 20.00,
+                    'price_pts' => 20.00,
+                    'order' => 1
+                ]
             ]);
         }
     }

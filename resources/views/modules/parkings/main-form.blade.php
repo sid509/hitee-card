@@ -43,23 +43,47 @@
     @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="mb-3">
-            <label class="form-label" for="first_hour_fee">First Hour Fee (Rs.)</label>
-            <input type="number" step="0.01" class="form-control @error('first_hour_fee') is-invalid @enderror" 
-                id="first_hour_fee" name="first_hour_fee" value="{{ old('first_hour_fee', $parking->first_hour_fee) }}" required />
-            @error('first_hour_fee') <div class="invalid-feedback">{{ $message }}</div> @enderror
-        </div>
+<div class="card mb-4 border shadow-none">
+    <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Parking Fee Tiers</h6>
+        <button type="button" class="btn btn-xs btn-primary" id="add-fee-tier">
+            <i class="bx bx-plus me-1"></i> Add Tier
+        </button>
     </div>
-    <div class="col-md-6">
-        <div class="mb-3">
-            <label class="form-label" for="onwards_hour_fee">Onwards Hour Fee (Rs./hr)</label>
-            <input type="number" step="0.01" class="form-control @error('onwards_hour_fee') is-invalid @enderror" 
-                id="onwards_hour_fee" name="onwards_hour_fee" value="{{ old('onwards_hour_fee', $parking->onwards_hour_fee) }}" required />
-            @error('onwards_hour_fee') <div class="invalid-feedback">{{ $message }}</div> @enderror
-        </div>
+    <div class="card-body pt-3" id="fee-tiers-container">
+        @php 
+            $fees = old('fees', $parking->fees->count() > 0 ? $parking->fees->toArray() : [['title' => '1st Hour', 'subtitle' => 'Entry fee', 'price_rs' => 0, 'price_pts' => 0]]);
+        @endphp
+        
+        @foreach($fees as $index => $fee)
+            <div class="fee-tier-row mb-3 pb-3 border-bottom position-relative">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small">Title (e.g. 1st Hour)</label>
+                        <input type="text" name="fees[{{ $index }}][title]" class="form-control form-control-sm" value="{{ $fee['title'] }}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Subtitle (Optional)</label>
+                        <input type="text" name="fees[{{ $index }}][subtitle]" class="form-control form-control-sm" value="{{ $fee['subtitle'] ?? '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Price (Rs.)</label>
+                        <input type="number" step="0.01" name="fees[{{ $index }}][price_rs]" class="form-control form-control-sm" value="{{ $fee['price_rs'] }}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Price (Pts)</label>
+                        <input type="number" step="0.01" name="fees[{{ $index }}][price_pts]" class="form-control form-control-sm" value="{{ $fee['price_pts'] }}" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-fee-tier w-100" {{ count($fees) <= 1 ? 'disabled' : '' }}>
+                            <i class="bx bx-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endforeach
     </div>
+    @error('fees') <div class="px-3 pb-2 text-danger small">{{ $message }}</div> @enderror
 </div>
 
 <div class="mb-3">
@@ -109,6 +133,58 @@
                 placeholder: 'Select Facilities',
                 width: '100%'
             });
+        }
+
+        // Dynamic Fee Tiers Logic
+        let tierIndex = {{ count($fees) }};
+
+        $('#add-fee-tier').on('click', function() {
+            const newRow = `
+                <div class="fee-tier-row mb-3 pb-3 border-bottom position-relative">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small">Title (e.g. 1st Hour)</label>
+                            <input type="text" name="fees[${tierIndex}][title]" class="form-control form-control-sm" placeholder="e.g. 2nd Hour" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small">Subtitle (Optional)</label>
+                            <input type="text" name="fees[${tierIndex}][subtitle]" class="form-control form-control-sm" placeholder="e.g. Standard rate">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small">Price (Rs.)</label>
+                            <input type="number" step="0.01" name="fees[${tierIndex}][price_rs]" class="form-control form-control-sm" value="0" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small">Price (Pts)</label>
+                            <input type="number" step="0.01" name="fees[${tierIndex}][price_pts]" class="form-control form-control-sm" value="0" required>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-fee-tier w-100">
+                                <i class="bx bx-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#fee-tiers-container').append(newRow);
+            tierIndex++;
+            updateRemoveButtons();
+        });
+
+        $(document).on('click', '.remove-fee-tier', function() {
+            if ($('.fee-tier-row').length > 1) {
+                $(this).closest('.fee-tier-row').remove();
+                updateRemoveButtons();
+            }
+        });
+
+        function updateRemoveButtons() {
+            const rows = $('.fee-tier-row');
+            if (rows.length <= 1) {
+                rows.find('.remove-fee-tier').prop('disabled', true);
+            } else {
+                rows.find('.remove-fee-tier').prop('disabled', false);
+            }
         }
     });
 </script>

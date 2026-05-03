@@ -46,6 +46,7 @@
                         <th>#</th>
                         <th>Parking Name</th>
                         <th>Location</th>
+                        <th>Entry Fee</th>
                         <th>Merchant</th>
                         <th>Status</th>
                         <th>Created At</th>
@@ -67,12 +68,13 @@
             responsive: false,
             autoWidth: false,
             
-            order: [[5, 'desc']],
+            order: [[6, 'desc']],
             ajax: "{{ route('parkings.index') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'name', name: 'name'},
                 {data: 'location', name: 'location'},
+                {data: 'entry_fee', name: 'entry_fee', orderable: false, searchable: false},
                 {data: 'merchant.name', name: 'merchant.name', defaultContent: 'N/A'},
                 {data: 'status', name: 'status'},
                 {data: 'created_at', name: 'created_at'},

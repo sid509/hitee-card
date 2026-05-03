@@ -231,11 +231,22 @@ class TapController extends Controller
 
     private function calculateParkingFare($tapIn, $tapOut, $parkingId)
     {
-        $parking = Parking::find($parkingId);
-        // Minimum 1 hour
+        $parking = Parking::with('fees')->find($parkingId);
         $durationHours = max(1, ceil($tapIn->created_at->diffInMinutes($tapOut->created_at) / 60));
         
-        if ($durationHours <= 1) return $parking->first_hour_fee;
-        return $parking->first_hour_fee + (($durationHours - 1) * $parking->onwards_hour_fee);
+        $fees = $parking->fees;
+
+        if ($fees->isEmpty()) {
+            return 20.00; // Fallback
+        }
+
+        $totalFare = 0;
+        for ($i = 1; $i <= $durationHours; $i++) {
+            // Get fee for the current hour, or the last one if exceeded
+            $feeTier = $fees[$i - 1] ?? $fees->last();
+            $totalFare += $feeTier->price_pts;
+        }
+
+        return $totalFare;
     }
 }

@@ -20,6 +20,7 @@ class HomepageApiTest extends TestCase
         Bus::create([
             'name' => 'KTM-01',
             'bus_number' => 'BA 1 PA 1234',
+            'total_capacity' => 40,
             'hwid' => 'BUS-HWID-01',
             'status' => 'active',
             'latitude' => 27.7172,
@@ -45,6 +46,7 @@ class HomepageApiTest extends TestCase
         Bus::create([
             'name' => 'KTM-01',
             'bus_number' => 'BA 1 PA 1234',
+            'total_capacity' => 40,
             'hwid' => 'BUS-HWID-01',
             'status' => 'active',
         ]);
@@ -52,6 +54,7 @@ class HomepageApiTest extends TestCase
         Bus::create([
             'name' => 'LTP-02',
             'bus_number' => 'BA 2 PA 5678',
+            'total_capacity' => 40,
             'hwid' => 'BUS-HWID-02',
             'status' => 'active',
         ]);
@@ -71,6 +74,7 @@ class HomepageApiTest extends TestCase
         $bus = Bus::create([
             'name' => 'KTM-01',
             'bus_number' => 'BA 1 PA 1234',
+            'total_capacity' => 40,
             'hwid' => 'BUS-HWID-01',
             'status' => 'active',
         ]);
@@ -92,14 +96,19 @@ class HomepageApiTest extends TestCase
      */
     public function test_can_list_parkings()
     {
-        Parking::create([
+        $parking = Parking::create([
             'name' => 'Durbar Square Parking',
             'location' => 'Kathmandu',
+            'total_capacity' => 100,
             'status' => 'opened',
             'latitude' => 27.7045,
             'longitude' => 85.3068,
-            'first_hour_fee' => 20,
-            'onwards_hour_fee' => 10,
+        ]);
+
+        $parking->fees()->create([
+            'title' => 'First Hour',
+            'price_rs' => 20,
+            'price_pts' => 20,
         ]);
 
         $response = $this->getJson('/api/parkings');
@@ -111,6 +120,7 @@ class HomepageApiTest extends TestCase
             ]);
         
         $this->assertCount(1, $response->json('content'));
+        $this->assertArrayHasKey('fees', $response->json('content.0'));
     }
 
     /**
@@ -121,9 +131,14 @@ class HomepageApiTest extends TestCase
         $parking = Parking::create([
             'name' => 'Durbar Square Parking',
             'location' => 'Kathmandu',
+            'total_capacity' => 100,
             'status' => 'opened',
-            'first_hour_fee' => 20,
-            'onwards_hour_fee' => 10,
+        ]);
+
+        $parking->fees()->create([
+            'title' => 'First Hour',
+            'price_rs' => 20,
+            'price_pts' => 20,
         ]);
 
         $response = $this->getJson('/api/parkings/' . $parking->id);
@@ -136,5 +151,6 @@ class HomepageApiTest extends TestCase
                     'name' => 'Durbar Square Parking',
                 ]
             ]);
+        $this->assertArrayHasKey('fees', $response->json('content'));
     }
 }

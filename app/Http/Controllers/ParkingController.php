@@ -21,7 +21,7 @@ class ParkingController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Parking::with('merchant')->latest();
+            $query = Parking::with(['merchant', 'fees'])->latest();
             
             // Limit to own parkings if merchant
             if (auth()->user()->hasRole('merchant')) {
@@ -38,8 +38,9 @@ class ParkingController extends Controller
                                 <span>' . $row->name . '</span>
                             </div>';
                 })
-                ->editColumn('first_hour_fee', function($row) {
-                    return 'Rs. ' . number_format($row->first_hour_fee, 2);
+                ->addColumn('entry_fee', function($row) {
+                    $firstFee = $row->fees->first();
+                    return $firstFee ? 'Rs. ' . number_format($firstFee->price_rs, 2) : 'N/A';
                 })
                 ->editColumn('status', function($row) {
                     $class = $row->status === 'active' ? 'bg-label-success' : 'bg-label-secondary';
@@ -140,8 +141,14 @@ class ParkingController extends Controller
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
         DB::transaction(function() use ($request) {
-            $parking = Parking::create($request->validated());
+            $parking = Parking::create($request->except('fees', 'attributes'));
             
+            if ($request->has('fees')) {
+                foreach ($request->input('fees') as $index => $feeData) {
+                    $parking->fees()->create(array_merge($feeData, ['order' => $index]));
+                }
+            }
+
             if ($request->has('attributes')) {
                 $parking->attributes()->sync($request->input('attributes'));
             }
@@ -190,8 +197,15 @@ class ParkingController extends Controller
         if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
         
         DB::transaction(function() use ($request, $parking) {
-            $parking->update($request->validated());
+            $parking->update($request->except('fees', 'attributes'));
             
+            $parking->fees()->delete();
+            if ($request->has('fees')) {
+                foreach ($request->input('fees') as $index => $feeData) {
+                    $parking->fees()->create(array_merge($feeData, ['order' => $index]));
+                }
+            }
+
             if ($request->has('attributes')) {
                 $parking->attributes()->sync($request->input('attributes'));
             } else {

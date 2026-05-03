@@ -30,6 +30,7 @@ class UserSeeder extends Seeder
             'phone_number' => '9841273250',
             'password' => Hash::make('Admin@Hitee2026'),
             'status' => 'active',
+            'email_verified_at' => now()
         ]);
         $admin->roles()->attach($superAdminRole);
 

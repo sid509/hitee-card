@@ -45,15 +45,26 @@
                                 <span class="fw-medium me-2">Merchant:</span>
                                 <span>{{ $parking->merchant->name ?? 'N/A' }}</span>
                             </li>
-                            <li class="mb-3">
-                                <span class="fw-medium me-2 text-primary">First Hour Fee:</span>
-                                <span class="fw-bold">Rs. {{ number_format($parking->first_hour_fee, 2) }}</span>
+                            <li class="mt-4 mb-2">
+                                <h6 class="text-primary border-bottom pb-2">Fee Structure</h6>
                             </li>
-                            <li class="mb-3">
-                                <span class="fw-medium me-2 text-primary">Onwards Fee:</span>
-                                <span class="fw-bold">Rs. {{ number_format($parking->onwards_hour_fee, 2) }} /hr</span>
+                            @forelse($parking->fees as $fee)
+                            <li class="mb-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-medium d-block">{{ $fee->title }}</span>
+                                    @if($fee->subtitle)
+                                    <small class="text-muted">{{ $fee->subtitle }}</small>
+                                    @endif
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold d-block text-primary">Rs. {{ number_format($fee->price_rs, 2) }}</span>
+                                    <small class="text-muted">{{ number_format($fee->price_pts, 0) }} pts</small>
+                                </div>
                             </li>
-                            <li class="mb-3">
+                            @empty
+                            <li class="text-muted small">No fees defined.</li>
+                            @endforelse
+                            <li class="mt-4 mb-3">
                                 <span class="fw-medium me-2">Current Occupancy:</span>
                                 <span class="badge {{ $parking->ongoing_rides_count >= $parking->total_capacity && $parking->total_capacity > 0 ? 'bg-label-danger' : 'bg-label-info' }}">
                                     {{ $parking->ongoing_rides_count }} / {{ $parking->total_capacity ?: 'N/A' }}

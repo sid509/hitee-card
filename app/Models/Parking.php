@@ -35,6 +35,11 @@ class Parking extends Model
         return $this->belongsToMany(User::class, 'parking_user', 'parking_id', 'user_id')->withTimestamps();
     }
 
+    public function fees()
+    {
+        return $this->hasMany(ParkingFee::class)->orderBy('order');
+    }
+
     public function attributes()
     {
         return $this->belongsToMany(ParkingAttribute::class);
