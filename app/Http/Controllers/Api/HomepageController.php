@@ -214,7 +214,8 @@ class HomepageController extends Controller
             'merchant:id,name', 
             'route.stops', 
             'activeFare.matrices.fromStop',
-            'activeFare.matrices.toStop'
+            'activeFare.matrices.toStop',
+            'currentPosition'
         ])->withCount('ongoingRides')->find($id);
 
         if (!$bus) {
@@ -230,6 +231,12 @@ class HomepageController extends Controller
             'status'      => $bus->status,
             'latitude'    => $bus->latitude,
             'longitude'   => $bus->longitude,
+            'current_position' => $bus->currentPosition ? [
+                'latitude' => (float) $bus->currentPosition->latitude,
+                'longitude' => (float) $bus->currentPosition->longitude,
+                'recorded_at' => $bus->currentPosition->recorded_at->toDateTimeString(),
+                'recorded_at_human' => $bus->currentPosition->recorded_at->diffForHumans(),
+            ] : null,
             'merchant'    => $bus->merchant?->name,
             'image_url'   => $bus->featured_image_url,
             'route'       => $bus->route ? [

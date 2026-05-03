@@ -7,6 +7,15 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="py-3 mb-0"><span class="text-muted fw-light">Bus /</span> {{ $bus->name }}</h4>
         <div class="d-flex gap-2">
+            @if(auth()->user()->hasRole('super-admin'))
+                <form action="{{ route('buses.update-locations') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="bus_id" value="{{ $bus->id }}">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bx bx-refresh me-1"></i> Update Location
+                    </button>
+                </form>
+            @endif
             @if(auth()->user()->hasRole('super-admin', 'merchant'))
                 <a href="{{ route('buses.edit', $bus->id) }}" class="btn btn-primary">
                     <i class="bx bx-edit-alt me-1"></i> Edit Bus
@@ -265,15 +274,51 @@
             });
         }
 
-        if (bus.latitude && bus.longitude) {
-            const busIcon = L.divIcon({
-                html: '<i class="bx bx-bus bg-primary text-white p-1 rounded-circle shadow" style="font-size: 24px; border: 2px solid white;"></i>',
-                className: 'custom-div-icon',
-                iconSize: [30, 30],
-                iconAnchor: [15, 15]
-            });
-            L.marker([bus.latitude, bus.longitude], {icon: busIcon, zIndexOffset: 1000}).addTo(map).bindPopup('<strong>Current Location</strong>');
+        const currentLat = {{ $bus->currentPosition ? $bus->currentPosition->latitude : ($bus->latitude ?? 27.7) }};
+        const currentLng = {{ $bus->currentPosition ? $bus->currentPosition->longitude : ($bus->longitude ?? 85.3) }};
+
+        const busIcon = L.divIcon({
+            html: '<i class="bx bx-bus bg-primary text-white p-1 rounded-circle shadow" style="font-size: 24px; border: 2px solid white;"></i>',
+            className: 'custom-div-icon',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+
+        let busMarker = null;
+
+        if (currentLat && currentLng) {
+            busMarker = L.marker([currentLat, currentLng], {icon: busIcon, zIndexOffset: 1000})
+                .addTo(map)
+                .bindPopup('<strong>' + 
+                           '{!! $bus->currentPosition ? "Live Location" : "Last Known Location" !!}' + 
+                           '</strong>' + 
+                           '{!! $bus->currentPosition ? "<br><small class=\"last-updated\">Updated: " . $bus->currentPosition->recorded_at->diffForHumans() . "</small>" : "" !!}');
+            
+            map.setView([currentLat, currentLng], 15);
         }
+
+        // Live Location Polling
+        const busId = {{ $bus->id }};
+        function updateLiveLocation() {
+            $.get(`/api/buses/${busId}`, function(response) {
+                if (response.status && response.content.current_position) {
+                    const pos = response.content.current_position;
+                    const newLatLng = new L.LatLng(pos.latitude, pos.longitude);
+                    
+                    if (busMarker) {
+                        busMarker.setLatLng(newLatLng);
+                        busMarker.getPopup().setContent(`<strong>Live Location</strong><br><small class="last-updated">Updated: ${pos.recorded_at_human}</small>`);
+                    } else {
+                        busMarker = L.marker(newLatLng, {icon: busIcon, zIndexOffset: 1000})
+                            .addTo(map)
+                            .bindPopup(`<strong>Live Location</strong><br><small class="last-updated">Updated: ${pos.recorded_at_human}</small>`);
+                    }
+                }
+            });
+        }
+
+        // Poll every 15 seconds
+        setInterval(updateLiveLocation, 15000);
 
         @if(!auth()->user()->hasRole('customers'))
         $('.bus-income-table').DataTable({

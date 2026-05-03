@@ -111,6 +111,7 @@ class BusController extends Controller
         if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
         
         $bus->loadCount('ongoingRides');
+        $bus->load('currentPosition');
         return view('modules.buses.show', compact('bus'));
     }
 
@@ -229,5 +230,22 @@ class BusController extends Controller
 
         $bus->delete();
         return redirect()->route('buses.index')->with('success', 'Bus deleted successfully.');
+    }
+
+    /**
+     * Trigger location update for all active buses (Admin Testing Only)
+     */
+    public function updateAllLocations(Request $request)
+    {
+        if (!auth()->user()->hasRole('super-admin')) abort(403);
+
+        $params = [];
+        if ($request->has('bus_id')) {
+            $params['--bus_id'] = $request->bus_id;
+        }
+
+        \Illuminate\Support\Facades\Artisan::call('bus:update-locations', $params);
+
+        return redirect()->back()->with('success', 'Bus locations updated successfully.');
     }
 }

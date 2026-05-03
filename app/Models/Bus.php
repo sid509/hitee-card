@@ -40,6 +40,16 @@ class Bus extends Model
         return $this->belongsTo(Route::class);
     }
 
+    public function locations()
+    {
+        return $this->hasMany(BusLocation::class);
+    }
+
+    public function currentPosition()
+    {
+        return $this->hasOne(BusLocation::class)->latestOfMany();
+    }
+
     public function activeFare()
     {
         return $this->belongsTo(Fare::class, 'active_fare_id');

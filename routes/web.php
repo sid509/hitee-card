@@ -194,6 +194,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/banners/{position}', [BannerController::class, 'update'])->name('banners.update');
         Route::post('/banners/{position}/toggle-status', [BannerController::class, 'toggleStatus'])->name('banners.toggle-status');
 
+        Route::post('/buses-update-locations', [BusController::class, 'updateAllLocations'])->name('buses.update-locations');
+
         // Support Management
         Route::controller(SupportController::class)->group(function () {
             Route::get('/supports', 'index')->name('supports.index');

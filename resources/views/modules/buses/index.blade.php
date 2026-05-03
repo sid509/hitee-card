@@ -10,11 +10,19 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">{{ __('messages.buses') }} {{ __('messages.list') }}</h5>
-        @if(auth()->user()->hasRole('super-admin'))
-        <a href="{{ route('buses.create') }}" class="btn btn-primary">
-            <i class="bx bx-plus me-1"></i> {{ __('messages.add') }} {{ __('messages.buses') }}
-        </a>
-        @endif
+        <div class="d-flex gap-2">
+            @if(auth()->user()->hasRole('super-admin'))
+                <form action="{{ route('buses.update-locations') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bx bx-refresh me-1"></i> Update Locations (Test)
+                    </button>
+                </form>
+                <a href="{{ route('buses.create') }}" class="btn btn-primary">
+                    <i class="bx bx-plus me-1"></i> {{ __('messages.add') }} {{ __('messages.buses') }}
+                </a>
+            @endif
+        </div>
     </div>
     <div class="card-body">
         <div class="table-responsive text-nowrap">
