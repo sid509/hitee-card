@@ -47,7 +47,8 @@ class MiscController extends Controller
         if (!$type || $type === 'bus') {
             $busQuery = Bus::with(['merchant:id,name', 'route:id,name,direction'])
                 ->where('status', 'active')
-                ->selectRaw("*, {$haversine} AS distance")
+                ->select('*')
+                ->selectRaw("{$haversine} AS distance")
                 ->having('distance', '<=', $radius)
                 ->orderBy('distance');
 
@@ -83,7 +84,8 @@ class MiscController extends Controller
         if (!$type || $type === 'parking') {
             $parkingQuery = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
                 ->where('status', 'opened')
-                ->selectRaw("*, {$haversine} AS distance")
+                ->select('*')
+                ->selectRaw("{$haversine} AS distance")
                 ->having('distance', '<=', $radius)
                 ->orderBy('distance');
 

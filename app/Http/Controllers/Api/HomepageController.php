@@ -65,11 +65,11 @@ class HomepageController extends Controller
         if ($lat && $lng) {
             $haversine = "(6371 * acos(cos(radians({$lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$lng})) + sin(radians({$lat})) * sin(radians(latitude))))";
             $radius = (float) $request->get('radius', 10);
-            $query->selectRaw("*, {$haversine} AS distance")
+            $query->selectRaw("{$haversine} AS distance")
                   ->having('distance', '<=', $radius)
                   ->orderBy('distance');
         } else {
-            $query->select('*')->orderBy('name');
+            $query->orderBy('name');
         }
 
         $buses = $query->paginate($perPage);
@@ -154,11 +154,11 @@ class HomepageController extends Controller
         if ($lat && $lng) {
             $haversine = "(6371 * acos(cos(radians({$lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$lng})) + sin(radians({$lat})) * sin(radians(latitude))))";
             $radius = (float) $request->get('radius', 10);
-            $query->selectRaw("*, {$haversine} AS distance")
+            $query->selectRaw("{$haversine} AS distance")
                   ->having('distance', '<=', $radius)
                   ->orderBy('distance');
         } else {
-            $query->select('*')->orderBy('name');
+            $query->orderBy('name');
         }
 
         $parkings = $query->paginate($perPage);
