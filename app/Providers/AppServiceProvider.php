@@ -64,23 +64,6 @@ class AppServiceProvider extends ServiceProvider
             // Table might not exist yet during migration
         }
 
-        Scramble::extendOpenApi(function (OpenApi $openApi) {
-            $openApi->secure(
-                SecurityScheme::http('bearer')
-            );
-        });
-
-        Scramble::configure()
-            ->withOperationTransformers(function (\Dedoc\Scramble\Support\Generator\Operation $operation) {
-                $operation->addParameters([
-                    \Dedoc\Scramble\Support\Generator\Parameter::make('x-app-lang', 'header')
-                        ->setSchema(\Dedoc\Scramble\Support\Generator\Schema::fromType(
-                            (new \Dedoc\Scramble\Support\Generator\Types\StringType)->default('en')
-                        ))
-                        ->description('Application language preference. Use "en" for English, "ne" or "np" for Nepali.')
-                ]);
-            });
-
         // View Composer for Sidebar and Dashboard
         View::composer('*', function ($view) {
             if (auth()->check() && auth()->user()->hasRole('super-admin')) {

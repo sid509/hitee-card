@@ -44,6 +44,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// API Documentation Landing Page
+Route::get('/docs/api', \App\Http\Controllers\DocsLandingController::class)->name('docs.landing');
+
 // Authentication Routes
 Route::controller(LoginController::class)->group(function () {
     Route::get('/login', 'showLoginForm')->name('login');
