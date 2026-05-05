@@ -21,29 +21,36 @@ class ScrambleServiceProvider extends ServiceProvider
             'ui' => [
                 'title' => 'Merchant API Documentation',
             ],
-        ])->expose('docs/merchant', 'docs/merchant.json');
+        ])->routes(function ($route) {
+            $controller = $route->getAction('controller');
+            return is_string($controller) && str_starts_with($controller, 'App\Http\Controllers\Api\Merchant\\');
+        })->afterOpenApiGenerated(function (OpenApi $openApi) {
+            $openApi->secure(SecurityScheme::http('bearer'));
+        })->expose('docs/merchant', 'docs/merchant.json');
 
         // 2. Customer API Documentation
         Scramble::registerApi('customer', [
             'api_path' => 'api',
-            'routes' => function ($route) {
-                // Include all /api routes EXCEPT /api/merchant
-                return Str::startsWith($route->uri, 'api/') && !Str::startsWith($route->uri, 'api/merchant');
-            },
             'ui' => [
                 'title' => 'Customer API Documentation',
             ],
-        ])->expose('docs/customer', 'docs/customer.json');
+        ])->routes(function ($route) {
+            $controller = $route->getAction('controller');
+            $uri = $route->uri();
+
+            // 1. Must be in Customer namespace
+            $isCustomerNamespace = is_string($controller) && str_starts_with($controller, 'App\Http\Controllers\Api\Customer\\');
+            
+            // 2. Must NOT be a merchant route
+            $isMerchantRoute = str_starts_with($uri, 'api/merchant');
+
+            return $isCustomerNamespace && !$isMerchantRoute;
+        })->afterOpenApiGenerated(function (OpenApi $openApi) {
+            $openApi->secure(SecurityScheme::http('bearer'));
+        })->expose('docs/customer', 'docs/customer.json');
 
         // Disable the default 'api' documentation
         Scramble::configure('default')->expose(false);
-
-        // Global configuration for both
-        Scramble::extendOpenApi(function (OpenApi $openApi) {
-            $openApi->secure(
-                SecurityScheme::http('bearer')
-            );
-        });
 
         Scramble::configure()
             ->withOperationTransformers(function (\Dedoc\Scramble\Support\Generator\Operation $operation) {

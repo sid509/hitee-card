@@ -6,48 +6,6 @@ use Illuminate\Support\Facades\Route;
  * Main API Routes Entry Point
  */
 
-use App\Http\Controllers\Api\Merchant\AuthController as MerchantAuthController;
-use App\Http\Controllers\Api\Merchant\DashboardController as MerchantDashboardController;
-use App\Http\Controllers\Api\Merchant\BusController as MerchantBusController;
-use App\Http\Controllers\Api\Merchant\ProfileController as MerchantProfileController;
-use App\Http\Controllers\Api\Merchant\SupportController as MerchantSupportController;
-
-/*
-|--------------------------------------------------------------------------
-| Merchant App APIs
-|--------------------------------------------------------------------------
-*/
-Route::prefix('merchant')->group(function () {
-    // Authentication
-    Route::post('/login', [MerchantAuthController::class, 'login']);
-    Route::post('/logout', [MerchantAuthController::class, 'logout'])->middleware('auth:sanctum');
-
-    // Protected Merchant Routes
-    Route::middleware(['auth:sanctum'])->group(function () {
-        // Dashboard & Stats
-        Route::get('/dashboard/income',     [MerchantDashboardController::class, 'income']);
-        Route::get('/dashboard/top-routes', [MerchantDashboardController::class, 'topRoutes']);
-        Route::get('/dashboard/withdrawals', [MerchantDashboardController::class, 'withdrawals']);
-        Route::get('/dashboard/arrivals',   [MerchantDashboardController::class, 'nearbyArrivals']);
-
-        // Fleet Management (Buses)
-        Route::get('/buses', [MerchantBusController::class, 'index']);
-        Route::get('/buses/{id}', [MerchantBusController::class, 'show']);
-
-        // Profile & Settings
-        Route::get('/profile', [MerchantProfileController::class, 'show']);
-        Route::put('/profile', [MerchantProfileController::class, 'update']);
-        Route::post('/profile/image', [MerchantProfileController::class, 'updateImage']);
-        Route::post('/profile/password', [MerchantProfileController::class, 'updatePassword']);
-        Route::post('/profile/language', [MerchantProfileController::class, 'updateLanguage']);
-        Route::post('/profile/notifications', [MerchantProfileController::class, 'updateNotification']);
-
-        // Support
-        Route::get('/support', [MerchantSupportController::class, 'index']);
-        Route::post('/support', [MerchantSupportController::class, 'store']);
-    });
-});
-
 /*
 |--------------------------------------------------------------------------
 | User/Customer App APIs
@@ -62,7 +20,16 @@ use App\Http\Controllers\Api\Customer\SupportController;
 use App\Http\Controllers\Api\Customer\WalletController;
 use App\Http\Controllers\Api\Customer\TapController;
 
-// Authentication
+// 1. Public Homepage & Search (No Auth Required)
+Route::group([], function () {
+    Route::get('/banners',      [BannerController::class, 'index']);
+    Route::get('/buses',        [HomepageController::class, 'listBuses']);
+    Route::get('/buses/{id}',   [HomepageController::class, 'showBus']);
+    Route::get('/parkings',     [HomepageController::class, 'listParkings']);
+    Route::get('/parkings/{id}', [HomepageController::class, 'showParking']);
+});
+
+// 2. Customer Authentication
 Route::controller(AuthController::class)->prefix('auth')->group(function () {
     Route::post('/register', 'register');
     Route::post('/login', 'login');
@@ -77,7 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 });
 
-// Protected User Routes
+// 3. Protected Customer Routes
 Route::middleware('auth:sanctum')->group(function () {
     // Profile
     Route::get('/profile', [ProfileController::class, 'show']);
@@ -110,16 +77,48 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Tap Handling
     Route::post('/tap', [TapController::class, 'processTap']);
+});
 
-    // Admin-only routes
-    Route::prefix('admin')->group(function () {
-        Route::put('/banners/{position}', [BannerController::class, 'update']);
+
+/*
+|--------------------------------------------------------------------------
+| Merchant App APIs
+|--------------------------------------------------------------------------
+*/
+use App\Http\Controllers\Api\Merchant\AuthController as MerchantAuthController;
+use App\Http\Controllers\Api\Merchant\DashboardController as MerchantDashboardController;
+use App\Http\Controllers\Api\Merchant\BusController as MerchantBusController;
+use App\Http\Controllers\Api\Merchant\ProfileController as MerchantProfileController;
+use App\Http\Controllers\Api\Merchant\SupportController as MerchantSupportController;
+
+Route::prefix('merchant')->group(function () {
+    // 1. Merchant Authentication
+    Route::post('/login', [MerchantAuthController::class, 'login']);
+    Route::post('/logout', [MerchantAuthController::class, 'logout'])->middleware('auth:sanctum');
+
+    // 2. Protected Merchant Routes
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Dashboard & Stats
+        Route::get('/dashboard/income',     [MerchantDashboardController::class, 'income']);
+        Route::get('/dashboard/top-routes', [MerchantDashboardController::class, 'topRoutes']);
+        Route::get('/dashboard/withdrawals', [MerchantDashboardController::class, 'withdrawals']);
+        Route::get('/dashboard/arrivals',   [MerchantDashboardController::class, 'nearbyArrivals']);
+
+        // Fleet Management (Buses)
+        Route::get('/buses', [MerchantBusController::class, 'index']);
+        Route::get('/buses/{id}', [MerchantBusController::class, 'show']);
+
+        // Profile & Settings
+        Route::get('/profile', [MerchantProfileController::class, 'show']);
+        Route::put('/profile', [MerchantProfileController::class, 'update']);
+        Route::post('/profile/image', [MerchantProfileController::class, 'updateImage']);
+        Route::post('/profile/password', [MerchantProfileController::class, 'updatePassword']);
+        Route::post('/profile/language', [MerchantProfileController::class, 'updateLanguage']);
+        Route::post('/profile/notifications', [MerchantProfileController::class, 'updateNotification']);
+
+        // Support
+        Route::get('/support', [MerchantSupportController::class, 'index']);
+        Route::post('/support', [MerchantSupportController::class, 'store']);
     });
 });
 
-// Homepage & Search Routes
-Route::get('/banners', [BannerController::class, 'index']);
-Route::get('/buses',       [HomepageController::class, 'listBuses']);
-Route::get('/buses/{id}',  [HomepageController::class, 'showBus']);
-Route::get('/parkings',      [HomepageController::class, 'listParkings']);
-Route::get('/parkings/{id}', [HomepageController::class, 'showParking']);
