@@ -112,14 +112,23 @@ class MiscApiTest extends TestCase
         ]);
 
         // Create a parking nearby (Kalanki)
-        \App\Models\Parking::create([
+        $parking = \App\Models\Parking::create([
             'name' => 'Kalanki Parking',
             'location' => 'Kalanki Chowk',
             'status' => 'opened',
             'latitude' => 27.6940,
             'longitude' => 85.2818,
-            'first_hour_fee' => 20,
-            'onwards_hour_fee' => 10
+        ]);
+
+        $parking->fees()->create([
+            'title' => 'First Hour',
+            'price_rs' => 20,
+            'price_pts' => 20,
+        ]);
+        $parking->fees()->create([
+            'title' => 'Onwards',
+            'price_rs' => 10,
+            'price_pts' => 10,
         ]);
 
         // Create a bus far away (Koteshwor - ~6km away)

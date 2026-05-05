@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
@@ -17,7 +17,8 @@ use Laravel\Socialite\Facades\Socialite;
 use Laravel\Sanctum\PersonalAccessToken;
 
 /**
- * @group Authentication
+ * @group CustomerApi
+ * @subgroup Auth
  *
  * APIs for user registration, login, and token management.
  */

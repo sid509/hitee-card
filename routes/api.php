@@ -1,20 +1,68 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\BannerController;
-use App\Http\Controllers\Api\MiscController;
-use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\HomepageController;
-use App\Http\Controllers\Api\SupportController;
-use App\Http\Controllers\Api\TapController;
-use App\Http\Controllers\Api\UserActivityController;
-use App\Http\Controllers\Api\WalletController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /**
- * Authentication API Routes
+ * Main API Routes Entry Point
  */
+
+use App\Http\Controllers\Api\Merchant\AuthController as MerchantAuthController;
+use App\Http\Controllers\Api\Merchant\DashboardController as MerchantDashboardController;
+use App\Http\Controllers\Api\Merchant\BusController as MerchantBusController;
+use App\Http\Controllers\Api\Merchant\ProfileController as MerchantProfileController;
+use App\Http\Controllers\Api\Merchant\SupportController as MerchantSupportController;
+
+/*
+|--------------------------------------------------------------------------
+| Merchant App APIs
+|--------------------------------------------------------------------------
+*/
+Route::prefix('merchant')->group(function () {
+    // Authentication
+    Route::post('/login', [MerchantAuthController::class, 'login']);
+    Route::post('/logout', [MerchantAuthController::class, 'logout'])->middleware('auth:sanctum');
+
+    // Protected Merchant Routes
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Dashboard & Stats
+        Route::get('/dashboard/income',     [MerchantDashboardController::class, 'income']);
+        Route::get('/dashboard/top-routes', [MerchantDashboardController::class, 'topRoutes']);
+        Route::get('/dashboard/withdrawals', [MerchantDashboardController::class, 'withdrawals']);
+        Route::get('/dashboard/arrivals',   [MerchantDashboardController::class, 'nearbyArrivals']);
+
+        // Fleet Management (Buses)
+        Route::get('/buses', [MerchantBusController::class, 'index']);
+        Route::get('/buses/{id}', [MerchantBusController::class, 'show']);
+
+        // Profile & Settings
+        Route::get('/profile', [MerchantProfileController::class, 'show']);
+        Route::put('/profile', [MerchantProfileController::class, 'update']);
+        Route::post('/profile/image', [MerchantProfileController::class, 'updateImage']);
+        Route::post('/profile/password', [MerchantProfileController::class, 'updatePassword']);
+        Route::post('/profile/language', [MerchantProfileController::class, 'updateLanguage']);
+        Route::post('/profile/notifications', [MerchantProfileController::class, 'updateNotification']);
+
+        // Support
+        Route::get('/support', [MerchantSupportController::class, 'index']);
+        Route::post('/support', [MerchantSupportController::class, 'store']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| User/Customer App APIs
+|--------------------------------------------------------------------------
+*/
+use App\Http\Controllers\Api\Customer\AuthController;
+use App\Http\Controllers\Api\Customer\BannerController;
+use App\Http\Controllers\Api\Customer\MiscController;
+use App\Http\Controllers\Api\Customer\ProfileController;
+use App\Http\Controllers\Api\Customer\HomepageController;
+use App\Http\Controllers\Api\Customer\SupportController;
+use App\Http\Controllers\Api\Customer\WalletController;
+use App\Http\Controllers\Api\Customer\TapController;
+
+// Authentication
 Route::controller(AuthController::class)->prefix('auth')->group(function () {
     Route::post('/register', 'register');
     Route::post('/login', 'login');
@@ -22,19 +70,14 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
     Route::post('/social', 'socialLogin');
     Route::post('/forgot-password', 'forgotPassword');
     Route::post('/reset-password',  'resetPassword');
-
-    // Authenticated Auth Routes
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', 'logout');
-        Route::post('/refresh', 'refresh');
-    });
 });
 
-/**
- * Protected User Routes
- * All routes below require a valid Sanctum access token.
- * Data is scoped to the authenticated user only.
- */
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+});
+
+// Protected User Routes
 Route::middleware('auth:sanctum')->group(function () {
     // Profile
     Route::get('/profile', [ProfileController::class, 'show']);
@@ -65,22 +108,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/nearby',           [MiscController::class, 'nearby']);
     });
 
-    // Admin-only routes (inline role check inside controllers)
+    // Tap Handling
+    Route::post('/tap', [TapController::class, 'processTap']);
+
+    // Admin-only routes
     Route::prefix('admin')->group(function () {
         Route::put('/banners/{position}', [BannerController::class, 'update']);
     });
 });
 
-/**
- * Homepage & Search Routes
- * Features used on the mobile app's main dashboard.
- */
+// Homepage & Search Routes
 Route::get('/banners', [BannerController::class, 'index']);
-
-// Buses
 Route::get('/buses',       [HomepageController::class, 'listBuses']);
 Route::get('/buses/{id}',  [HomepageController::class, 'showBus']);
-
-// Parkings
 Route::get('/parkings',      [HomepageController::class, 'listParkings']);
 Route::get('/parkings/{id}', [HomepageController::class, 'showParking']);

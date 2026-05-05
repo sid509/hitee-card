@@ -1,12 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\BalanceIn;
 use App\Models\BalanceOut;
 use Illuminate\Http\Request;
 
+/**
+ * @group CustomerApi
+ * @subgroup Wallet
+ */
 class WalletController extends Controller
 {
     /**

@@ -1,12 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Models\SupportRequest;
 use Illuminate\Http\Request;
 
+/**
+ * @group CustomerApi
+ * @subgroup Support
+ */
 class SupportController extends Controller
 {
     /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
@@ -9,7 +9,12 @@ use App\Models\Route;
 use App\Models\Stop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
+/**
+ * @group CustomerApi
+ * @subgroup Misc
+ */
 class MiscController extends Controller
 {
     /**
@@ -43,16 +48,28 @@ class MiscController extends Controller
         $results = [];
         $pagination = [];
 
+        $isSqlite = config('database.default') === 'sqlite';
+
         // 1. Fetch Buses if requested or no type specified
         if (!$type || $type === 'bus') {
             $busQuery = Bus::with(['merchant:id,name', 'route:id,name,direction'])
                 ->where('status', 'active')
                 ->select('*')
-                ->selectRaw("{$haversine} AS distance")
-                ->having('distance', '<=', $radius)
-                ->orderBy('distance');
+                ->selectRaw("{$haversine} AS distance");
 
-            $buses = $busQuery->paginate($perPage, ['*'], 'bus_page');
+            if ($isSqlite) {
+                $allBuses = $busQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
+                $buses = new LengthAwarePaginator(
+                    $allBuses->forPage($request->input('bus_page', 1), $perPage),
+                    $allBuses->count(),
+                    $perPage,
+                    $request->input('bus_page', 1),
+                    ['path' => $request->url(), 'pageName' => 'bus_page']
+                );
+            } else {
+                $busQuery->whereRaw("{$haversine} <= ?", [$radius])->orderBy('distance');
+                $buses = $busQuery->paginate($perPage, ['*'], 'bus_page');
+            }
 
             $results['buses'] = collect($buses->items())->map(fn($bus) => [
                 'id'          => $bus->id,
@@ -85,11 +102,21 @@ class MiscController extends Controller
             $parkingQuery = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
                 ->where('status', 'opened')
                 ->select('*')
-                ->selectRaw("{$haversine} AS distance")
-                ->having('distance', '<=', $radius)
-                ->orderBy('distance');
+                ->selectRaw("{$haversine} AS distance");
 
-            $parkings = $parkingQuery->paginate($perPage, ['*'], 'parking_page');
+            if ($isSqlite) {
+                $allParkings = $parkingQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
+                $parkings = new LengthAwarePaginator(
+                    $allParkings->forPage($request->input('parking_page', 1), $perPage),
+                    $allParkings->count(),
+                    $perPage,
+                    $request->input('parking_page', 1),
+                    ['path' => $request->url(), 'pageName' => 'parking_page']
+                );
+            } else {
+                $parkingQuery->whereRaw("{$haversine} <= ?", [$radius])->orderBy('distance');
+                $parkings = $parkingQuery->paginate($perPage, ['*'], 'parking_page');
+            }
 
             $results['parkings'] = collect($parkings->items())->map(fn($p) => [
                 'id'               => $p->id,
@@ -99,8 +126,6 @@ class MiscController extends Controller
                 'latitude'         => $p->latitude,
                 'longitude'        => $p->longitude,
                 'distance_km'      => round((float) $p->distance, 2),
-                'first_hour_pts'   => (float) $p->first_hour_fee,
-                'onwards_hour_pts' => (float) $p->onwards_hour_fee,
                 'merchant'         => $p->merchant?->name,
                 'attributes'       => $p->attributes->map(fn($a) => [
                     'name' => $a->name,

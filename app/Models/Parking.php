@@ -11,7 +11,7 @@ use App\Traits\HasMedia;
 class Parking extends Model
 {
     use SoftDeletes, HasMedia;
-    protected $fillable = ['name', 'location', 'total_capacity', 'status', 'merchant_id', 'latitude', 'longitude', 'first_hour_fee', 'onwards_hour_fee'];
+    protected $fillable = ['name', 'location', 'total_capacity', 'status', 'merchant_id', 'latitude', 'longitude'];
 
     protected $appends = ['featured_image_url'];
 

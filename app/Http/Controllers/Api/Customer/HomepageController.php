@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
@@ -8,7 +8,8 @@ use App\Models\Parking;
 use Illuminate\Http\Request;
 
 /**
- * @group Homepage
+ * @group CustomerApi
+ * @subgroup Homepage
  *
  * APIs for the mobile app's main dashboard, including buses and parkings.
  */
