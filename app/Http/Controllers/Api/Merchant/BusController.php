@@ -79,14 +79,58 @@ class BusController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $bus = Bus::findOrFail($id);
+        $bus = Bus::with([
+            'route.stops', 
+            'currentPosition', 
+            'activeFare.matrices.fromStop',
+            'activeFare.matrices.toStop'
+        ])->withCount('ongoingRides')->findOrFail($id);
 
         if ($bus->merchant_id !== $request->user()->id) {
             return apiResponse(false, 'You do not have permission to view this bus', null, 403);
         }
 
-        $bus->load(['route', 'currentPosition', 'activeFare']);
+        $data = [
+            'id'          => $bus->id,
+            'name'        => $bus->name,
+            'bus_number'  => $bus->bus_number,
+            'total_capacity' => (int) $bus->total_capacity,
+            'current_occupancy' => (int) $bus->ongoing_rides_count,
+            'status'      => $bus->status,
+            'latitude'    => $bus->latitude,
+            'longitude'   => $bus->longitude,
+            'image_url'   => $bus->featured_image_url,
+            'route'       => $bus->route ? [
+                'id'        => $bus->route->id,
+                'name'      => $bus->route->name,
+                'direction' => $bus->route->direction,
+                'stops'     => $bus->route->stops->map(fn($s) => [
+                    'id'        => $s->id,
+                    'name'      => $s->stop_name,
+                    'latitude'  => $s->latitude,
+                    'longitude' => $s->longitude,
+                    'order'     => $s->order,
+                ]),
+            ] : null,
+            'current_position' => $bus->currentPosition ? [
+                'latitude' => $bus->currentPosition->latitude,
+                'longitude' => $bus->currentPosition->longitude,
+                'heading' => $bus->currentPosition->heading,
+                'speed' => $bus->currentPosition->speed,
+                'recorded_at' => $bus->currentPosition->recorded_at->toDateTimeString()
+            ] : null,
+            'active_fare' => $bus->activeFare ? [
+                'id'             => $bus->activeFare->id,
+                'name'           => $bus->activeFare->name,
+                'effective_from' => $bus->activeFare->effective_from,
+                'matrix'         => $bus->activeFare->matrices->map(fn($m) => [
+                    'from'   => $m->fromStop?->stop_name,
+                    'to'     => $m->toStop?->stop_name,
+                    'amount' => (float) $m->amount,
+                ]),
+            ] : null,
+        ];
 
-        return apiResponse(true, 'Bus details fetched successfully', $bus);
+        return apiResponse(true, 'Bus details fetched successfully', $data);
     }
 }

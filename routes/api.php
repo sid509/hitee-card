@@ -88,25 +88,40 @@ Route::middleware('auth:sanctum')->group(function () {
 use App\Http\Controllers\Api\Merchant\AuthController as MerchantAuthController;
 use App\Http\Controllers\Api\Merchant\DashboardController as MerchantDashboardController;
 use App\Http\Controllers\Api\Merchant\BusController as MerchantBusController;
+use App\Http\Controllers\Api\Merchant\ParkingController as MerchantParkingController;
+use App\Http\Controllers\Api\Merchant\BannerController as MerchantBannerController;
 use App\Http\Controllers\Api\Merchant\ProfileController as MerchantProfileController;
 use App\Http\Controllers\Api\Merchant\SupportController as MerchantSupportController;
-
 Route::prefix('merchant')->group(function () {
     // 1. Merchant Authentication
     Route::post('/login', [MerchantAuthController::class, 'login']);
+    Route::post('/biometric-login', [MerchantAuthController::class, 'biometricLogin']);
+    Route::post('/social', [MerchantAuthController::class, 'socialLogin']);
     Route::post('/logout', [MerchantAuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('/forgot-password', [MerchantAuthController::class, 'forgotPassword']);
+    Route::post('/reset-password',  [MerchantAuthController::class, 'resetPassword']);
 
-    // 2. Protected Merchant Routes
+    // 2. Banners (Public/Static)
+    Route::get('/banners', [MerchantBannerController::class, 'index']);
+
+    // 3. Protected Merchant Routes
     Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/auth/refresh', [MerchantAuthController::class, 'refresh']);
+
         // Dashboard & Stats
         Route::get('/dashboard/income',     [MerchantDashboardController::class, 'income']);
         Route::get('/dashboard/top-routes', [MerchantDashboardController::class, 'topRoutes']);
+        Route::get('/dashboard/top-parkings', [MerchantDashboardController::class, 'topParkings']);
         Route::get('/dashboard/withdrawals', [MerchantDashboardController::class, 'withdrawals']);
         Route::get('/dashboard/arrivals',   [MerchantDashboardController::class, 'nearbyArrivals']);
 
         // Fleet Management (Buses)
         Route::get('/buses', [MerchantBusController::class, 'index']);
         Route::get('/buses/{id}', [MerchantBusController::class, 'show']);
+
+        // Parking Management
+        Route::get('/parkings', [MerchantParkingController::class, 'index']);
+        Route::get('/parkings/{id}', [MerchantParkingController::class, 'show']);
 
         // Profile & Settings
         Route::get('/profile', [MerchantProfileController::class, 'show']);

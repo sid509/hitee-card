@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Merchant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
+use App\Models\Parking;
 use App\Models\MerchantIncome;
 use App\Models\MerchantWithdrawal;
 use App\Models\Stop;
@@ -79,6 +80,26 @@ class DashboardController extends Controller
             ->get();
 
         return apiResponse(true, 'Top routes fetched successfully', $routes);
+    }
+
+    /**
+     * Top Performing Parkings
+     */
+    public function topParkings(Request $request)
+    {
+        $merchant = $request->user();
+
+        $parkings = DB::table('merchant_incomes')
+            ->join('parkings', 'merchant_incomes.reference_id', '=', 'parkings.id')
+            ->where('merchant_incomes.merchant_id', $merchant->id)
+            ->where('merchant_incomes.reference_type', Parking::class)
+            ->select('parkings.id', 'parkings.name', DB::raw('SUM(merchant_incomes.amount) as total_revenue'))
+            ->groupBy('parkings.id', 'parkings.name')
+            ->orderByDesc('total_revenue')
+            ->limit(5)
+            ->get();
+
+        return apiResponse(true, 'Top parkings fetched successfully', $parkings);
     }
 
     /**

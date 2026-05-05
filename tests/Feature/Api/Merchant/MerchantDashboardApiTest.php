@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\Merchant;
 
 use App\Models\Bus;
+use App\Models\Parking;
 use App\Models\BusLocation;
 use App\Models\MerchantIncome;
 use App\Models\MerchantWithdrawal;
@@ -115,6 +116,35 @@ class MerchantDashboardApiTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonFragment(['name' => 'Test Route', 'total_revenue' => 1000]);
+    }
+
+    public function test_merchant_can_get_top_parkings()
+    {
+        $parking = Parking::create([
+            'name' => 'Test Parking',
+            'location' => 'Kathmandu',
+            'status' => 'opened',
+            'merchant_id' => $this->merchant->id,
+            'latitude' => 27.7,
+            'longitude' => 85.3,
+            'total_capacity' => 100,
+        ]);
+
+        $bo = BalanceOut::create(['amount' => 500, 'user_id' => $this->merchant->id, 'merchant_id' => $this->merchant->id, 'type' => 'parking_fee']);
+        MerchantIncome::create([
+            'merchant_id' => $this->merchant->id,
+            'balance_out_id' => $bo->id,
+            'amount' => 500,
+            'type' => 'parking',
+            'reference_id' => $parking->id,
+            'reference_type' => Parking::class,
+        ]);
+
+        Sanctum::actingAs($this->merchant);
+        $response = $this->getJson('/api/merchant/dashboard/top-parkings');
+
+        $response->assertStatus(200)
+            ->assertJsonFragment(['name' => 'Test Parking', 'total_revenue' => 500]);
     }
 
     public function test_merchant_can_get_withdrawals()

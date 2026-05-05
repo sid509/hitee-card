@@ -83,7 +83,13 @@ class MerchantBusApiTest extends TestCase
         $response = $this->getJson("/api/merchant/buses/{$bus->id}");
 
         $response->assertStatus(200)
-            ->assertJsonFragment(['bus_number' => 'BA 1 PA 1111']);
+            ->assertJsonFragment(['bus_number' => 'BA 1 PA 1111'])
+            ->assertJsonStructure([
+                'status',
+                'content' => [
+                    'id', 'name', 'bus_number', 'active_fare', 'route'
+                ]
+            ]);
     }
 
     public function test_merchant_cannot_show_other_merchant_bus()

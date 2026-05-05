@@ -38,4 +38,42 @@ return Application::configure(basePath: dirname(__DIR__))
                 return apiResponse(false, $e->validator->errors()->first(), $e->errors(), 422);
             }
         });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+            if ($request->is('api/*')) {
+                return apiResponse(false, 'Resource Not Found', '', 404);
+            }
+        });
+
+        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, $request) {
+            if ($request->is('api/*')) {
+                return apiResponse(false, 'Resource Not Found', '', 404);
+            }
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e, $request) {
+            if ($request->is('api/*')) {
+                return apiResponse(false, 'Access Denied', '', 403);
+            }
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException $e, $request) {
+            if ($request->is('api/*')) {
+                return apiResponse(false, 'Method Not Allowed', '', 405);
+            }
+        });
+
+        $exceptions->render(function (\Throwable $e, $request) {
+            if ($request->is('api/*')) {
+                $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+                $message = $e->getMessage() ?: 'Internal Server Error';
+                
+                // Hide detailed messages in production if it's a 500 error and not in debug mode
+                if ($status === 500 && !config('app.debug')) {
+                    $message = 'Something went wrong on our end.';
+                }
+                
+                return apiResponse(false, $message, '', $status);
+            }
+        });
     })->create();

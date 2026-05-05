@@ -17,6 +17,8 @@ class Banner extends Model
         'home_middle',
         'home_bottom',
         'wallet_top',
+        'merchant_home_top',
+        'merchant_home_middle',
     ];
 
     protected $fillable = [
