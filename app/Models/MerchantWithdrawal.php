@@ -20,6 +20,11 @@ class MerchantWithdrawal extends Model
         'remarks',
     ];
 
+    protected $casts = [
+        'merchant_id' => 'integer',
+        'amount' => 'float',
+    ];
+
     public function merchant()
     {
         return $this->belongsTo(User::class, 'merchant_id');

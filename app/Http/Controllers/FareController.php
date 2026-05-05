@@ -22,6 +22,15 @@ class FareController extends Controller
                 $query->whereHas('buses', function($q) {
                     $q->where('merchant_id', auth()->id());
                 });
+            } elseif (auth()->user()->hasRole('staff')) {
+                $user = auth()->user();
+                $merchantIds = $user->merchants->pluck('id');
+                $query->whereHas('buses', function($q) use ($merchantIds, $user) {
+                    $q->whereIn('merchant_id', $merchantIds)
+                      ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                          $sq->where('user_id', $user->id);
+                      });
+                });
             }
 
             return DataTables::of($query)
@@ -64,13 +73,16 @@ class FareController extends Controller
                     }
 
                     if (auth()->user()->hasRole('super-admin', 'merchant', 'staff')) {
+                        $user = auth()->user();
                         $canAssign = false;
-                        if (auth()->user()->hasRole('super-admin')) $canAssign = true;
-                        elseif (auth()->user()->hasRole('merchant')) {
-                             $canAssign = $row->buses()->where('merchant_id', auth()->id())->exists();
+                        if ($user->hasRole('super-admin')) $canAssign = true;
+                        elseif ($user->hasRole('merchant')) {
+                             $canAssign = $row->buses()->where('merchant_id', $user->id)->exists();
                         }
-                        elseif (auth()->user()->hasRole('staff')) {
-                            $canAssign = auth()->user()->assignedBuses()->where('route_id', $row->route_id)->exists();
+                        elseif ($user->hasRole('staff')) {
+                            $isMerchantStaff = $user->merchants()->whereIn('merchant_id', $row->buses->pluck('merchant_id'))->exists();
+                            $isAssignedStaff = $user->assignedBuses()->where('route_id', $row->route_id)->exists();
+                            $canAssign = $isMerchantStaff || $isAssignedStaff;
                         }
 
                         if ($canAssign) {
@@ -199,16 +211,13 @@ class FareController extends Controller
         $fare = Fare::findOrFail($request->fare_id);
         $bus = Bus::findOrFail($request->bus_id);
 
-        if (!auth()->user()->hasRole('super-admin')) {
-            if (auth()->user()->hasRole('merchant')) {
-                // Bus must belong to merchant
-                if ($bus->merchant_id != auth()->id()) abort(403);
-            } elseif (auth()->user()->hasRole('staff')) {
-                if (!auth()->user()->assignedBuses->contains($bus->id)) abort(403);
-            } else {
-                abort(403);
-            }
-        }
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $bus->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $bus->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $bus->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
 
         $bus->update([
             'route_id' => $fare->route_id,

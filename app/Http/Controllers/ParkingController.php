@@ -27,7 +27,13 @@ class ParkingController extends Controller
             if (auth()->user()->hasRole('merchant')) {
                 $query->where('merchant_id', auth()->id());
             } elseif (auth()->user()->hasRole('staff')) {
-                $query->whereIn('id', auth()->user()->assignedParkings->pluck('id'));
+                $user = auth()->user();
+                $query->where(function($q) use ($user) {
+                    $q->whereIn('merchant_id', $user->merchants->pluck('id'))
+                      ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                          $sq->where('user_id', $user->id);
+                      });
+                });
             }
 
             return DataTables::of($query)
@@ -95,9 +101,13 @@ class ParkingController extends Controller
      */
     public function toggleStatus(Parking $parking)
     {
-        if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
-        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
-        if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $parking->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $parking->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $parking->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
 
         $parking->status = $parking->status === 'opened' ? 'closed' : 'opened';
         $parking->save();
@@ -110,9 +120,13 @@ class ParkingController extends Controller
      */
     public function show(Parking $parking)
     {
-        // Merchant can only view their own
-        if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
-        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $parking->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $parking->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $parking->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
         
         $parking->load(['attributes', 'merchant']);
         $parking->loadCount('ongoingRides');
@@ -174,10 +188,13 @@ class ParkingController extends Controller
      */
     public function edit(Parking $parking)
     {
-        // Merchant can only edit their own
-        if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
-        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
-        if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $parking->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $parking->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $parking->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
         
         $merchants = User::whereHas('roles', function($q){ $q->where('slug', 'merchant'); })->get();
         $allAttributes = ParkingAttribute::all();
@@ -193,8 +210,13 @@ class ParkingController extends Controller
      */
     public function update(UpdateParkingRequest $request, Parking $parking)
     {
-        if (auth()->user()->hasRole('merchant') && $parking->merchant_id != auth()->id()) abort(403);
-        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedParkings->contains($parking->id)) abort(403);
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $parking->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $parking->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $parking->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
         
         DB::transaction(function() use ($request, $parking) {
             $parking->update($request->except('fees', 'attributes'));

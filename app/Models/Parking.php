@@ -15,6 +15,13 @@ class Parking extends Model
 
     protected $appends = ['featured_image_url'];
 
+    protected $casts = [
+        'merchant_id' => 'integer',
+        'total_capacity' => 'integer',
+        'latitude' => 'float',
+        'longitude' => 'float',
+    ];
+
     public function ongoingRides()
     {
         return $this->morphMany(Ride::class, 'reference')->where('status', 'ongoing');

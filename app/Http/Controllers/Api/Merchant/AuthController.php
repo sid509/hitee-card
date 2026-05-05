@@ -27,8 +27,8 @@ class AuthController extends Controller
         $user = User::where('phone_number', $request->phone_number)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
-            if (!$user->hasRole('merchant')) {
-                return apiResponse(false, 'Unauthorized. Access restricted to merchants.', '', 403);
+            if (!$user->hasRole('merchant', 'staff')) {
+                return apiResponse(false, 'Unauthorized. Access restricted to merchants and staff.', '', 403);
             }
 
             if ($user->status != User::STATUS_ACTIVE) {
@@ -152,8 +152,8 @@ class AuthController extends Controller
                 return apiResponse(false, 'Merchant account not found. Please contact administrator.', '', 404);
             }
 
-            if (!$user->hasRole('merchant')) {
-                return apiResponse(false, 'Unauthorized. Access restricted to merchants.', '', 403);
+            if (!$user->hasRole('merchant', 'staff')) {
+                return apiResponse(false, 'Unauthorized. Access restricted to merchants and staff.', '', 403);
             }
 
             if ($user->status != User::STATUS_ACTIVE) {

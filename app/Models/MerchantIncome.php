@@ -20,6 +20,13 @@ class MerchantIncome extends Model
         'type',
     ];
 
+    protected $casts = [
+        'merchant_id' => 'integer',
+        'balance_out_id' => 'integer',
+        'reference_id' => 'integer',
+        'amount' => 'float',
+    ];
+
     public function merchant()
     {
         return $this->belongsTo(User::class, 'merchant_id');

@@ -25,7 +25,13 @@ class BusController extends Controller
             if (auth()->user()->hasRole('merchant')) {
                 $query->where('merchant_id', auth()->id());
             } elseif (auth()->user()->hasRole('staff')) {
-                $query->whereIn('id', auth()->user()->assignedBuses->pluck('id'));
+                $user = auth()->user();
+                $query->where(function($q) use ($user) {
+                    $q->whereIn('merchant_id', $user->merchants->pluck('id'))
+                      ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                          $sq->where('user_id', $user->id);
+                      });
+                });
             }
 
             return DataTables::of($query)
@@ -91,9 +97,13 @@ class BusController extends Controller
      */
     public function toggleStatus(Bus $bus)
     {
-        if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
-        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
-        if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $bus->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $bus->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $bus->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
 
         $bus->status = $bus->status === 'active' ? 'inactive' : 'active';
         $bus->save();
@@ -106,9 +116,13 @@ class BusController extends Controller
      */
     public function show(Bus $bus)
     {
-        // Merchant can only view their own
-        if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
-        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $bus->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $bus->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $bus->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
         
         $bus->loadCount('ongoingRides');
         $bus->load('currentPosition');
@@ -161,10 +175,13 @@ class BusController extends Controller
      */
     public function edit(Bus $bus)
     {
-        // Ensure merchant only edits their own bus
-        if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
-        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
-        if (!auth()->user()->hasRole('super-admin', 'merchant', 'staff')) abort(403);
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $bus->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $bus->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $bus->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
         
         $merchants = User::whereHas('roles', function($q){ $q->where('slug', 'merchant'); })->get();
         $routes = \App\Models\Route::all();
@@ -178,9 +195,13 @@ class BusController extends Controller
      */
     public function update(UpdateBusRequest $request, Bus $bus)
     {
-        // Ensure merchant only updates their own bus
-        if (auth()->user()->hasRole('merchant') && $bus->merchant_id != auth()->id()) abort(403);
-        if (auth()->user()->hasRole('staff') && !auth()->user()->assignedBuses->contains($bus->id)) abort(403);
+        $user = auth()->user();
+        $isOwner = $user->hasRole('merchant') && $bus->merchant_id == $user->id;
+        $isMerchantStaff = $user->hasRole('staff') && $user->merchants()->where('merchant_id', $bus->merchant_id)->exists();
+        $isAssignedStaff = $user->hasRole('staff') && $bus->assignedStaff()->where('user_id', $user->id)->exists();
+        $isSuperAdmin = $user->hasRole('super-admin');
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff && !$isSuperAdmin) abort(403);
         
         $data = [
             'name' => $request->name,
