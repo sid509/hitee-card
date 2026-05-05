@@ -250,10 +250,10 @@ class AuthApiTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
+        $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
 
         $response = $this->postJson('/api/auth/biometric-login', [
-            'refresh_token' => $refreshToken,
+            'access_token' => $accessToken,
         ]);
 
         $response->assertStatus(200)
@@ -273,37 +273,37 @@ class AuthApiTest extends TestCase
     }
 
     /**
-     * Test biometric login failure with invalid refresh token.
+     * Test biometric login failure with invalid token.
      */
     public function test_biometric_login_failure_invalid_token()
     {
         $response = $this->postJson('/api/auth/biometric-login', [
-            'refresh_token' => 'invalid-token',
+            'access_token' => 'invalid-token',
         ]);
 
         $response->assertStatus(403)
             ->assertJson([
                 'status' => false,
-                'message' => 'Invalid token type for refresh',
+                'message' => 'Invalid token provided',
             ]);
     }
 
     /**
-     * Test biometric login failure with an access token.
+     * Test biometric login failure with a refresh token.
      */
-    public function test_biometric_login_failure_with_access_token()
+    public function test_biometric_login_failure_with_refresh_token()
     {
         $user = User::factory()->create();
-        $accessToken = $user->createToken('access_token', ['access'])->plainTextToken;
+        $refreshToken = $user->createToken('refresh_token', ['refresh'])->plainTextToken;
 
         $response = $this->postJson('/api/auth/biometric-login', [
-            'refresh_token' => $accessToken,
+            'access_token' => $refreshToken,
         ]);
 
         $response->assertStatus(403)
             ->assertJson([
                 'status' => false,
-                'message' => 'Invalid token type for refresh',
+                'message' => 'Invalid token provided',
             ]);
     }
 

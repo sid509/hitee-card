@@ -79,9 +79,13 @@ class BusController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $bus = Bus::where('merchant_id', $request->user()->id)
-            ->with(['route', 'currentPosition', 'active_fare'])
-            ->findOrFail($id);
+        $bus = Bus::findOrFail($id);
+
+        if ($bus->merchant_id !== $request->user()->id) {
+            return apiResponse(false, 'You do not have permission to view this bus', null, 403);
+        }
+
+        $bus->load(['route', 'currentPosition', 'activeFare']);
 
         return apiResponse(true, 'Bus details fetched successfully', $bus);
     }

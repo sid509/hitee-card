@@ -112,11 +112,18 @@ class DashboardController extends Controller
 
         $haversine = "(6371 * acos(cos(radians({$lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$lng})) + sin(radians({$lat})) * sin(radians(latitude))))";
         
-        $nearbyStops = Stop::select('*')
-            ->selectRaw("{$haversine} AS distance")
-            ->having('distance', '<=', $radius)
-            ->orderBy('distance')
-            ->get();
+        $isSqlite = config('database.default') === 'sqlite';
+        
+        $query = Stop::select('*')
+            ->selectRaw("{$haversine} AS distance");
+
+        if ($isSqlite) {
+            $nearbyStops = $query->get()->where('distance', '<=', $radius)->sortBy('distance');
+        } else {
+            $nearbyStops = $query->having('distance', '<=', $radius)
+                ->orderBy('distance')
+                ->get();
+        }
 
         $arrivals = [];
 
@@ -132,7 +139,7 @@ class DashboardController extends Controller
                 if ($bus->currentPosition) {
                     $busLat = $bus->currentPosition->latitude;
                     $busLng = $bus->currentPosition->longitude;
-                    $distToStop = (6371 * acos(cos(radians($busLat)) * cos(radians($stop->latitude)) * cos(radians($stop->longitude) - radians($busLng)) + sin(radians($busLat)) * sin(radians($stop->latitude))));
+                    $distToStop = (6371 * acos(cos(deg2rad($busLat)) * cos(deg2rad($stop->latitude)) * cos(deg2rad($stop->longitude) - deg2rad($busLng)) + sin(deg2rad($busLat)) * sin(deg2rad($stop->latitude))));
                     
                     $arrivals[] = [
                         'stop_name' => $stop->name,
