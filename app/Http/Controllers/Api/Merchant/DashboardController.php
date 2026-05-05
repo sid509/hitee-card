@@ -23,7 +23,8 @@ class DashboardController extends Controller
      */
     public function income(Request $request)
     {
-        $merchant = $request->user();
+        $user = $request->user();
+        $merchantIds = array_merge([$user->id], $user->merchants->pluck('id')->toArray());
 
         $now = Carbon::now();
         
@@ -36,11 +37,11 @@ class DashboardController extends Controller
         $lastMonthStart = $lastMonthDate->copy()->startOfMonth();
         $lastMonthEnd = $lastMonthDate->copy()->endOfMonth();
 
-        $currentMonthIncome = MerchantIncome::where('merchant_id', $merchant->id)
+        $currentMonthIncome = MerchantIncome::whereIn('merchant_id', $merchantIds)
             ->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd])
             ->sum('amount');
 
-        $lastMonthIncome = MerchantIncome::where('merchant_id', $merchant->id)
+        $lastMonthIncome = MerchantIncome::whereIn('merchant_id', $merchantIds)
             ->whereBetween('created_at', [$lastMonthStart, $lastMonthEnd])
             ->sum('amount');
 
@@ -66,12 +67,13 @@ class DashboardController extends Controller
      */
     public function topRoutes(Request $request)
     {
-        $merchant = $request->user();
+        $user = $request->user();
+        $merchantIds = array_merge([$user->id], $user->merchants->pluck('id')->toArray());
 
         $routes = DB::table('merchant_incomes')
             ->join('buses', 'merchant_incomes.reference_id', '=', 'buses.id')
             ->join('routes', 'buses.route_id', '=', 'routes.id')
-            ->where('merchant_incomes.merchant_id', $merchant->id)
+            ->whereIn('merchant_incomes.merchant_id', $merchantIds)
             ->where('merchant_incomes.reference_type', Bus::class)
             ->select('routes.id', 'routes.name', DB::raw('SUM(merchant_incomes.amount) as total_revenue'))
             ->groupBy('routes.id', 'routes.name')
@@ -87,11 +89,12 @@ class DashboardController extends Controller
      */
     public function topParkings(Request $request)
     {
-        $merchant = $request->user();
+        $user = $request->user();
+        $merchantIds = array_merge([$user->id], $user->merchants->pluck('id')->toArray());
 
         $parkings = DB::table('merchant_incomes')
             ->join('parkings', 'merchant_incomes.reference_id', '=', 'parkings.id')
-            ->where('merchant_incomes.merchant_id', $merchant->id)
+            ->whereIn('merchant_incomes.merchant_id', $merchantIds)
             ->where('merchant_incomes.reference_type', Parking::class)
             ->select('parkings.id', 'parkings.name', DB::raw('SUM(merchant_incomes.amount) as total_revenue'))
             ->groupBy('parkings.id', 'parkings.name')
@@ -107,9 +110,10 @@ class DashboardController extends Controller
      */
     public function withdrawals(Request $request)
     {
-        $merchant = $request->user();
+        $user = $request->user();
+        $merchantIds = array_merge([$user->id], $user->merchants->pluck('id')->toArray());
 
-        $withdrawals = MerchantWithdrawal::where('merchant_id', $merchant->id)
+        $withdrawals = MerchantWithdrawal::whereIn('merchant_id', $merchantIds)
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -162,6 +166,8 @@ class DashboardController extends Controller
                     $busLng = $bus->currentPosition->longitude;
                     $distToStop = (6371 * acos(cos(deg2rad($busLat)) * cos(deg2rad($stop->latitude)) * cos(deg2rad($stop->longitude) - deg2rad($busLng)) + sin(deg2rad($busLat)) * sin(deg2rad($stop->latitude))));
                     
+                    $merchantIds = array_merge([$request->user()->id], $request->user()->merchants->pluck('id')->toArray());
+                    
                     $arrivals[] = [
                         'stop_name' => $stop->name,
                         'bus_name' => $bus->name,
@@ -169,7 +175,7 @@ class DashboardController extends Controller
                         'route_name' => $bus->route->name,
                         'distance_km' => round($distToStop, 2),
                         'estimated_arrival_minutes' => round(($distToStop / 20) * 60, 0),
-                        'is_merchant_bus' => $bus->merchant_id == $request->user()->id
+                        'is_merchant_bus' => in_array($bus->merchant_id, $merchantIds)
                     ];
                 }
             }

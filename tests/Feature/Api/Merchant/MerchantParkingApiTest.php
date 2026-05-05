@@ -93,4 +93,30 @@ class MerchantParkingApiTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_staff_can_view_their_merchants_parking()
+    {
+        $staff = User::create([
+            'name' => 'Staff Member',
+            'email' => 'staff@example.com',
+            'phone_number' => '9841000000',
+            'password' => \Hash::make('password'),
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        
+        // Link staff to merchant
+        $this->merchant->staff()->attach($staff);
+
+        Sanctum::actingAs($staff);
+        $response = $this->getJson("/api/merchant/parkings/{$this->parking->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+                'content' => [
+                    'id' => $this->parking->id,
+                    'name' => 'Merchant Parking'
+                ]
+            ]);
+    }
 }

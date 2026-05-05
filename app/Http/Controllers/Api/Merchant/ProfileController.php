@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\Setting;
+use App\Models\Bus;
+use App\Models\Parking;
+use App\Models\MerchantIncome;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -21,6 +24,20 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $user->load(['roles']);
+
+        $merchantIds = array_merge([$user->id], $user->merchants->pluck('id')->toArray());
+
+        $totalBuses = Bus::whereIn('merchant_id', $merchantIds)
+            ->orWhereHas('assignedStaff', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->count();
+
+        $totalParkings = Parking::whereIn('merchant_id', $merchantIds)
+            ->orWhereHas('assignedStaff', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->count();
+
+        $totalRevenue = MerchantIncome::whereIn('merchant_id', $merchantIds)->sum('amount');
         
         $data = [
             'id' => $user->id,
@@ -33,10 +50,10 @@ class ProfileController extends Controller
             'status' => $user->status,
             'roles' => $user->roles->pluck('name'),
             'stats' => [
-                'merchant_balance' => (float) $user->merchantBalance(),
-                'total_buses'     => $user->buses()->count(),
-                'total_parkings'   => $user->parkings()->count(),
-                'total_revenue'    => (float) $user->merchantIncomes()->sum('amount'),
+                'merchant_balance' => (float) $user->merchantBalance(), // This remains user-specific for now as withdrawals are user-linked
+                'total_buses'     => $totalBuses,
+                'total_parkings'   => $totalParkings,
+                'total_revenue'    => (float) $totalRevenue,
             ],
             'settings' => [
                 'terms_url'     => Setting::get('terms_url', 'https://hitee.ai/terms'),

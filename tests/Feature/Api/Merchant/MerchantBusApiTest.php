@@ -116,4 +116,32 @@ class MerchantBusApiTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_staff_can_show_their_merchants_bus()
+    {
+        $bus = Bus::create([
+            'name' => 'Merchant Bus',
+            'bus_number' => 'BA 1 PA 1234',
+            'hwid' => 'HWID1234',
+            'merchant_id' => $this->merchant->id,
+            'status' => 'active'
+        ]);
+
+        $staff = User::create([
+            'name' => 'Staff Member',
+            'email' => 'staff@example.com',
+            'phone_number' => '9841000000',
+            'password' => Hash::make('password'),
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        
+        // Link staff to merchant
+        $this->merchant->staff()->attach($staff);
+
+        Sanctum::actingAs($staff);
+        $response = $this->getJson("/api/merchant/buses/{$bus->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonFragment(['bus_number' => 'BA 1 PA 1234']);
+    }
 }

@@ -17,11 +17,21 @@ class ParkingController extends Controller
      */
     public function index(Request $request)
     {
-        $merchant = $request->user();
+        $user = $request->user();
 
-        $query = Parking::where('merchant_id', $merchant->id)
+        // Get parkings owned by this merchant OR where this user is assigned staff
+        // OR parkings belonging to merchants where this user is staff
+        $query = Parking::query()
             ->with(['attributes', 'fees'])
             ->withCount('ongoingRides');
+
+        $query->where(function($q) use ($user) {
+            $q->where('merchant_id', $user->id)
+              ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                  $sq->where('user_id', $user->id);
+              })
+              ->orWhereIn('merchant_id', $user->merchants->pluck('id'));
+        });
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -66,6 +76,7 @@ class ParkingController extends Controller
      */
     public function show(Request $request, $id)
     {
+        $user = $request->user();
         $parking = Parking::with(['attributes', 'fees', 'media'])
             ->withCount('ongoingRides')
             ->find($id);
@@ -74,7 +85,11 @@ class ParkingController extends Controller
             return apiResponse(false, 'Parking not found', null, 404);
         }
 
-        if ($parking->merchant_id !== $request->user()->id) {
+        $isOwner = $parking->merchant_id === $user->id;
+        $isMerchantStaff = $user->merchants()->where('merchant_id', $parking->merchant_id)->exists();
+        $isAssignedStaff = $parking->assignedStaff()->where('user_id', $user->id)->exists();
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff) {
             return apiResponse(false, 'You do not have permission to view this parking', null, 403);
         }
 
@@ -105,5 +120,4 @@ class ParkingController extends Controller
         ];
 
         return apiResponse(true, 'Parking details fetched successfully', $data);
-    }
-}
+    }}

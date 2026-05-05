@@ -205,4 +205,35 @@ class MerchantDashboardApiTest extends TestCase
             ->assertJsonStructure(['content'])
             ->assertJsonFragment(['stop_name' => 'Test Stop', 'bus_name' => 'Test Bus']);
     }
+
+    public function test_staff_can_see_aggregated_income()
+    {
+        $staff = User::create([
+            'name' => 'Staff Member',
+            'email' => 'staff@example.com',
+            'phone_number' => '9841000000',
+            'password' => Hash::make('password'),
+            'status' => User::STATUS_ACTIVE,
+        ]);
+        
+        // Link staff to merchant
+        $this->merchant->staff()->attach($staff);
+
+        // Income for the merchant
+        $bo = BalanceOut::create(['amount' => 1000, 'user_id' => $this->merchant->id, 'merchant_id' => $this->merchant->id, 'type' => 'fare_deduction']);
+        MerchantIncome::create([
+            'merchant_id' => $this->merchant->id,
+            'balance_out_id' => $bo->id,
+            'amount' => 1000,
+            'type' => 'fare',
+            'reference_id' => 1,
+            'reference_type' => Bus::class,
+        ]);
+
+        Sanctum::actingAs($staff);
+        $response = $this->getJson('/api/merchant/dashboard/income');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('content.current_month_income', 1000);
+    }
 }

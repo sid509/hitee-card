@@ -17,10 +17,20 @@ class BusController extends Controller
      */
     public function index(Request $request)
     {
-        $merchant = $request->user();
+        $user = $request->user();
 
-        $query = Bus::where('merchant_id', $merchant->id)
+        // Get buses owned by this merchant OR where this user is assigned staff 
+        // OR buses belonging to merchants where this user is staff
+        $query = Bus::query()
             ->with(['route', 'currentPosition']);
+
+        $query->where(function($q) use ($user) {
+            $q->where('merchant_id', $user->id)
+              ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                  $sq->where('user_id', $user->id);
+              })
+              ->orWhereIn('merchant_id', $user->merchants->pluck('id'));
+        });
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -79,6 +89,7 @@ class BusController extends Controller
      */
     public function show(Request $request, $id)
     {
+        $user = $request->user();
         $bus = Bus::with([
             'route.stops', 
             'currentPosition', 
@@ -86,7 +97,11 @@ class BusController extends Controller
             'activeFare.matrices.toStop'
         ])->withCount('ongoingRides')->findOrFail($id);
 
-        if ($bus->merchant_id !== $request->user()->id) {
+        $isOwner = $bus->merchant_id === $user->id;
+        $isMerchantStaff = $user->merchants()->where('merchant_id', $bus->merchant_id)->exists();
+        $isAssignedStaff = $bus->assignedStaff()->where('user_id', $user->id)->exists();
+
+        if (!$isOwner && !$isMerchantStaff && !$isAssignedStaff) {
             return apiResponse(false, 'You do not have permission to view this bus', null, 403);
         }
 
