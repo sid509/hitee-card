@@ -11,8 +11,14 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">All Registered Users</h5>
-        @if(auth()->user()->hasRole('super-admin'))
         <div class="d-flex gap-2">
+            <select id="roleFilter" class="form-select form-select-sm" style="width: 150px;">
+                <option value="">All Roles</option>
+                @foreach($roles as $role)
+                    <option value="{{ $role->slug }}">{{ $role->name }}</option>
+                @endforeach
+            </select>
+            @if(auth()->user()->hasRole('super-admin'))
             <div class="dropdown">
                 <button class="btn btn-secondary dropdown-toggle btn-sm" type="button" id="bulkActions" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Bulk Actions
@@ -167,7 +173,12 @@
             serverSide: true,
             responsive: false,
             autoWidth: false,
-            ajax: "{{ route('users.index') }}",
+            ajax: {
+                url: "{{ route('users.index') }}",
+                data: function (d) {
+                    d.role = $('#roleFilter').val();
+                }
+            },
             order: [[7, 'desc']],
             columnDefs: [
                 {
@@ -183,17 +194,7 @@
                 {data: 'card_info', name: 'card_info', orderable: false, searchable: false},
                 {data: 'role_icons', name: 'role_icons', orderable: false},
                 {data: 'balance', name: 'balance', orderable: false, searchable: false},
-                {data: 'status', name: 'status', render: function(data) {
-                    if (data === undefined || data === null) return '-';
-                    const s = String(data);
-                    let classMap = { 'active': 'bg-label-success', 'inactive': 'bg-label-secondary', '1': 'bg-label-success', '0': 'bg-label-secondary' };
-                    let label = s.charAt(0).toUpperCase() + s.slice(1);
-                    if (s === '1') label = 'Active';
-                    if (s === '0') label = 'Inactive';
-                    if (s === '-1') label = 'Pending';
-                    
-                    return `<span class="badge ${classMap[s] || 'bg-label-info'}">${label}</span>`;
-                }},
+                {data: 'status', name: 'status', orderable: false, searchable: false},
                 {data: 'created_at', name: 'created_at', orderable: true},
                 {data: 'action', name: 'action', orderable: false, searchable: false},
             ],
@@ -204,6 +205,10 @@
                     return new bootstrap.Tooltip(tooltipTriggerEl);
                 });
             }
+        });
+
+        $('#roleFilter').on('change', function() {
+            table.draw();
         });
 
         // Manage Balance Button

@@ -20,15 +20,17 @@ class BalanceIn extends Model
         'created_by',
         'gateway_name',
         'transaction_id',
+        'gateway_name',
         'status',
-    ];
+        'payload',
+        ];
 
-    protected $casts = [
+        protected $casts = [
         'user_id' => 'integer',
         'card_id' => 'integer',
         'amount' => 'float',
-    ];
-
+        'payload' => 'array',
+        ];
     public function user()
     {
         return $this->belongsTo(User::class);

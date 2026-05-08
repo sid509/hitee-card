@@ -77,6 +77,13 @@
             </div>
 
             <div class="mb-6">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="is_tourist" name="is_tourist" value="1" {{ old('is_tourist') ? 'checked' : '' }} />
+                    <label class="form-check-label" for="is_tourist"> I am not a nepali citizen </label>
+                </div>
+            </div>
+
+            <div class="mb-6">
                 <button class="btn btn-primary d-grid w-100" type="submit">Sign up</button>
             </div>
         </form>

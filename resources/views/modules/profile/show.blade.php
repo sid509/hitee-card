@@ -57,6 +57,13 @@
                             <input class="form-control @error('phone_number') is-invalid @enderror" type="text" id="phone_number" name="phone_number" value="{{ old('phone_number', $user->phone_number) }}" placeholder="98XXXXXXXX" />
                             @error('phone_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+                        <div class="mb-3 col-md-6 d-flex align-items-center">
+                            <div class="form-check mt-3">
+                                <input type="hidden" name="is_tourist" value="0">
+                                <input class="form-check-input" type="checkbox" id="is_tourist" name="is_tourist" value="1" {{ old('is_tourist', $user->is_tourist) ? 'checked' : '' }} />
+                                <label class="form-check-label" for="is_tourist"> I am not a nepali citizen </label>
+                            </div>
+                        </div>
                     </div>
                     <div class="mt-2">
                         <button type="submit" class="btn btn-primary me-2">Save changes</button>

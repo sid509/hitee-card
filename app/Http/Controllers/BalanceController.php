@@ -114,7 +114,7 @@ class BalanceController extends Controller
     }
 
     /**
-     * Merchant withdrawal via Khalti (Simulated for now, as Khalti Load/Payout API requires specific credentials).
+     * Merchant withdrawal via Khalti.
      */
     public function merchantWithdraw(Request $request)
     {
@@ -133,20 +133,30 @@ class BalanceController extends Controller
             'merchant_id' => $merchant->id,
             'amount' => $request->amount,
             'status' => 'pending',
+            'gateway_name' => 'khalti',
             'remarks' => $request->remarks,
         ]);
 
         // In a real scenario, we would call Khalti Payout/Load API here
-        // For simulation, we'll just mark it as completed
+        // Simulation of Khalti response
+        $simulatedPayload = [
+            'transaction_id' => 'KHLT_' . time() . '_' . $withdrawal->id,
+            'status' => 'success',
+            'payout_method' => 'wallet',
+            'amount' => $request->amount * 100, // paisa
+        ];
+
         $withdrawal->update([
             'status' => 'completed',
-            'transaction_id' => 'KHLT_' . time() . '_' . $withdrawal->id,
+            'transaction_id' => $simulatedPayload['transaction_id'],
+            'payload' => $simulatedPayload,
         ]);
 
         logActivity('merchant_withdrawal', 'Merchant withdrawal completed', [
             'amount' => $request->amount,
             'transaction_id' => $withdrawal->transaction_id,
-            'remarks' => $request->remarks
+            'remarks' => $request->remarks,
+            'gateway' => 'khalti'
         ]);
 
         return back()->with('success', 'Withdrawal processed successfully to your Khalti wallet.');
@@ -386,6 +396,11 @@ class BalanceController extends Controller
         ]);
 
         $user = auth()->user();
+
+        if ($user->is_tourist) {
+            return back()->with('error', 'Khalti is only available for local users. Please use Stripe.');
+        }
+
         $amountInPaisa = $request->amount * 100;
         $purchaseOrderNo = 'TRANS_' . time() . '_' . $user->id;
 
@@ -416,6 +431,7 @@ class BalanceController extends Controller
                 'transaction_id' => $data['pidx'],
                 'status' => 'pending',
                 'gateway_name' => 'khalti',
+                'payload' => $data,
             ]);
 
             return redirect($data['payment_url']);
@@ -447,6 +463,7 @@ class BalanceController extends Controller
                     $balanceIn->update([
                         'status' => 'completed',
                         'remarks' => 'Khalti Topup Successful. TXN ID: ' . ($data['transaction_id'] ?? $pidx),
+                        'payload' => array_merge($balanceIn->payload ?? [], $data),
                     ]);
 
                     logActivity('balance_topup', 'Balance topped up via Khalti', [
@@ -461,5 +478,92 @@ class BalanceController extends Controller
         }
 
         return redirect()->route('dashboard')->with('error', 'Payment verification failed or was cancelled.');
+    }
+
+    /**
+     * Stripe payment initiation.
+     */
+    public function stripePayment(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1', 
+        ]);
+
+        $user = auth()->user();
+
+        if (!$user->hasRole('customers')) {
+            return back()->with('error', 'Only customers can topup their balance.');
+        }
+
+        if (!$user->is_tourist) {
+            return back()->with('error', 'Stripe is only available for tourists. Please use Khalti.');
+        }
+
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+        $session = \Stripe\Checkout\Session::create([
+            'payment_method_types' => ['card'],
+            'line_items' => [[
+                'price_data' => [
+                    'currency' => 'usd', // Usually USD for international tourists
+                    'product_data' => [
+                        'name' => 'Hitee Balance Topup',
+                    ],
+                    'unit_amount' => $request->amount * 100, // Amount in cents
+                ],
+                'quantity' => 1,
+            ]],
+            'mode' => 'payment',
+            'success_url' => route('stripe.verify') . '?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => route('dashboard'),
+            'client_reference_id' => $user->id,
+            'customer_email' => $user->email,
+        ]);
+
+        // Create a pending balance in record
+        BalanceIn::create([
+            'user_id' => $user->id,
+            'amount' => $request->amount, // We'll treat 1 USD = 1 Point for simplicity, or add conversion logic
+            'type' => 'stripe',
+            'remarks' => 'Stripe Topup Initiation',
+            'transaction_id' => $session->id,
+            'status' => 'pending',
+            'gateway_name' => 'stripe',
+            'payload' => $session->toArray(),
+        ]);
+
+        return redirect($session->url);
+    }
+
+    /**
+     * Stripe payment verification.
+     */
+    public function stripeVerify(Request $request)
+    {
+        $sessionId = $request->session_id;
+
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+        $session = \Stripe\Checkout\Session::retrieve($sessionId);
+
+        if ($session->payment_status === 'paid') {
+            $balanceIn = BalanceIn::where('transaction_id', $sessionId)->first();
+            if ($balanceIn && $balanceIn->status !== 'completed') {
+                $balanceIn->update([
+                    'status' => 'completed',
+                    'remarks' => 'Stripe Topup Successful. Session ID: ' . $sessionId,
+                    'payload' => array_merge($balanceIn->payload ?? [], $session->toArray()),
+                ]);
+
+                logActivity('balance_topup', 'Balance topped up via Stripe', [
+                    'amount' => $balanceIn->amount,
+                    'transaction_id' => $sessionId,
+                    'gateway' => 'stripe'
+                ]);
+
+                return redirect()->route('dashboard')->with('success', 'Balance topped up successfully!');
+            }
+        }
+
+        return redirect()->route('dashboard')->with('error', 'Stripe payment verification failed.');
     }
 }

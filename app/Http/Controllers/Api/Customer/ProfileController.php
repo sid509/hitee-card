@@ -101,7 +101,7 @@ class ProfileController extends Controller
         }
 
         // Phone update not allowed as per requirement
-        $user->update($request->only('name', 'email'));
+        $user->update($request->only('name', 'email', 'is_tourist'));
 
         logActivity('profile_update', 'User updated profile details via API', [], $user->id);
 
@@ -109,6 +109,7 @@ class ProfileController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'is_tourist' => (bool) $user->is_tourist,
             'avatar_url' => $user->avatar_url,
         ]);
     }

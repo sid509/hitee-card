@@ -23,6 +23,14 @@ class UserController extends Controller
             $data = User::with(['roles', 'activeCard'])
                 ->select(['id', 'name', 'email', 'phone_number', 'status', 'created_at'])
                 ->latest();
+
+            // Filter by Role
+            if ($request->filled('role')) {
+                $data->whereHas('roles', function($q) use ($request) {
+                    $q->where('slug', $request->role);
+                });
+            }
+
             return DataTables::of($data)
                 ->addIndexColumn()
                 ->addColumn('checkbox', function($row){
@@ -58,6 +66,25 @@ class UserController extends Controller
                     $class = $balance < 0 ? 'bg-label-danger' : '';
                     return '<span class="badge '.$class.'">Rs. '.number_format($balance, 2).'</span>';
                 })
+                ->editColumn('status', function($row){
+                    if ($row->id === auth()->id()) {
+                        return '<i class="bx bx-check-circle text-success fs-4"></i>';
+                    }
+
+                    $s = (int)$row->status;
+                    if ($s === -1) {
+                        return '<a href="javascript:void(0);" class="approve-user-btn" data-id="'.$row->id.'" title="Click to Approve">
+                                    <i class="bx bx-help-circle text-warning fs-4"></i>
+                                </a>';
+                    }
+
+                    $icon = $s === 1 ? 'bx-check-circle text-success' : 'bx-x-circle text-danger';
+                    $title = $s === 1 ? 'Active - Click to Deactivate' : 'Inactive - Click to Activate';
+                    
+                    return '<a href="javascript:void(0);" class="toggle-user-status" data-id="'.$row->id.'" title="'.$title.'">
+                                <i class="bx '.$icon.' fs-4"></i>
+                            </a>';
+                })
                 ->editColumn('created_at', function($row){
                     return formatDate($row->created_at);
                 })
@@ -66,23 +93,6 @@ class UserController extends Controller
 
                     // View Button
                     $actions .= '<a href="'.route('users.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
-
-                    if (auth()->user()->hasRole('super-admin') && $row->id !== auth()->id()) {
-                        $s = (int)$row->status;
-
-                        // 1. Pending Approval State
-                        if ($s === -1) {
-                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 approve-user-btn" data-id="'.$row->id.'" title="Approve & Activate"><i class="bx bx-check-shield"></i></button>';
-                        } 
-                        // 2. Active State -> Show Deactivate Button
-                        elseif ($s === 1) {
-                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-danger me-1 toggle-user-status" data-id="'.$row->id.'" title="Deactivate Account"><i class="bx bx-user-x"></i></button>';
-                        } 
-                        // 3. Inactive State -> Show Activate Button
-                        else {
-                            $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 toggle-user-status" data-id="'.$row->id.'" title="Activate Account"><i class="bx bx-user-check"></i></button>';
-                        }
-                    }
 
                     // Edit Button
                     $actions .= '<a href="'.route('users.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
@@ -117,12 +127,13 @@ class UserController extends Controller
                     $actions .= '</div>';
                     return $actions;
                 })
-                ->rawColumns(['action', 'role_icons', 'balance', 'checkbox', 'user_info', 'card_info'])
+                ->rawColumns(['action', 'role_icons', 'balance', 'checkbox', 'user_info', 'card_info', 'status'])
                 ->make(true);
         }
 
         return view('modules.users.index', [
-            'merchants' => User::whereHas('roles', fn($q) => $q->whereIn('slug', ['merchant', 'staff']))->get()
+            'merchants' => User::whereHas('roles', fn($q) => $q->whereIn('slug', ['merchant', 'staff']))->get(),
+            'roles' => Role::all()
         ]);
     }
 
@@ -171,6 +182,7 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'status' => 'active',
+            'is_tourist' => $request->boolean('is_tourist'),
         ]);
 
         if ($request->has('roles')) {

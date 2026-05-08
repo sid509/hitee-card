@@ -89,10 +89,17 @@
 
                     @if(auth()->user()->hasRole('customers'))
                         <div class="col-md-3 col-6">
-                            <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
-                                <i class="bx bx-plus-circle fs-3 mb-2 text-primary"></i>
-                                <span class="small fw-medium">Topup Balance</span>
-                            </a>
+                            @if(auth()->user()->is_tourist)
+                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#stripeTopupModal" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                    <i class="bx bxl-stripe fs-3 mb-2 text-primary"></i>
+                                    <span class="small fw-medium">Topup Balance</span>
+                                </a>
+                            @else
+                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                    <i class="bx bx-plus-circle fs-3 mb-2 text-primary"></i>
+                                    <span class="small fw-medium">Topup Balance</span>
+                                </a>
+                            @endif
                         </div>
                         <div class="col-md-3 col-6">
                             <a href="{{ route('transactions.logs') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
@@ -125,7 +132,11 @@
                         <h2 class="text-white mb-2">Rs. {{ number_format(auth()->user()->hasRole('merchant') ? auth()->user()->merchantBalance() : auth()->user()->balance(), 2) }}</h2>
                         <div class="d-flex gap-2">
                             @if(auth()->user()->hasRole('customers'))
-                                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal">Topup</button>
+                                @if(auth()->user()->is_tourist)
+                                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#stripeTopupModal">Topup</button>
+                                @else
+                                    <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal">Topup</button>
+                                @endif
                                 <a href="{{ route('transactions.logs') }}" class="btn btn-sm btn-outline-light">History</a>
                             @elseif(auth()->user()->hasRole('merchant'))
                                 <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#withdrawModal">Withdraw</button>
@@ -527,7 +538,14 @@
 <!-- Khalti Topup Modal -->
 <div class="modal fade" id="khaltiTopupModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content @if(auth()->user()->is_tourist) position-relative @endif">
+            @if(auth()->user()->is_tourist)
+                <div class="position-absolute w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 10; backdrop-filter: blur(4px); border-radius: inherit;">
+                    <i class="bx bx-lock-alt fs-1 text-muted mb-2"></i>
+                    <h5 class="text-muted">Available for Local Users</h5>
+                    <button type="button" class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#stripeTopupModal">Use Stripe Instead</button>
+                </div>
+            @endif
             <div class="modal-header">
                 <h5 class="modal-title">Topup with Khalti</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -538,13 +556,47 @@
                     <img src="{{ asset('assets/img/hitee/khalti.png') }}" alt="Khalti" class="mb-4" style="height: 50px;">
                     <div class="mb-3 text-start">
                         <label class="form-label">Topup Amount (Rs.)</label>
-                        <input type="number" name="amount" class="form-control form-control-lg" placeholder="100.00" step="1" min="10" required>
+                        <input type="number" name="amount" class="form-control form-control-lg" placeholder="100.00" step="1" min="10" required @if(auth()->user()->is_tourist) disabled @endif>
                         <div class="form-text">Minimum topup amount is Rs. 10.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Pay with Khalti</button>
+                    <button type="submit" class="btn btn-primary" @if(auth()->user()->is_tourist) disabled @endif>Pay with Khalti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Stripe Topup Modal -->
+<div class="modal fade" id="stripeTopupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content @if(!auth()->user()->is_tourist) position-relative @endif">
+            @if(!auth()->user()->is_tourist)
+                <div class="position-absolute w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 10; backdrop-filter: blur(4px); border-radius: inherit;">
+                    <i class="bx bx-lock-alt fs-1 text-muted mb-2"></i>
+                    <h5 class="text-muted">Available for Tourists</h5>
+                    <button type="button" class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal">Use Khalti Instead</button>
+                </div>
+            @endif
+            <div class="modal-header">
+                <h5 class="modal-title">Topup with Stripe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('stripe.payment') }}" method="POST">
+                @csrf
+                <div class="modal-body text-center">
+                    <i class="bx bxl-stripe text-primary mb-4" style="font-size: 80px;"></i>
+                    <div class="mb-3 text-start">
+                        <label class="form-label">Topup Amount (USD)</label>
+                        <input type="number" name="amount" class="form-control form-control-lg" placeholder="10.00" step="0.01" min="1" required @if(!auth()->user()->is_tourist) disabled @endif>
+                        <div class="form-text">Minimum topup amount is $1.00. 1 USD = 1 Hitee Point.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" @if(!auth()->user()->is_tourist) disabled @endif>Pay with Stripe</button>
                 </div>
             </form>
         </div>

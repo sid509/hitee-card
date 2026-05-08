@@ -29,7 +29,8 @@ class UpdateUserRequest extends BaseRequest
                 Rule::unique('users')->ignore($userId),
             ],
             'password' => 'nullable|string|min:8|confirmed',
-            'roles' => 'nullable|array'
+            'roles' => 'nullable|array',
+            'is_tourist' => 'nullable|boolean'
         ];
     }
 }

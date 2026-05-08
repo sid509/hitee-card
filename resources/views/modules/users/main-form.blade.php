@@ -77,6 +77,18 @@
     </div>
 </div>
 
+<div class="mb-3">
+    <label class="form-label">Account Options</label>
+    <div class="form-check mt-2">
+        <input type="hidden" name="is_tourist" value="0">
+        <input class="form-check-input" type="checkbox" name="is_tourist" value="1" id="is_tourist" 
+            {{ old('is_tourist', $user->is_tourist) ? 'checked' : '' }}>
+        <label class="form-check-label" for="is_tourist">
+            Is Tourist (Not a Nepali Citizen)
+        </label>
+    </div>
+</div>
+
 <div class="mt-4">
     <button type="submit" class="btn btn-primary me-2">Save User</button>
     <a href="{{ route('users.index') }}" class="btn btn-outline-secondary">Cancel</a>

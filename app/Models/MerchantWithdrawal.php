@@ -18,11 +18,13 @@ class MerchantWithdrawal extends Model
         'transaction_id',
         'gateway_name',
         'remarks',
+        'payload',
     ];
 
     protected $casts = [
         'merchant_id' => 'integer',
         'amount' => 'float',
+        'payload' => 'array',
     ];
 
     public function merchant()

@@ -282,6 +282,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/transactions/manual-deduct', 'manualDeduct')->name('transactions.manual-deduct');
         Route::post('/transactions/khalti-payment', 'khaltiPayment')->name('khalti.payment');
         Route::get('/transactions/khalti-verify', 'khaltiVerify')->name('khalti.verify');
+        Route::post('/transactions/stripe-payment', 'stripePayment')->name('stripe.payment');
+        Route::get('/transactions/stripe-verify', 'stripeVerify')->name('stripe.verify');
 
         // Merchant specific
         Route::get('/merchant/income', 'merchantTransactions')->name('merchant.income');

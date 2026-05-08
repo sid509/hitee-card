@@ -23,6 +23,7 @@ class RegisterController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'phone_number' => ['required', 'string', 'regex:/^9\d{9}$/', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'is_tourist' => ['nullable', 'boolean'],
         ]);
 
         $user = User::create([
@@ -31,6 +32,7 @@ class RegisterController extends Controller
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'status' => User::STATUS_PENDING,
+            'is_tourist' => $request->boolean('is_tourist'),
         ]);
 
         $user->sendEmailVerificationNotification();

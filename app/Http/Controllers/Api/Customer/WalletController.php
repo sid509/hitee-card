@@ -131,34 +131,114 @@ class WalletController extends Controller
      * Wallet Top-up
      *
      * Adds balance to the authenticated user's wallet.
-     * This endpoint supports manual top-ups and Khalti (KPG) payments.
+     * This endpoint supports Khalti and Stripe payment initiation.
      * The amount is added as Hitee Points (pts), where 1 Rs = 1 pt.
      */
     public function topup(Request $request)
     {
         $request->validate([
-            'amount'         => 'required|numeric|min:1',
-            'type'           => 'nullable|string|in:manual,khalti',
-            'transaction_id' => 'nullable|string',
-            'remarks'        => 'nullable|string|max:255',
+            'amount' => 'required|numeric|min:1',
+            'method' => 'required|string|in:khalti,stripe',
+            'remarks' => 'nullable|string|max:255',
         ]);
 
         $user = $request->user();
 
-        $balanceIn = BalanceIn::create([
-            'user_id'        => $user->id,
-            'amount'         => $request->amount,
-            'type'           => $request->get('type', 'manual'),
-            'status'         => 'completed',
-            'gateway_name'   => $request->get('type', 'manual') === 'khalti' ? 'Khalti' : 'App Manual',
-            'transaction_id' => $request->transaction_id ?? 'TXN-' . strtoupper(uniqid()),
-            'remarks'        => $request->remarks ?? 'Top-up from app',
-            'created_by'     => $user->id,
+        if ($request->method === 'khalti' && $user->is_tourist) {
+            return apiResponse(false, 'Khalti is only available for local users. Please use Stripe.', null, 400);
+        }
+
+        if ($request->method === 'stripe' && !$user->is_tourist) {
+            return apiResponse(false, 'Stripe is only available for tourists. Please use Khalti.', null, 400);
+        }
+
+        if ($request->method === 'khalti') {
+            return $this->initiateKhalti($user, $request->amount, $request->remarks);
+        } else {
+            return $this->initiateStripe($user, $request->amount, $request->remarks);
+        }
+    }
+
+    private function initiateKhalti($user, $amount, $remarks)
+    {
+        $amountInPaisa = $amount * 100;
+        $purchaseOrderNo = 'TRANS_' . time() . '_' . $user->id;
+
+        $response = \Illuminate\Support\Facades\Http::withHeaders([
+            'Authorization' => 'Key ' . config('services.khalti.secret_key'),
+            'Content-Type' => 'application/json',
+        ])->post('https://a.khalti.com/api/v2/epayment/initiate/', [
+            'return_url' => route('khalti.verify'),
+            'website_url' => config('app.url'),
+            'amount' => $amountInPaisa,
+            'purchase_order_id' => $purchaseOrderNo,
+            'purchase_order_name' => 'Balance Topup',
+            'customer_info' => [
+                'name' => $user->name,
+                'email' => $user->email,
+            ]
         ]);
 
-        return apiResponse(true, __('messages.wallet_topup_success'), [
-            'transaction'     => $this->mapTopup($balanceIn),
-            'current_balance' => (float) $user->balance(),
+        if ($response->successful()) {
+            $data = $response->json();
+            
+            BalanceIn::create([
+                'user_id' => $user->id,
+                'amount' => $amount,
+                'type' => 'khalti',
+                'remarks' => $remarks ?? 'Khalti Topup Initiation',
+                'transaction_id' => $data['pidx'],
+                'status' => 'pending',
+                'gateway_name' => 'khalti',
+                'payload' => $data,
+            ]);
+
+            return apiResponse(true, 'Khalti payment initiated.', [
+                'payment_url' => $data['payment_url'],
+                'pidx' => $data['pidx']
+            ]);
+        }
+
+        return apiResponse(false, 'Failed to initiate Khalti payment.', null, 500);
+    }
+
+    private function initiateStripe($user, $amount, $remarks)
+    {
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+        $session = \Stripe\Checkout\Session::create([
+            'payment_method_types' => ['card'],
+            'line_items' => [[
+                'price_data' => [
+                    'currency' => 'usd',
+                    'product_data' => [
+                        'name' => 'Hitee Balance Topup',
+                    ],
+                    'unit_amount' => $amount * 100,
+                ],
+                'quantity' => 1,
+            ]],
+            'mode' => 'payment',
+            'success_url' => route('stripe.verify') . '?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => config('app.url'), // Frontend URL ideally
+            'client_reference_id' => $user->id,
+            'customer_email' => $user->email,
+        ]);
+
+        BalanceIn::create([
+            'user_id' => $user->id,
+            'amount' => $amount, 
+            'type' => 'stripe',
+            'remarks' => $remarks ?? 'Stripe Topup Initiation',
+            'transaction_id' => $session->id,
+            'status' => 'pending',
+            'gateway_name' => 'stripe',
+            'payload' => $session->toArray(),
+        ]);
+
+        return apiResponse(true, 'Stripe payment initiated.', [
+            'payment_url' => $session->url,
+            'session_id' => $session->id
         ]);
     }
 

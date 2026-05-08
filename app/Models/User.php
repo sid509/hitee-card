@@ -37,6 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'last_notified_at',
         'password',
         'status',
+        'is_tourist',
     ];
 
     protected $appends = ['avatar_url'];
@@ -98,6 +99,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'notification_enabled' => 'boolean',
             'last_notified_at' => 'datetime',
+            'is_tourist' => 'boolean',
         ];
     }
 
