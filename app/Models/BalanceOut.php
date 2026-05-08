@@ -23,6 +23,14 @@ class BalanceOut extends Model
         'created_by',
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+        'card_id' => 'integer',
+        'merchant_id' => 'integer',
+        'amount' => 'float',
+        'reference_id' => 'integer',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

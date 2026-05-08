@@ -65,8 +65,8 @@ class AuthController extends Controller
 
         $user = $token->tokenable;
 
-        if (!$user->hasRole('merchant')) {
-            return apiResponse(false, 'Unauthorized. Access restricted to merchants.', '', 403);
+        if (!$user->hasRole('merchant', 'staff')) {
+            return apiResponse(false, 'Unauthorized. Access restricted to merchants and staff.', '', 403);
         }
 
         // Check account activation status
@@ -182,8 +182,8 @@ class AuthController extends Controller
 
         // Optional: Check if user exists and has merchant role before sending
         $user = User::where('email', $request->email)->first();
-        if ($user && !$user->hasRole('merchant')) {
-            return apiResponse(false, 'Unauthorized. This email is not associated with a merchant account.', '', 403);
+        if ($user && !$user->hasRole('merchant', 'staff')) {
+            return apiResponse(false, 'Unauthorized. This email is not associated with a merchant or staff account.', '', 403);
         }
 
         $status = Password::sendResetLink($request->only('email'));

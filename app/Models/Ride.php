@@ -21,6 +21,16 @@ class Ride extends Model
         'status'
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+        'card_id' => 'integer',
+        'merchant_id' => 'integer',
+        'reference_id' => 'integer',
+        'tap_in_id' => 'integer',
+        'tap_out_id' => 'integer',
+        'fare_amount' => 'float',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

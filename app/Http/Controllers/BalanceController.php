@@ -158,17 +158,16 @@ class BalanceController extends Controller
     public function merchantTransactions(Request $request)
     {
         $user = auth()->user();
-        $merchantId = $user->id;
+        $merchantIds = array_merge([$user->id], $user->merchants->pluck('id')->toArray());
         
         if ($request->ajax()) {
             $query = MerchantIncome::with(['transaction.user', 'transaction.card']);
 
-            // If super admin and a specific asset is requested, don't limit by current user id
-            // This allows admin to see logs for buses/parkings they don't own
+            // If super admin and a specific asset is requested, don't limit by authorized ids
             if ($user->hasRole('super-admin') && $request->filled('reference_id') && $request->filled('reference_type')) {
                 // No merchant_id filter needed for admin viewing specific asset
             } else {
-                $query->where('merchant_id', $merchantId);
+                $query->whereIn('merchant_id', $merchantIds);
             }
 
             if ($request->filled('reference_id')) {
@@ -214,10 +213,11 @@ class BalanceController extends Controller
      */
     public function merchantWithdrawals(Request $request)
     {
-        $merchantId = auth()->id();
+        $user = auth()->user();
+        $merchantIds = array_merge([$user->id], $user->merchants->pluck('id')->toArray());
         
         if ($request->ajax()) {
-            $data = MerchantWithdrawal::where('merchant_id', $merchantId)
+            $data = MerchantWithdrawal::whereIn('merchant_id', $merchantIds)
                 ->select(['merchant_withdrawals.*'])
                 ->orderBy('created_at', 'desc');
 

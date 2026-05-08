@@ -23,6 +23,12 @@ class BalanceIn extends Model
         'status',
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+        'card_id' => 'integer',
+        'amount' => 'float',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

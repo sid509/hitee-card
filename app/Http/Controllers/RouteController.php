@@ -20,6 +20,15 @@ class RouteController extends Controller
                 $query->whereHas('buses', function($q) {
                     $q->where('merchant_id', auth()->id());
                 });
+            } elseif (auth()->user()->hasRole('staff')) {
+                $user = auth()->user();
+                $merchantIds = $user->merchants->pluck('id');
+                $query->whereHas('buses', function($q) use ($merchantIds, $user) {
+                    $q->whereIn('merchant_id', $merchantIds)
+                      ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                          $sq->where('user_id', $user->id);
+                      });
+                });
             }
 
             return DataTables::of($query)
@@ -30,6 +39,14 @@ class RouteController extends Controller
                     
                     if ($user->hasRole('merchant')) {
                         $busesQuery->where('merchant_id', $user->id);
+                    } elseif ($user->hasRole('staff')) {
+                        $merchantIds = $user->merchants->pluck('id');
+                        $busesQuery->where(function($q) use ($merchantIds, $user) {
+                            $q->whereIn('merchant_id', $merchantIds)
+                              ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                                  $sq->where('user_id', $user->id);
+                              });
+                        });
                     }
                     
                     $buses = $busesQuery->get();

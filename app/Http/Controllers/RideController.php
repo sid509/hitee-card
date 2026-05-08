@@ -39,15 +39,17 @@ class RideController extends Controller
                 $query->where('merchant_id', auth()->id());
             } elseif (auth()->user()->hasRole('staff')) {
                 $user = auth()->user();
+                $merchantIds = $user->merchants->pluck('id');
                 $assignedBusIds = $user->assignedBuses->pluck('id');
                 $assignedParkingIds = $user->assignedParkings->pluck('id');
                 
-                $query->where(function($q) use ($assignedBusIds, $assignedParkingIds) {
-                    $q->where(function($sq) use ($assignedBusIds) {
-                        $sq->where('reference_type', 'App\Models\Bus')->whereIn('reference_id', $assignedBusIds);
-                    })->orWhere(function($sq) use ($assignedParkingIds) {
-                        $sq->where('reference_type', 'App\Models\Parking')->whereIn('reference_id', $assignedParkingIds);
-                    });
+                $query->where(function($q) use ($merchantIds, $assignedBusIds, $assignedParkingIds) {
+                    $q->whereIn('merchant_id', $merchantIds)
+                      ->orWhere(function($sq) use ($assignedBusIds) {
+                          $sq->where('reference_type', 'App\Models\Bus')->whereIn('reference_id', $assignedBusIds);
+                      })->orWhere(function($sq) use ($assignedParkingIds) {
+                          $sq->where('reference_type', 'App\Models\Parking')->whereIn('reference_id', $assignedParkingIds);
+                      });
                 });
             }
 
@@ -137,15 +139,17 @@ class RideController extends Controller
                 $query->where('merchant_id', auth()->id());
             } elseif (auth()->user()->hasRole('staff')) {
                 $user = auth()->user();
+                $merchantIds = $user->merchants->pluck('id');
                 $assignedBusIds = $user->assignedBuses->pluck('id');
                 $assignedParkingIds = $user->assignedParkings->pluck('id');
                 
-                $query->where(function($q) use ($assignedBusIds, $assignedParkingIds) {
-                    $q->where(function($sq) use ($assignedBusIds) {
-                        $sq->where('reference_type', 'App\Models\Bus')->whereIn('reference_id', $assignedBusIds);
-                    })->orWhere(function($sq) use ($assignedParkingIds) {
-                        $sq->where('reference_type', 'App\Models\Parking')->whereIn('reference_id', $assignedParkingIds);
-                    });
+                $query->where(function($q) use ($merchantIds, $assignedBusIds, $assignedParkingIds) {
+                    $q->whereIn('merchant_id', $merchantIds)
+                      ->orWhere(function($sq) use ($assignedBusIds) {
+                          $sq->where('reference_type', 'App\Models\Bus')->whereIn('reference_id', $assignedBusIds);
+                      })->orWhere(function($sq) use ($assignedParkingIds) {
+                          $sq->where('reference_type', 'App\Models\Parking')->whereIn('reference_id', $assignedParkingIds);
+                      });
                 });
             }
 

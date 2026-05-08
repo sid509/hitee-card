@@ -22,6 +22,16 @@ class Tap extends Model
         'longitude'
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+        'card_id' => 'integer',
+        'merchant_id' => 'integer',
+        'reference_id' => 'integer',
+        'stop_id' => 'integer',
+        'latitude' => 'float',
+        'longitude' => 'float',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

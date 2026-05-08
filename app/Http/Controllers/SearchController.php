@@ -51,6 +51,14 @@ class SearchController extends Controller
 
         if ($user->hasRole('merchant')) {
             $busesQuery->where('merchant_id', $user->id);
+        } elseif ($user->hasRole('staff')) {
+            $merchantIds = $user->merchants->pluck('id');
+            $busesQuery->where(function($q) use ($merchantIds, $user) {
+                $q->whereIn('merchant_id', $merchantIds)
+                  ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                      $sq->where('user_id', $user->id);
+                  });
+            });
         }
 
         $buses = $busesQuery->limit(5)->get();
@@ -71,6 +79,14 @@ class SearchController extends Controller
 
         if ($user->hasRole('merchant')) {
             $parkingsQuery->where('merchant_id', $user->id);
+        } elseif ($user->hasRole('staff')) {
+            $merchantIds = $user->merchants->pluck('id');
+            $parkingsQuery->where(function($q) use ($merchantIds, $user) {
+                $q->whereIn('merchant_id', $merchantIds)
+                  ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                      $sq->where('user_id', $user->id);
+                  });
+            });
         }
 
         $parkings = $parkingsQuery->limit(5)->get();
@@ -193,7 +209,13 @@ class SearchController extends Controller
             } elseif ($user->hasRole('merchant')) {
                 $query->where('merchant_id', $user->id);
             } elseif ($user->hasRole('staff')) {
-                $query->whereIn('id', $user->assignedBuses->pluck('id'));
+                $merchantIds = $user->merchants->pluck('id');
+                $query->where(function($q) use ($merchantIds, $user) {
+                    $q->whereIn('merchant_id', $merchantIds)
+                      ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                          $sq->where('user_id', $user->id);
+                      });
+                });
             }
 
             if ($search) $query->where('name', 'LIKE', "%$search%")->orWhere('bus_number', 'LIKE', "%$search%");
@@ -210,7 +232,13 @@ class SearchController extends Controller
             } elseif ($user->hasRole('merchant')) {
                 $query->where('merchant_id', $user->id);
             } elseif ($user->hasRole('staff')) {
-                $query->whereIn('id', $user->assignedParkings->pluck('id'));
+                $merchantIds = $user->merchants->pluck('id');
+                $query->where(function($q) use ($merchantIds, $user) {
+                    $q->whereIn('merchant_id', $merchantIds)
+                      ->orWhereHas('assignedStaff', function($sq) use ($user) {
+                          $sq->where('user_id', $user->id);
+                      });
+                });
             }
 
             if ($search) $query->where('name', 'LIKE', "%$search%")->orWhere('location', 'LIKE', "%$search%");
