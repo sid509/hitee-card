@@ -21,7 +21,13 @@ class CardController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Card::with('user')->latest();
+            $query = Card::with('user');
+
+            if (auth()->user()->hasRole('customers')) {
+                $query->where('user_id', auth()->id());
+            }
+
+            $query->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -130,12 +136,22 @@ class CardController extends Controller
         return view('modules.cards.show', compact('card', 'recentTaps', 'recentRides', 'balanceLogs'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
+        
         $card = new Card();
+        $application = null;
+
+        if ($request->filled('application_id')) {
+            $application = \App\Models\CardApplication::find($request->application_id);
+            if ($application) {
+                $card->user_id = $application->user_id;
+            }
+        }
+
         $users = User::whereHas('roles', function($q){ $q->where('slug', 'customers'); })->get();
-        return view('modules.cards.create', compact('card', 'users'));
+        return view('modules.cards.create', compact('card', 'users', 'application'));
     }
 
     /**
@@ -153,7 +169,25 @@ class CardController extends Controller
             Card::where('user_id', $request->user_id)->update(['is_currently_active' => false]);
         }
 
-        Card::create($data);
+        $card = Card::create($data);
+
+        // Process application if exists
+        if ($request->filled('application_id')) {
+            $application = \App\Models\CardApplication::find($request->application_id);
+            if ($application) {
+                $application->update([
+                    'status' => 'approved',
+                    'card_id' => $card->id,
+                    'processed_at' => now(),
+                    'admin_remarks' => 'Card issued via management dashboard: ' . $request->get('remarks', '')
+                ]);
+
+                logActivity('card_application_processed', "Card application approved and issued", [
+                    'application_id' => $application->id,
+                    'card_number' => $card->card_number
+                ]);
+            }
+        }
 
         return redirect()->route('cards.index')->with('success', 'Card issued successfully.');
     }

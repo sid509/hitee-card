@@ -193,6 +193,7 @@
     </div>
 
     @include('layouts.partials.support-modal')
+    @include('layouts.partials.financial-modals')
 
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

@@ -12,6 +12,11 @@
         <h5 class="mb-0">Cards List</h5>
         <div class="d-flex gap-2">
             @if(auth()->user()->hasRole('super-admin'))
+            @if(isset($pendingCardApplicationsCount) && $pendingCardApplicationsCount > 0)
+            <a href="{{ route('card-applications.index') }}" class="btn btn-label-danger btn-sm">
+                <i class="bx bx-error-circle me-1"></i> {{ $pendingCardApplicationsCount }} Pending Requests
+            </a>
+            @endif
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button" id="bulkActions" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bx bx-check-square me-1"></i> Bulk Actions
@@ -21,10 +26,19 @@
                     <li><a class="dropdown-item bulk-status-change" href="javascript:void(0);" data-status="inactive">Deactivate Selected</a></li>
                 </ul>
             </div>
-            @endif
             <a href="{{ route('cards.create') }}" class="btn btn-primary btn-sm">
                 <i class="bx bx-plus me-1"></i> Issue New Card
             </a>
+            @endif
+
+            @if(auth()->user()->hasRole('customers'))
+            <a href="{{ route('card-applications.index') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bx bx-list-ul me-1"></i> My Applications
+            </a>
+            <a href="{{ route('card-applications.create') }}" class="btn btn-primary btn-sm">
+                <i class="bx bx-plus me-1"></i> Apply for New Card
+            </a>
+            @endif
         </div>
     </div>
     <div class="card-body">
@@ -131,6 +145,9 @@
             
             order: [[7, 'desc']],
             ajax: "{{ route('cards.index') }}",
+            language: {
+                emptyTable: "{{ auth()->user()->hasRole('customers') ? 'You do not have any cards. Click \'Apply for New Card\' to get one.' : 'No cards found in the system.' }}"
+            },
             columnDefs: [
                 {
                     targets: [0, 1, 6, 8],

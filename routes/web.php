@@ -25,6 +25,7 @@ use App\Http\Controllers\RideController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\CardApplicationController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\LogController;
 use App\Models\User;
@@ -260,6 +261,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('parkings', ParkingController::class);
     Route::resource('cards', CardController::class);
     Route::post('/cards/{card}/request-change', [CardController::class, 'requestChange'])->name('cards.request-change');
+    Route::resource('card-applications', CardApplicationController::class);
 
     // Support
     Route::post('/support/send', [SupportController::class, 'send'])->name('support.send');

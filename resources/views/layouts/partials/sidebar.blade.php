@@ -157,6 +157,21 @@
             </a>
         </li>
 
+        @if(auth()->user()->hasRole('customers'))
+        <li class="menu-item">
+            <a href="javascript:void(0);" class="menu-link" data-bs-toggle="modal" data-bs-target="{{ auth()->user()->is_tourist ? '#stripeTopupModal' : '#khaltiTopupModal' }}">
+                <i class="menu-icon tf-icons bx bx-plus-circle"></i>
+                <div class="text-truncate">Add Balance</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('cards.index') ? 'active' : '' }}">
+            <a href="{{ route('cards.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-credit-card"></i>
+                <div class="text-truncate">My Cards</div>
+            </a>
+        </li>
+        @endif
+
         <!-- Administration Group -->
         @if(auth()->user()->hasRole('super-admin'))
         <li class="menu-header small text-uppercase">
@@ -184,6 +199,16 @@
                         <div class="text-truncate">{{ __('messages.cards') }}</div>
                     </a>
                 </li>
+                @if(auth()->user()->hasRole('super-admin'))
+                <li class="menu-item {{ request()->routeIs('card-applications.*') ? 'active' : '' }}">
+                    <a href="{{ route('card-applications.index') }}" class="menu-link d-flex justify-content-between align-items-center">
+                        <div class="text-truncate">Card Requests</div>
+                        @if(isset($pendingCardApplicationsCount) && $pendingCardApplicationsCount > 0)
+                            <span class="badge badge-center rounded-pill bg-danger" style="width: 1.5rem; height: 1.5rem;">{{ $pendingCardApplicationsCount }}</span>
+                        @endif
+                    </a>
+                </li>
+                @endif
                 <li class="menu-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
                     <a href="{{ route('roles.index') }}" class="menu-link">
                         <div class="text-truncate">{{ __('messages.roles') }}</div>

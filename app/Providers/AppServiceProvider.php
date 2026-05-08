@@ -11,6 +11,7 @@ use Dedoc\Scramble\Support\Generator\SecurityScheme;
 
 use Illuminate\Support\Facades\View;
 use App\Models\SupportRequest;
+use App\Models\CardApplication;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -68,6 +69,7 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
             if (auth()->check() && auth()->user()->hasRole('super-admin')) {
                 $view->with('openSupportCount', SupportRequest::where('status', 'open')->count());
+                $view->with('pendingCardApplicationsCount', CardApplication::where('status', 'pending')->count());
             }
         });
     }

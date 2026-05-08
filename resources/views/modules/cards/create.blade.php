@@ -14,8 +14,20 @@
                 <h5 class="mb-0">Issue New Card</h5>
             </div>
             <div class="card-body">
+                @if(isset($application))
+                <div class="alert alert-info d-flex align-items-center mb-4">
+                    <i class="bx bx-info-circle me-2"></i>
+                    <div>
+                        Processing application for <strong>{{ $application->user->name }}</strong>. 
+                        Card Type: <span class="badge bg-label-primary">{{ ucfirst($application->type) }}</span>
+                    </div>
+                </div>
+                @endif
                 <form action="{{ route('cards.store') }}" method="POST">
                     @csrf
+                    @if(isset($application))
+                        <input type="hidden" name="application_id" value="{{ $application->id }}">
+                    @endif
                     @include('modules.cards.main-form')
                 </form>
             </div>

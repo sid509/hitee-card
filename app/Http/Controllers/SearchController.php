@@ -18,6 +18,20 @@ class SearchController extends Controller
     public function global(Request $request)
     {
         $q = $request->get('q');
+        $type = $request->get('type');
+
+        // Handle specific type search
+        if ($type === 'unassigned_cards') {
+            $cards = Card::whereNull('user_id')
+                ->where(function($query) use ($q) {
+                    $query->where('card_number', 'LIKE', "%$q%")
+                          ->orWhere('hwid', 'LIKE', "%$q%");
+                })
+                ->limit(20)
+                ->get();
+            return response()->json($cards);
+        }
+
         if (!$q || strlen($q) < 2) return response()->json([]);
 
         $user = auth()->user();
