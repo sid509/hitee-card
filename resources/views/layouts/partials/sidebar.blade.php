@@ -28,89 +28,8 @@
                 <div class="text-truncate">{{ __('messages.system_audit') }}</div>
             </a>
         </li>
-        @endif
-
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">{{ __('messages.operations') }}</span>
-        </li>
-        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff', 'customers'))
-        <li class="menu-item {{ request()->routeIs('rides.index', 'rides.tap-ledger') ? 'active open' : '' }}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-git-commit"></i>
-                <div class="text-truncate">{{ __('messages.journeys') }}</div>
-            </a>
-            <ul class="menu-sub">
-                <li class="menu-item {{ request()->routeIs('rides.index') ? 'active' : '' }}">
-                    <a href="{{ route('rides.index') }}" class="menu-link">
-                        <div class="text-truncate">{{ __('messages.rides_ledger') }}</div>
-                    </a>
-                </li>
-                <li class="menu-item {{ request()->routeIs('rides.tap-ledger') ? 'active' : '' }}">
-                    <a href="{{ route('rides.tap-ledger') }}" class="menu-link">
-                        <div class="text-truncate">{{ __('messages.raw_taps') }}</div>
-                    </a>
-                </li>
-            </ul>
-        </li>
-        @endif
-
-        @if(auth()->user()->hasRole('merchant'))
-        <li class="menu-item {{ request()->routeIs('staff.*') ? 'active' : '' }}">
-            <a href="{{ route('staff.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-group"></i>
-                <div class="text-truncate">{{ __('messages.staff') }}</div>
-            </a>
-        </li>
-        @endif
-
-        <!-- Fleet & Infrastructure -->
-        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">{{ __('messages.fleet_infrastructure') }}</span>
-        </li>
-        <li class="menu-item {{ request()->routeIs('buses.*') ? 'active' : '' }}">
-            <a href="{{ route('buses.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-bus"></i>
-                <div class="text-truncate">{{ __('messages.buses') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('parkings.*') ? 'active' : '' }}">
-            <a href="{{ route('parkings.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bxs-parking"></i>
-                <div class="text-truncate">{{ __('messages.parkings') }}</div>
-            </a>
-        </li>
-        @if(!auth()->user()->hasRole('staff'))
-        <li class="menu-item {{ request()->routeIs('routes.*', 'fares.*', 'stops.*') ? 'active open' : '' }}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-map-alt"></i>
-                <div class="text-truncate">{{ __('messages.network') }}</div>
-            </a>
-            <ul class="menu-sub">
-                <li class="menu-item {{ request()->routeIs('routes.*') ? 'active' : '' }}">
-                    <a href="{{ route('routes.index') }}" class="menu-link">
-                        <div class="text-truncate">{{ __('messages.routes') }}</div>
-                    </a>
-                </li>
-                <li class="menu-item {{ request()->routeIs('fares.*') ? 'active' : '' }}">
-                    <a href="{{ route('fares.index') }}" class="menu-link">
-                        <div class="text-truncate">{{ __('messages.fares') }}</div>
-                    </a>
-                </li>
-                @if(auth()->user()->hasRole('super-admin'))
-                <li class="menu-item {{ request()->routeIs('stops.*') ? 'active' : '' }}">
-                    <a href="{{ route('stops.index') }}" class="menu-link">
-                        <div class="text-truncate">{{ __('messages.stops') }}</div>
-                    </a>
-                </li>
-                @endif
-            </ul>
-        </li>
-        @endif
-        @endif
 
         <!-- Administration Group -->
-        @if(auth()->user()->hasRole('super-admin'))
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">{{ __('messages.administration') }}</span>
         </li>
@@ -136,7 +55,6 @@
                         <div class="text-truncate">{{ __('messages.cards') }}</div>
                     </a>
                 </li>
-                @if(auth()->user()->hasRole('super-admin'))
                 <li class="menu-item {{ request()->routeIs('card-applications.*') ? 'active' : '' }}">
                     <a href="{{ route('card-applications.index') }}" class="menu-link d-flex justify-content-between align-items-center">
                         <div class="text-truncate">Card Requests</div>
@@ -145,7 +63,6 @@
                         @endif
                     </a>
                 </li>
-                @endif
                 <li class="menu-item {{ request()->routeIs('roles.*') ? 'active' : '' }}">
                     <a href="{{ route('roles.index') }}" class="menu-link">
                         <div class="text-truncate">{{ __('messages.roles') }}</div>
