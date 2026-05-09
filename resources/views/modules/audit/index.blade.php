@@ -102,5 +102,24 @@
             </div>
         </div>
     </div>
+
+    <!-- Card Requests -->
+    <div class="col-sm-6 col-lg-3 mb-4">
+        <div class="card card-border-shadow-primary h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2 pb-1">
+                    <div class="avatar me-2">
+                        <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-credit-card-front"></i></span>
+                    </div>
+                    <h4 class="ms-1 mb-0">{{ $pendingCardApplicationsCount ?? 0 }}</h4>
+                </div>
+                <p class="mb-1">Card Requests</p>
+                <p class="mb-0">
+                    <small class="text-muted">Pending card applications</small>
+                </p>
+                <a href="{{ route('card-applications.index') }}" class="btn btn-sm btn-link px-0 mt-2">View List</a>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
