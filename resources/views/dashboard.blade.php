@@ -6,6 +6,26 @@
 <style>
     .map-container { border: 1px solid #dee2e6; }
     .nearby-badge { position: absolute; top: 10px; right: 10px; z-index: 1000; }
+    .fullscreen-map {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1099;
+        margin: 0 !important;
+        background: white;
+    }
+    .fullscreen-map .card {
+        height: 100%;
+        border-radius: 0;
+    }
+    .fullscreen-map #fleet-map {
+        height: calc(100vh - 120px) !important;
+    }
+    .dark-style .fullscreen-map {
+        background: #232333;
+    }
 </style>
 @endpush
 
@@ -374,13 +394,13 @@
                 }
 
                 $('#toggleMapSize').on('click', function() {
-                    const container = $('#fleet-map');
-                    if (container.height() === 450) {
-                        container.height(800);
-                        $(this).html('<i class="bx bx-exit-fullscreen"></i> Shrink Map');
-                    } else {
-                        container.height(450);
+                    const wrapper = $('#fleet-map-container');
+                    if (wrapper.hasClass('fullscreen-map')) {
+                        wrapper.removeClass('fullscreen-map');
                         $(this).html('<i class="bx bx-fullscreen"></i> Toggle Fullscreen');
+                    } else {
+                        wrapper.addClass('fullscreen-map');
+                        $(this).html('<i class="bx bx-exit-fullscreen"></i> Exit Fullscreen');
                     }
                     setTimeout(() => { fleetMap.invalidateSize(); }, 300);
                 });
