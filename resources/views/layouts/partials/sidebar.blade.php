@@ -98,29 +98,6 @@
                 <div class="text-truncate">{{ __('messages.banners') }}</div>
             </a>
         </li>
-
-        <!-- System Settings -->
-        <li class="menu-header small text-uppercase">
-            <span class="menu-header-text">{{ __('messages.system') }}</span>
-        </li>
-        <li class="menu-item {{ request()->routeIs('parking-attributes.*') ? 'active' : '' }}">
-            <a href="{{ route('parking-attributes.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-list-check"></i>
-                <div class="text-truncate">{{ __('messages.parking_attributes') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-            <a href="{{ route('settings.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-cog"></i>
-                <div class="text-truncate">{{ __('messages.settings') }}</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('logs.*') ? 'active' : '' }}">
-            <a href="{{ route('logs.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-terminal"></i>
-                <div class="text-truncate">{{ __('messages.server_logs') }}</div>
-            </a>
-        </li>
         @endif
 
         <li class="menu-header small text-uppercase">
@@ -261,6 +238,31 @@
             <a href="{{ route('cards.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-credit-card"></i>
                 <div class="text-truncate">My Cards</div>
+            </a>
+        </li>
+        @endif
+
+        <!-- System Settings -->
+        @if(auth()->user()->hasRole('super-admin'))
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">{{ __('messages.system') }}</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('parking-attributes.*') ? 'active' : '' }}">
+            <a href="{{ route('parking-attributes.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-list-check"></i>
+                <div class="text-truncate">{{ __('messages.parking_attributes') }}</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+            <a href="{{ route('settings.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-cog"></i>
+                <div class="text-truncate">{{ __('messages.settings') }}</div>
+            </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+            <a href="{{ route('logs.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-terminal"></i>
+                <div class="text-truncate">{{ __('messages.server_logs') }}</div>
             </a>
         </li>
         @endif
