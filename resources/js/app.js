@@ -8,14 +8,14 @@ import DataTable from 'datatables.net-bs5';
 import 'datatables.net-responsive-bs5';
 
 // Set Globals
-window.$ = window.jQuery = jQuery;
+window.jQuery = window.$ = jQuery;
 window.Popper = Popper;
 window.bootstrap = bootstrap;
 window.PerfectScrollbar = PerfectScrollbar;
 window.DataTable = DataTable;
 
 // Set DataTables Defaults
-$.extend(true, $.fn.dataTable.defaults, {
+jQuery.extend(true, jQuery.fn.dataTable.defaults, {
     stateSave: false,
     stateSaveCallback: function(settings, data) {
         const page = Math.floor(data.start / data.length) + 1;

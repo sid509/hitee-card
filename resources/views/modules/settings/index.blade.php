@@ -156,6 +156,29 @@
                                 <input type="text" class="form-control" name="khalti_public_key" value="{{ $settings['khalti_public_key'] ?? '' }}">
                             </div>
                         </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Stripe Secret Key</label>
+                                <input type="password" class="form-control" name="stripe_secret_key" value="{{ $settings['stripe_secret_key'] ?? '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Stripe Publishable Key</label>
+                                <input type="text" class="form-control" name="stripe_publishable_key" value="{{ $settings['stripe_publishable_key'] ?? '' }}">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Stripe Currency (lowercase, e.g. usd, inr, npr)</label>
+                                <input type="text" class="form-control" name="stripe_currency" value="{{ $settings['stripe_currency'] ?? 'usd' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Khalti Mode</label>
+                                <select class="form-select" name="khalti_mode">
+                                    <option value="test" {{ ($settings['khalti_mode'] ?? '') == 'test' ? 'selected' : '' }}>Test</option>
+                                    <option value="live" {{ ($settings['khalti_mode'] ?? '') == 'live' ? 'selected' : '' }}>Live</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="mt-4">
                             <button type="submit" class="btn btn-primary shadow">Save Payment Settings</button>
                         </div>

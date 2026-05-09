@@ -210,7 +210,7 @@ class WalletController extends Controller
             'payment_method_types' => ['card'],
             'line_items' => [[
                 'price_data' => [
-                    'currency' => 'usd',
+                    'currency' => config('services.stripe.currency', 'usd'),
                     'product_data' => [
                         'name' => 'Hitee Balance Topup',
                     ],
@@ -219,6 +219,25 @@ class WalletController extends Controller
                 'quantity' => 1,
             ]],
             'mode' => 'payment',
+            'billing_address_collection' => 'required',
+            'payment_intent_data' => [
+                'description' => 'Hitee Platform Balance Topup - User ID: ' . $user->id,
+                'metadata' => [
+                    'user_id' => $user->id,
+                    'type' => 'balance_topup'
+                ],
+                // Shipping info is often required by Stripe India for export of services
+                'shipping' => [
+                    'name' => $user->name,
+                    'address' => [
+                        'line1' => 'International Customer',
+                        'city' => 'International',
+                        'state' => 'International',
+                        'postal_code' => '00000',
+                        'country' => 'US', // Default placeholder, user will fill real billing during checkout
+                    ],
+                ],
+            ],
             'success_url' => route('stripe.verify') . '?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => config('app.url'), // Frontend URL ideally
             'client_reference_id' => $user->id,

@@ -146,11 +146,12 @@ Route::middleware(['auth'])->group(function () {
 
         $busCount = (clone $busesQuery)->count();
         $parkingCount = (clone $parkingsQuery)->count();
+        $openSupportCount = \App\Models\SupportRequest::where('status', 'open')->count();
 
         $buses = $busesQuery->with(['route.stops'])->get(['id', 'name', 'bus_number', 'latitude', 'longitude', 'route_id']);
         $parkings = $parkingsQuery->get(['id', 'name', 'location', 'latitude', 'longitude']);
 
-        return view('dashboard', compact('userCount', 'busCount', 'parkingCount', 'cardCount', 'transactionCount', 'buses', 'parkings'));
+        return view('dashboard', compact('userCount', 'busCount', 'parkingCount', 'cardCount', 'transactionCount', 'buses', 'parkings', 'openSupportCount'));
     })->name('dashboard');
 
     // Profile Management

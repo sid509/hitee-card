@@ -241,158 +241,162 @@
             });
         };
 
-        $(function() {
-            // Display session messages
-            @if(session('success'))
-                showAlert("{{ session('success') }}", 'success', 'Success');
-            @endif
-            @if(session('error'))
-                showAlert("{{ session('error') }}", 'error', 'Error');
-            @endif
-            @if(session('info'))
-                showAlert("{{ session('info') }}", 'info', 'Info');
-            @endif
-            @if(session('warning'))
-                showAlert("{{ session('warning') }}", 'warning', 'Warning');
-            @endif
+        document.addEventListener('DOMContentLoaded', function() {
+            const jQuery = window.jQuery;
+            if (jQuery) {
+                const $ = jQuery;
+                // Display session messages
+                @if(session('success'))
+                    if (window.showAlert) showAlert("{{ session('success') }}", 'success', 'Success');
+                @endif
+                @if(session('error'))
+                    if (window.showAlert) showAlert("{{ session('error') }}", 'error', 'Error');
+                @endif
+                @if(session('info'))
+                    if (window.showAlert) showAlert("{{ session('info') }}", 'info', 'Info');
+                @endif
+                @if(session('warning'))
+                    if (window.showAlert) showAlert("{{ session('warning') }}", 'warning', 'Warning');
+                @endif
 
-            const btnSend = $('#btnSendSupport');
-            const supportForm = $('#quickSupportForm');
+                const btnSend = $('#btnSendSupport');
+                const supportForm = $('#quickSupportForm');
 
-            // Spotlight Logic
-            const modalEl = document.getElementById('spotlightModal');
-            if (modalEl) {
-                const spotlightModal = new bootstrap.Modal(modalEl);
-                const input = $('#spotlight-input');
-                const results = $('#spotlight-results');
-                let debounceTimer;
+                // Spotlight Logic
+                const modalEl = document.getElementById('spotlightModal');
+                if (modalEl) {
+                    const spotlightModal = new bootstrap.Modal(modalEl);
+                    const input = $('#spotlight-input');
+                    const results = $('#spotlight-results');
+                    let debounceTimer;
 
-                $('#spotlight-trigger').on('click', () => spotlightModal.show());
+                    $('#spotlight-trigger').on('click', () => spotlightModal.show());
 
-                $(document).on('keydown', function(e) {
-                    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                        e.preventDefault();
-                        spotlightModal.show();
-                    }
-                });
-
-                modalEl.addEventListener('shown.bs.modal', () => input.focus());
-                
-                modalEl.addEventListener('hidden.bs.modal', () => {
-                    input.val('');
-                    results.html('<div class="text-center py-5 text-muted"><i class="bx bx-search-alt fs-1 mb-2"></i><p>Search for anything...</p></div>');
-                });
-
-                input.on('input', function() {
-                    clearTimeout(debounceTimer);
-                    const q = $(this).val();
-
-                    if (q.length < 2) {
-                        results.html('<div class="text-center py-5 text-muted"><i class="bx bx-search-alt fs-1 mb-2"></i><p>Search for anything...</p></div>');
-                        return;
-                    }
-
-                    results.html('<div class="text-center py-5"><span class="spinner-border text-primary"></span></div>');
-
-                    debounceTimer = setTimeout(() => {
-                        $.get("{{ route('search.global') }}", { q: q }, function(data) {
-                            if (Object.keys(data).length === 0) {
-                                results.html('<div class="text-center py-5 text-muted"><i class="bx bx-confused fs-1 mb-2"></i><p>No results found for "' + q + '"</p></div>');
-                                return;
-                            }
-
-                            let html = '';
-                            for (const category in data) {
-                                html += `<div class="category-header">${category}</div>`;
-                                data[category].forEach(item => {
-                                    html += `
-                                        <a href="${item.url}" class="result-item">
-                                            <div class="result-icon"><i class="bx ${item.icon}"></i></div>
-                                            <div class="result-meta">
-                                                <span class="result-title">${item.title}</span>
-                                                <span class="result-subtitle">${item.subtitle}</span>
-                                            </div>
-                                            <i class="bx bx-chevron-right text-muted"></i>
-                                        </a>
-                                    `;
-                                });
-                            }
-                            results.html(html);
-                        });
-                    }, 300);
-                });
-            }
-
-            $(document).on('click', '.delete-btn', function(e) {
-                e.preventDefault();
-                const form = $(this).closest('form');
-
-                showConfirm('Are you sure?', 'You won\'t be able to revert this!', 'Yes, delete it!')
-                    .then((result) => {
-                        if (result.isConfirmed) {
-                            form.submit();
+                    $(document).on('keydown', function(e) {
+                        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                            e.preventDefault();
+                            spotlightModal.show();
                         }
                     });
-            });
 
-            $('.select2-ajax-merchant').each(function() {
-                $(this).select2({
-                    ajax: {
-                        url: "{{ route('search.merchants') }}",
-                        dataType: 'json',
-                        delay: 250,
-                        data: params => ({ q: params.term, page: params.page }),
-                        processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
-                        cache: true
-                    },
-                    placeholder: 'Search Merchant...',
-                    allowClear: true,
-                    width: '100%',
-                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
-                });
-            });
+                    modalEl.addEventListener('shown.bs.modal', () => input.focus());
+                    
+                    modalEl.addEventListener('hidden.bs.modal', () => {
+                        input.val('');
+                        results.html('<div class="text-center py-5 text-muted"><i class="bx bx-search-alt fs-1 mb-2"></i><p>Search for anything...</p></div>');
+                    });
 
-            $('.select2-users').each(function() {
-                $(this).select2({
-                    ajax: {
-                        url: "{{ route('search.users') }}",
-                        dataType: 'json',
-                        delay: 250,
-                        data: params => ({ q: params.term, page: params.page }),
-                        processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
-                        cache: true
-                    },
-                    placeholder: 'Search Customer...',
-                    allowClear: true,
-                    width: '100%',
-                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
-                });
-            });
+                    input.on('input', function() {
+                        clearTimeout(debounceTimer);
+                        const q = $(this).val();
 
-            supportForm.on('submit', function(e) {
-                e.preventDefault();
-                btnSend.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Sending...');
-                $.ajax({
-                    url: "{{ route('support.send') }}",
-                    method: "POST",
-                    data: $(this).serialize(),
-                    success: function(response) {
-                        supportForm[0].reset();
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('supportModal'));
-                        if (modal) modal.hide();
-                        setTimeout(() => {
-                            showAlert(response.message || 'Support request sent successfully');
-                        }, 500);
-                    },
-                    error: function(xhr) {
-                        const msg = xhr.responseJSON?.message || 'Failed to send support request';
-                        showAlert(msg, 'error');
-                    },
-                    complete: function() {
-                        btnSend.prop('disabled', false).text('Send Message');
-                    }
+                        if (q.length < 2) {
+                            results.html('<div class="text-center py-5 text-muted"><i class="bx bx-search-alt fs-1 mb-2"></i><p>Search for anything...</p></div>');
+                            return;
+                        }
+
+                        results.html('<div class="text-center py-5"><span class="spinner-border text-primary"></span></div>');
+
+                        debounceTimer = setTimeout(() => {
+                            $.get("{{ route('search.global') }}", { q: q }, function(data) {
+                                if (Object.keys(data).length === 0) {
+                                    results.html('<div class="text-center py-5 text-muted"><i class="bx bx-confused fs-1 mb-2"></i><p>No results found for "' + q + '"</p></div>');
+                                    return;
+                                }
+
+                                let html = '';
+                                for (const category in data) {
+                                    html += `<div class="category-header">${category}</div>`;
+                                    data[category].forEach(item => {
+                                        html += `
+                                            <a href="${item.url}" class="result-item">
+                                                <div class="result-icon"><i class="bx ${item.icon}"></i></div>
+                                                <div class="result-meta">
+                                                    <span class="result-title">${item.title}</span>
+                                                    <span class="result-subtitle">${item.subtitle}</span>
+                                                </div>
+                                                <i class="bx bx-chevron-right text-muted"></i>
+                                            </a>
+                                        `;
+                                    });
+                                }
+                                results.html(html);
+                            });
+                        }, 300);
+                    });
+                }
+
+                $(document).on('click', '.delete-btn', function(e) {
+                    e.preventDefault();
+                    const form = $(this).closest('form');
+
+                    showConfirm('Are you sure?', 'You won\'t be able to revert this!', 'Yes, delete it!')
+                        .then((result) => {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
                 });
-            });
+
+                $('.select2-ajax-merchant').each(function() {
+                    $(this).select2({
+                        ajax: {
+                            url: "{{ route('search.merchants') }}",
+                            dataType: 'json',
+                            delay: 250,
+                            data: params => ({ q: params.term, page: params.page }),
+                            processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                            cache: true
+                        },
+                        placeholder: 'Search Merchant...',
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
+                    });
+                });
+
+                $('.select2-users').each(function() {
+                    $(this).select2({
+                        ajax: {
+                            url: "{{ route('search.users') }}",
+                            dataType: 'json',
+                            delay: 250,
+                            data: params => ({ q: params.term, page: params.page }),
+                            processResults: (data, params) => ({ results: data.results, pagination: { more: data.pagination.more } }),
+                            cache: true
+                        },
+                        placeholder: 'Search Customer...',
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
+                    });
+                });
+
+                supportForm.on('submit', function(e) {
+                    e.preventDefault();
+                    btnSend.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Sending...');
+                    $.ajax({
+                        url: "{{ route('support.send') }}",
+                        method: "POST",
+                        data: $(this).serialize(),
+                        success: function(response) {
+                            supportForm[0].reset();
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('supportModal'));
+                            if (modal) modal.hide();
+                            setTimeout(() => {
+                                showAlert(response.message || 'Support request sent successfully');
+                            }, 500);
+                        },
+                        error: function(xhr) {
+                            const msg = xhr.responseJSON?.message || 'Failed to send support request';
+                            showAlert(msg, 'error');
+                        },
+                        complete: function() {
+                            btnSend.prop('disabled', false).text('Send Message');
+                        }
+                    });
+                });
+            }
         });
     </script>
     @stack('page-js')

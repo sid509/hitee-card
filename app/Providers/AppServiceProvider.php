@@ -48,6 +48,10 @@ class AppServiceProvider extends ServiceProvider
                 // Services (Khalti, FB, Google)
                 if (isset($dbSettings['khalti_secret_key'])) config(['services.khalti.secret_key' => $dbSettings['khalti_secret_key']]);
                 if (isset($dbSettings['khalti_public_key'])) config(['services.khalti.public_key' => $dbSettings['khalti_public_key']]);
+                if (isset($dbSettings['stripe_secret_key'])) config(['services.stripe.secret' => $dbSettings['stripe_secret_key']]);
+                if (isset($dbSettings['stripe_publishable_key'])) config(['services.stripe.key' => $dbSettings['stripe_publishable_key']]);
+                if (isset($dbSettings['stripe_currency'])) config(['services.stripe.currency' => $dbSettings['stripe_currency']]);
+                if (isset($dbSettings['khalti_mode'])) config(['services.khalti.mode' => $dbSettings['khalti_mode']]);
                 if (isset($dbSettings['facebook_client_id'])) config(['services.facebook.client_id' => $dbSettings['facebook_client_id']]);
                 if (isset($dbSettings['facebook_client_secret'])) config(['services.facebook.client_secret' => $dbSettings['facebook_client_secret']]);
                 if (isset($dbSettings['facebook_redirect_url'])) config(['services.facebook.redirect' => $dbSettings['facebook_redirect_url']]);

@@ -4,7 +4,7 @@
 
 @push('page-css')
 <style>
-    #map { height: 400px; border-radius: 8px; border: 1px solid #dee2e6; }
+    .map-container { border: 1px solid #dee2e6; }
     .nearby-badge { position: absolute; top: 10px; right: 10px; z-index: 1000; }
 </style>
 @endpush
@@ -250,14 +250,14 @@
 <div class="row">
     <!-- Map View for Admin and Merchant -->
     @if(auth()->user()->hasRole('super-admin', 'merchant'))
-    <div class="col-12 mb-4" id="map-container">
+    <div class="col-12 mb-4" id="fleet-map-container">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Fleet & Asset Locations</h5>
                 <button id="toggleMapSize" class="btn btn-sm btn-outline-primary"><i class="bx bx-fullscreen"></i> Toggle Fullscreen</button>
             </div>
             <div class="card-body">
-                <div id="map"></div>
+                <div id="fleet-map" style="height: 450px; border-radius: 8px;"></div>
             </div>
         </div>
     </div>
@@ -292,6 +292,9 @@
                 </div>
                 <div class="row" id="nearby-assets-container">
                     <!-- Dynamic content -->
+                    <div class="col-12 text-center py-3 text-muted">
+                        Waiting for location access...
+                    </div>
                 </div>
             </div>
         </div>
@@ -301,7 +304,7 @@
         <div class="card">
             <h5 class="card-header">Local Area Map</h5>
             <div class="card-body">
-                <div id="map"></div>
+                <div id="customer-map" style="height: 400px; border-radius: 8px;"></div>
             </div>
         </div>
     </div>
@@ -311,3 +314,208 @@
 @endsection
 
 @push('page-js')
+<script type="module">
+    document.addEventListener('DOMContentLoaded', function() {
+        const jQuery = window.jQuery;
+        if (!jQuery) return;
+        const $ = jQuery;
+
+        // Common map logic helper
+        const createMap = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return null;
+            const m = L.map(id).setView([27.7172, 85.3240], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(m);
+            return m;
+        };
+
+        // 1. Admin/Merchant Fleet Map
+        @if(auth()->user()->hasRole('super-admin', 'merchant'))
+        try {
+            const fleetMap = createMap('fleet-map');
+            if (fleetMap) {
+                const buses = @json($buses);
+                const parkings = @json($parkings);
+
+                const busIcon = L.divIcon({
+                    html: '<i class="bx bx-bus bg-primary text-white p-1 rounded-circle shadow" style="font-size: 20px; border: 2px solid white;"></i>',
+                    className: 'custom-div-icon', iconSize: [26, 26], iconAnchor: [13, 13]
+                });
+
+                const parkingIcon = L.divIcon({
+                    html: '<i class="bx bxs-parking bg-info text-white p-1 rounded-circle shadow" style="font-size: 20px; border: 2px solid white;"></i>',
+                    className: 'custom-div-icon', iconSize: [26, 26], iconAnchor: [13, 13]
+                });
+
+                const fleetBounds = L.latLngBounds();
+
+                buses.forEach(bus => {
+                    if (bus.latitude && bus.longitude) {
+                        L.marker([bus.latitude, bus.longitude], {icon: busIcon})
+                            .addTo(fleetMap)
+                            .bindPopup(`<strong>${bus.name}</strong><br>Bus: ${bus.bus_number}<br><a href="/buses/${bus.id}" class="btn btn-xs btn-primary mt-1 text-white">View Details</a>`);
+                        fleetBounds.extend([bus.latitude, bus.longitude]);
+                    }
+                });
+
+                parkings.forEach(parking => {
+                    if (parking.latitude && parking.longitude) {
+                        L.marker([parking.latitude, parking.longitude], {icon: parkingIcon})
+                            .addTo(fleetMap)
+                            .bindPopup(`<strong>${parking.name}</strong><br>${parking.location}<br><a href="/parkings/${parking.id}" class="btn btn-xs btn-info mt-1 text-white">View Details</a>`);
+                        fleetBounds.extend([parking.latitude, parking.longitude]);
+                    }
+                });
+
+                if (fleetBounds.isValid()) {
+                    fleetMap.fitBounds(fleetBounds, {padding: [50, 50]});
+                }
+
+                $('#toggleMapSize').on('click', function() {
+                    const container = $('#fleet-map');
+                    if (container.height() === 450) {
+                        container.height(800);
+                        $(this).html('<i class="bx bx-exit-fullscreen"></i> Shrink Map');
+                    } else {
+                        container.height(450);
+                        $(this).html('<i class="bx bx-fullscreen"></i> Toggle Fullscreen');
+                    }
+                    setTimeout(() => { fleetMap.invalidateSize(); }, 300);
+                });
+            }
+        } catch (e) { console.error("Fleet map error:", e); }
+        @endif
+
+        // 2. Customer Nearby Logic
+        @if(auth()->user()->hasRole('customers'))
+        try {
+            const customerMap = createMap('customer-map');
+            let userMarker;
+            const allBuses = @json($buses);
+            const allParkings = @json($parkings);
+
+            const detectLocation = () => {
+                if (!navigator.geolocation) {
+                    $('#nearby-status').removeClass('alert-info').addClass('alert-danger').html('<i class="bx bx-error-circle me-2"></i> Geolocation not supported.');
+                    return;
+                }
+
+                $('#nearby-status').html('<i class="bx bx-loader-alt bx-spin me-2"></i> Requesting location access...');
+                
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    if (customerMap) {
+                        customerMap.setView([lat, lng], 15);
+                        if (userMarker) customerMap.removeLayer(userMarker);
+                        userMarker = L.circleMarker([lat, lng], {
+                            radius: 8, fillColor: "#696cff", color: "#fff", weight: 3, opacity: 1, fillOpacity: 0.8
+                        }).addTo(customerMap).bindPopup("Your Location");
+                    }
+
+                    processNearby(lat, lng);
+                }, (error) => {
+                    let msg = 'Location access denied.';
+                    if (error.code === error.TIMEOUT) msg = 'Location request timed out.';
+                    if (error.code === error.POSITION_UNAVAILABLE) msg = 'Location unavailable.';
+                    
+                    $('#nearby-status').removeClass('alert-info').addClass('alert-danger').html('<i class="bx bx-error-circle me-2"></i> ' + msg);
+                    processNearby(27.7172, 85.3240); // Default to Kathmandu
+                }, { timeout: 10000 });
+            };
+
+            const calculateDistance = (lat1, lon1, lat2, lon2) => {
+                const R = 6371; // km
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c;
+            };
+
+            const processNearby = (userLat, userLng) => {
+                $('#nearby-status').html('<i class="bx bx-loader-alt bx-spin me-2"></i> Finding nearby assets...');
+                
+                const combined = [
+                    ...allBuses.map(b => ({...b, type: 'bus'})),
+                    ...allParkings.map(p => ({...p, type: 'parking'}))
+                ];
+
+                const nearby = combined.map(item => {
+                    const dist = calculateDistance(userLat, userLng, item.latitude, item.longitude);
+                    return { ...item, distance_km: dist.toFixed(2) };
+                }).filter(item => item.distance_km <= 5.0);
+
+                const busCount = nearby.filter(i => i.type === 'bus').length;
+                const parkingCount = nearby.filter(i => i.type === 'parking').length;
+
+                const container = $('#nearby-assets-container');
+                container.empty();
+
+                if (nearby.length === 0) {
+                    $('#nearby-status').removeClass('alert-info alert-success alert-danger').addClass('alert-warning').html('<i class="bx bx-info-circle me-2"></i> No assets found within 5km.');
+                    container.html('<div class="col-12 text-center py-3 text-muted">No assets found nearby.</div>');
+                    return;
+                }
+
+                $('#nearby-status').removeClass('alert-info alert-danger alert-warning').addClass('alert-success')
+                    .html(`<i class="bx bx-check-circle me-2"></i> Found ${nearby.length} assets nearby: ${busCount} Buses and ${parkingCount} Parkings.`);
+
+                // Show a summary card instead of a long list
+                container.append(`
+                    <div class="col-12">
+                        <div class="d-flex justify-content-around align-items-center p-4 border rounded bg-label-facebook">
+                            <div class="text-center">
+                                <div class="avatar avatar-md mx-auto mb-2">
+                                    <span class="avatar-initial rounded bg-primary"><i class="bx bx-bus fs-3 text-white"></i></span>
+                                </div>
+                                <h4 class="mb-0 fw-bold text-primary">${busCount}</h4>
+                                <small class="text-muted fw-medium">Buses</small>
+                            </div>
+                            <div class="vr mx-3"></div>
+                            <div class="text-center">
+                                <div class="avatar avatar-md mx-auto mb-2">
+                                    <span class="avatar-initial rounded bg-info"><i class="bx bxs-parking fs-3 text-white"></i></span>
+                                </div>
+                                <h4 class="mb-0 fw-bold text-info">${parkingCount}</h4>
+                                <small class="text-muted fw-medium">Parkings</small>
+                            </div>
+                        </div>
+                        <p class="text-center mt-3 small text-muted">Explore the map markers below for exact locations.</p>
+                    </div>
+                `);
+
+                const busIcon = L.divIcon({
+                    html: '<i class="bx bx-bus bg-primary text-white p-1 rounded-circle shadow" style="font-size: 18px; border: 2px solid white;"></i>',
+                    className: 'custom-div-icon', iconSize: [24, 24], iconAnchor: [12, 12]
+                });
+
+                const parkingIcon = L.divIcon({
+                    html: '<i class="bx bxs-parking bg-info text-white p-1 rounded-circle shadow" style="font-size: 18px; border: 2px solid white;"></i>',
+                    className: 'custom-div-icon', iconSize: [24, 24], iconAnchor: [12, 12]
+                });
+
+                nearby.forEach(asset => {
+                    if (customerMap) {
+                        L.marker([asset.latitude, asset.longitude], {icon: asset.type === 'bus' ? busIcon : parkingIcon})
+                            .addTo(customerMap)
+                            .bindPopup(`<strong>${asset.name}</strong><br>${asset.distance_km} km away`);
+                    }
+                });
+            };
+
+            // Initial detection
+            detectLocation();
+
+            $('#refreshNearby').on('click', detectLocation);
+
+        } catch (e) { console.error("Customer map error:", e); }
+        @endif
+    });
+</script>
+@endpush
