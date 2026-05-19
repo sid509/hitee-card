@@ -52,7 +52,7 @@
                             @endphp
                             <span class="badge bg-label-{{ $badgeClass }}">{{ strtoupper($template->type) }}</span>
                         </td>
-                        <td>{{ $template->created_at->format('M d, Y') }}</td>
+                        <td>{{ formatDate($template->created_at, false) }}</td>
                         <td>
                             <button type="button" class="btn btn-sm btn-icon btn-primary me-1" 
                                     data-bs-toggle="modal" data-bs-target="#viewTemplateModal{{ $template->id }}" title="View Content">
@@ -69,37 +69,63 @@
 
                             <!-- View Template Modal -->
                             <div class="modal fade" id="viewTemplateModal{{ $template->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
                                     <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Template: {{ $template->name }}</h5>
+                                        <div class="modal-header border-bottom">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar flex-shrink-0 me-2">
+                                                    <span class="avatar-initial rounded bg-label-{{ $badgeClass }}"><i class="bx {{ $template->type == 'email' ? 'bx-envelope' : ($template->type == 'fcm' ? 'bx-bell' : 'bx-message-square-dots') }}"></i></span>
+                                                </div>
+                                                <div>
+                                                    <h5 class="modal-title mb-0">{{ $template->name }}</h5>
+                                                    <small class="text-muted">Template Type: {{ strtoupper($template->type) }}</small>
+                                                </div>
+                                            </div>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                        <div class="modal-body">
-                                            <div class="row">
-                                                <div class="col-md-6 border-end">
-                                                    <h6 class="fw-bold border-bottom pb-2">English (EN)</h6>
-                                                    @if($template->subject_en)
-                                                        <p class="mb-1"><strong>Subject:</strong></p>
-                                                        <p class="text-muted small mb-2">{{ $template->subject_en }}</p>
-                                                    @endif
-                                                    <p class="mb-1"><strong>Body:</strong></p>
-                                                    <div class="p-3 border rounded">
-                                                        {!! $template->type == 'email' ? $template->body_en : nl2br(e($template->body_en)) !!}
+                                        <div class="modal-body bg-light-gray">
+                                            <div class="row g-4">
+                                                <div class="col-md-6">
+                                                    <div class="card shadow-none border h-100">
+                                                        <div class="card-header bg-lighter py-2 border-bottom">
+                                                            <h6 class="mb-0 fw-bold"><i class="bx bx-world me-1"></i> English (EN)</h6>
+                                                        </div>
+                                                        <div class="card-body pt-3">
+                                                            @if($template->subject_en)
+                                                                <p class="mb-1 fw-bold text-dark small text-uppercase">Subject</p>
+                                                                <p class="mb-3 p-2 bg-lighter rounded border-start border-primary border-3">{{ $template->subject_en }}</p>
+                                                            @endif
+                                                            <p class="mb-1 fw-bold text-dark small text-uppercase">Message Body</p>
+                                                            <div class="p-3 border rounded bg-white shadow-sm" style="min-height: 150px; font-family: 'Public Sans', sans-serif;">
+                                                                {!! $template->type == 'email' ? $template->body_en : nl2br(e($template->body_en)) !!}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <h6 class="fw-bold border-bottom pb-2">Nepali (NE)</h6>
-                                                    @if($template->subject_ne)
-                                                        <p class="mb-1"><strong>Subject:</strong></p>
-                                                        <p class="text-muted small mb-2">{{ $template->subject_ne }}</p>
-                                                    @endif
-                                                    <p class="mb-1"><strong>Body:</strong></p>
-                                                    <div class="p-3 border rounded">
-                                                        {!! $template->type == 'email' ? $template->body_ne : nl2br(e($template->body_ne)) !!}
+                                                    <div class="card shadow-none border h-100">
+                                                        <div class="card-header bg-lighter py-2 border-bottom">
+                                                            <h6 class="mb-0 fw-bold"><i class="bx bx-font me-1"></i> Nepali (NE)</h6>
+                                                        </div>
+                                                        <div class="card-body pt-3">
+                                                            @if($template->subject_ne)
+                                                                <p class="mb-1 fw-bold text-dark small text-uppercase">Subject</p>
+                                                                <p class="mb-3 p-2 bg-lighter rounded border-start border-warning border-3">{{ $template->subject_ne }}</p>
+                                                            @endif
+                                                            <p class="mb-1 fw-bold text-dark small text-uppercase">Message Body</p>
+                                                            <div class="p-3 border rounded bg-white shadow-sm" style="min-height: 150px; font-family: 'Public Sans', sans-serif;">
+                                                                {!! $template->type == 'email' ? $template->body_ne : nl2br(e($template->body_ne)) !!}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="modal-footer border-top">
+                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close Preview</button>
+                                            <a href="{{ route('broadcast.send-form') }}?template_id={{ $template->id }}" class="btn btn-primary">
+                                                <i class="bx bx-send me-1"></i> Use this Template
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -141,7 +167,7 @@
                 <tbody class="table-border-bottom-0">
                     @forelse($broadcasts as $broadcast)
                     <tr>
-                        <td>{{ $broadcast->created_at->format('M d, Y H:i') }}</td>
+                        <td>{{ formatDate($broadcast->created_at) }}</td>
                         <td>{{ $broadcast->title }}</td>
                         <td>
                             @php

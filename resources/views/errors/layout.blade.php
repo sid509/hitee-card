@@ -17,7 +17,7 @@
             <h4 class="mb-2 mx-2">@yield('headline')</h4>
             <p class="mb-6 mx-2">@yield('message')</p>
             <div class="d-flex justify-content-center gap-3">
-                <a href="javascript:history.back()" class="btn btn-outline-secondary">Go Back</a>
+                <a href="javascript:history.back()" class="btn btn-label-secondary">Go Back</a>
                 <a href="{{ route('dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
             </div>
             <div class="mt-6">

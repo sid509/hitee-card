@@ -26,11 +26,14 @@
                     <div class="row">
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Route Name</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name', $route->name) }}" placeholder="e.g. Kalanki - Ratnapark Ring Road" required>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-map-pin"></i></span>
+                                <input type="text" name="name" class="form-control" value="{{ old('name', $route->name) }}" placeholder="e.g. Kalanki - Ratnapark Ring Road" required>
+                            </div>
                         </div>
                         <div class="col-md-12 mb-3">
                             <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="2">{{ old('description', $route->description) }}</textarea>
+                            <textarea name="description" class="form-control-text" rows="2">{{ old('description', $route->description) }}</textarea>
                         </div>
                     </div>
 
@@ -59,13 +62,16 @@
                             <div id="no-stops-msg" class="alert alert-light text-center py-2">No stops added yet.</div>
                             <div class="mt-3">
                                 <label class="form-label">Add Stop</label>
-                                <select id="stop-search-select" class="form-select select2-ajax-stops"></select>
+                                <div class="input-group input-group-merge">
+                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                    <select id="stop-search-select" class="form-select select2-ajax-stops"></select>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary me-2">Save Route</button>
+                        <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Save Route</button>
                         <a href="{{ route('routes.index') }}" class="btn btn-label-secondary">Cancel</a>
                     </div>
                 </form>

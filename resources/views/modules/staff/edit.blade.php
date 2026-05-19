@@ -20,20 +20,29 @@
                     
                     <div class="mb-3">
                         <label class="form-label" for="name">Full Name</label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="John Doe" value="{{ old('name', $staff->name) }}" required />
-                        @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-user"></i></span>
+                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="John Doe" value="{{ old('name', $staff->name) }}" required />
+                        </div>
+                        @error('name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label" for="email">Email</label>
-                        <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="john@example.com" value="{{ old('email', $staff->email) }}" required />
-                        @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-envelope"></i></span>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="john@example.com" value="{{ old('email', $staff->email) }}" required />
+                        </div>
+                        @error('email') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label" for="password">Password (Leave blank to keep current)</label>
-                        <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
-                        @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-lock-alt"></i></span>
+                            <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+                        </div>
+                        @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <hr class="my-4">
@@ -74,8 +83,8 @@
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary me-2">Update Staff</button>
-                        <a href="{{ route('staff.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Update Staff</button>
+                        <a href="{{ route('staff.index') }}" class="btn btn-label-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

@@ -362,12 +362,28 @@ class SearchController extends Controller
             ->orderBy("distance")
             ->get();
 
+        $servicePartners = \App\Models\ServicePartner::select(['id', 'name', 'service_type', 'address', 'latitude', 'longitude'])
+            ->selectRaw("$haversine AS distance")
+            ->having("distance", "<=", $radius)
+            ->orderBy("distance")
+            ->get();
+
+        $stops = \App\Models\Stop::select(['id', 'name', 'latitude', 'longitude'])
+            ->selectRaw("$haversine AS distance")
+            ->having("distance", "<=", $radius)
+            ->orderBy("distance")
+            ->get();
+
         return response()->json([
             'buses' => $buses,
             'parkings' => $parkings,
+            'service_partners' => $servicePartners,
+            'stops' => $stops,
             'counts' => [
                 'buses' => $buses->count(),
-                'parkings' => $parkings->count()
+                'parkings' => $parkings->count(),
+                'service_partners' => $servicePartners->count(),
+                'stops' => $stops->count()
             ]
         ]);
     }

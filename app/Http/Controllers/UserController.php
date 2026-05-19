@@ -180,9 +180,11 @@ class UserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'status' => 'active',
             'is_tourist' => $request->boolean('is_tourist'),
+            'merchant_type' => $request->merchant_type,
         ]);
 
         if ($request->has('roles')) {
@@ -221,6 +223,8 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone_number' => $request->phone_number,
+            'is_tourist' => $request->boolean('is_tourist'),
+            'merchant_type' => $request->merchant_type,
         ];
 
         if ($request->filled('password')) {

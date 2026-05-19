@@ -70,9 +70,11 @@ class BusController extends Controller
                                     </form>';
                     }
 
-                    // Edit Button
-                    if ($canEdit) {
+                    // Edit Button or Request Change
+                    if (auth()->user()->hasRole('super-admin')) {
                         $actions .= '<a href="'.route('buses.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
+                    } else if (auth()->user()->hasRole('merchant', 'staff')) {
+                        $actions .= '<button type="button" class="btn btn-sm btn-outline-primary btn-request-change" data-id="'.$row->id.'" data-type="bus" title="Request Change">Request Change</button>';
                     }
                     // Delete Button
                     if ($canDelete) {

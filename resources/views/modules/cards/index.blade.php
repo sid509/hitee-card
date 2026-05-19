@@ -13,12 +13,12 @@
         <div class="d-flex gap-2">
             @if(auth()->user()->hasRole('super-admin'))
             @if(isset($pendingCardApplicationsCount) && $pendingCardApplicationsCount > 0)
-            <a href="{{ route('card-applications.index') }}" class="btn btn-label-danger btn-sm">
+            <a href="{{ route('card-applications.index') }}" class="btn btn-label-danger">
                 <i class="bx bx-error-circle me-1"></i> {{ $pendingCardApplicationsCount }} Pending Requests
             </a>
             @endif
             <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button" id="bulkActions" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-label-secondary dropdown-toggle btn-sm" type="button" id="bulkActions" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bx bx-check-square me-1"></i> Bulk Actions
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="bulkActions">
@@ -26,16 +26,16 @@
                     <li><a class="dropdown-item bulk-status-change" href="javascript:void(0);" data-status="inactive">Deactivate Selected</a></li>
                 </ul>
             </div>
-            <a href="{{ route('cards.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route('cards.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus me-1"></i> Issue New Card
             </a>
             @endif
 
             @if(auth()->user()->hasRole('customers'))
-            <a href="{{ route('card-applications.index') }}" class="btn btn-outline-primary btn-sm">
+            <a href="{{ route('card-applications.index') }}" class="btn btn-outline-primary">
                 <i class="bx bx-list-ul me-1"></i> My Applications
             </a>
-            <a href="{{ route('card-applications.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route('card-applications.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus me-1"></i> Apply for New Card
             </a>
             @endif
@@ -51,17 +51,15 @@
                     margin: 0 !important;
                 }
                 table.data-table th, table.data-table td {
-                    overflow: hidden;
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
+                    /* Removed text-overflow: ellipsis to prevent stray dots */
                 }
                 /* Explicit column widths */
                 table.data-table th:nth-child(1) { width: 40px; }  /* Checkbox */
                 table.data-table th:nth-child(2) { width: 50px; }  /* ID */
                 table.data-table th:nth-child(3) { width: 180px; } /* Card Number */
-                table.data-table th:nth-child(4) { width: 180px; } /* HWID */
-                table.data-table th:nth-child(5) { width: 150px; } /* User */
-                table.data-table th:nth-child(6) { width: 120px; text-align: center; } /* Status */
+                table.data-table th:nth-child(4) { width: 150px; } /* User */
+                table.data-table th:nth-child(5) { width: 150px; } /* Subscriptions */
+                table.data-table th:nth-child(6) { width: 100px; text-align: center; } /* Status */
                 table.data-table th:nth-child(7) { width: 100px; text-align: center; } /* Usage */
                 table.data-table th:nth-child(8) { width: 150px; } /* Created At */
                 table.data-table th:nth-child(9) { width: 180px; } /* Actions */
@@ -78,8 +76,8 @@
                         <th width="10" class="text-start"><input type="checkbox" class="form-check-input" id="select-all"></th>
                         <th>ID</th>
                         <th>Card Number</th>
-                        <th>HWID</th>
                         <th>User</th>
+                        <th>Subscriptions</th>
                         <th>Status</th>
                         <th>Usage</th>
                         <th>Created At</th>
@@ -108,24 +106,30 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Card Number</label>
-                        <input type="text" id="request_card_number" class="form-control" readonly disabled>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-credit-card"></i></span>
+                            <input type="text" id="request_card_number" class="form-control" readonly disabled>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Request Type</label>
-                        <select name="type" id="request_type" class="form-select" required>
-                            <option value="upgrade" id="opt_upgrade">Upgrade Card</option>
-                            <option value="enable" id="opt_enable">Enable/Activate Card</option>
-                            <option value="disable" id="opt_disable">Disable/Deactivate Card</option>
-                        </select>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-chevron-right"></i></span>
+                            <select name="type" id="request_type" class="form-select" required>
+                                <option value="upgrade" id="opt_upgrade">Upgrade Card</option>
+                                <option value="enable" id="opt_enable">Enable/Activate Card</option>
+                                <option value="disable" id="opt_disable">Disable/Deactivate Card</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Additional Message (Optional)</label>
-                        <textarea name="message" class="form-control" rows="3" placeholder="Explain your request..."></textarea>
+                        <textarea name="message" class="form-control-text" rows="3" placeholder="Explain your request..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" id="btnSubmitRequest" class="btn btn-primary">Submit Request</button>
+                    <button type="submit" id="btnSubmitRequest" class="btn btn-primary"><i class="bx bx-send me-1"></i> Submit Request</button>
                 </div>
             </form>
         </div>
@@ -159,8 +163,8 @@
                 {data: 'checkbox', name: 'checkbox', orderable: false, searchable: false},
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
                 {data: 'card_number', name: 'card_number'},
-                {data: 'hwid', name: 'hwid'},
                 {data: 'user.name', name: 'user.name', defaultContent: 'N/A'},
+                {data: 'subscriptions', name: 'subscriptions', orderable: false, searchable: false},
                 {data: 'status', name: 'status', render: function(data) {
                     let classMap = { active: 'bg-label-success', inactive: 'bg-label-secondary', blocked: 'bg-label-danger' };
                     return `<span class="badge ${classMap[data] || 'bg-label-info'}">${data.charAt(0).toUpperCase() + data.slice(1)}</span>`;

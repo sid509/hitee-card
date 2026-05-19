@@ -39,6 +39,11 @@
 @push('page-js')
 <script type="module">
     $(function() {
+        $('.select2-subscriptions').select2({
+            placeholder: 'Select Models...',
+            width: '100%'
+        });
+
         $('.select2-users').select2({
             ajax: {
                 url: "{{ route('search.users') }}",

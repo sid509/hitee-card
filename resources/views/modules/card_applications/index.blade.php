@@ -45,9 +45,7 @@
             ajax: "{{ route('card-applications.index') }}",
             columns: [
                 {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                {data: 'created_at', name: 'created_at', render: function(data) {
-                    return new Date(data).toLocaleDateString();
-                }},
+                {data: 'created_at', name: 'created_at'},
                 {data: 'user.name', name: 'user.name'},
                 {data: 'type', name: 'type'},
                 {data: 'status', name: 'status'},

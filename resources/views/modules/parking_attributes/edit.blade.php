@@ -18,9 +18,12 @@
                     
                     <div class="mb-3">
                         <label class="form-label" for="name">Attribute Name</label>
-                        <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" 
-                            value="{{ old('name', $attribute->name) }}" required />
-                        @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-detail"></i></span>
+                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" 
+                                value="{{ old('name', $attribute->name) }}" required />
+                        </div>
+                        @error('name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="mb-3">
@@ -31,15 +34,18 @@
                                 <img src="{{ $attribute->icon_url }}" alt="{{ $attribute->name }}" height="40" width="40" class="border p-1">
                             </div>
                         @endif
-                        <input type="file" class="form-control @error('icon') is-invalid @enderror" id="icon" name="icon" 
-                            accept=".svg" />
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-image-add"></i></span>
+                            <input type="file" class="form-control @error('icon') is-invalid @enderror" id="icon" name="icon" 
+                                accept=".svg" />
+                        </div>
                         <div class="form-text">Leave blank to keep the current icon. Only SVG allowed. Max 1MB.</div>
-                        @error('icon') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        @error('icon') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary me-2">Update Attribute</button>
-                        <a href="{{ route('parking-attributes.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Update Attribute</button>
+                        <a href="{{ route('parking-attributes.index') }}" class="btn btn-label-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

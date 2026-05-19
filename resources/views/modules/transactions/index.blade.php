@@ -66,7 +66,7 @@
                 </div>
                 <div class="{{ auth()->user()->hasRole('super-admin') ? 'col-md-3' : 'col-md-4' }} d-flex align-items-end gap-2">
                     <button type="button" id="btnFilter" class="btn btn-primary btn-filter-reset d-none"><i class="bx bx-filter-alt"></i></button>
-                    <button type="button" id="resetFilters" class="btn btn-outline-secondary btn-filter-reset"><i class="bx bx-refresh"></i></button>
+                    <button type="button" id="resetFilters" class="btn btn-label-secondary btn-filter-reset"><i class="bx bx-refresh"></i></button>
                 </div>
             </form>
         </div>

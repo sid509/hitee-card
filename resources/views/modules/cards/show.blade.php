@@ -30,20 +30,29 @@
                             </div>
                             <div class="user-info text-center">
                                 <h5 class="mb-2">{{ $card->card_number }}</h5>
-                                <span class="badge {{ $card->status === 'active' ? 'bg-label-success' : 'bg-label-danger' }} mb-2">{{ ucfirst($card->status) }}</span>
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge {{ $card->status === 'active' ? 'bg-label-success' : 'bg-label-danger' }}">{{ ucfirst($card->status) }}</span>
+                                    @foreach($card->subscriptionModels as $model)
+                                        <span class="badge bg-label-primary">{{ $model->name }}</span>
+                                    @endforeach
+                                    @if($card->subscriptionModels->isEmpty())
+                                        <span class="badge bg-label-secondary">Standard Transit</span>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-around flex-wrap my-4 py-3 border-top border-bottom">
-                        <div class="d-flex align-items-start me-4 mt-3 gap-3">
-                            <span class="badge bg-label-primary p-2 rounded"><i class="bx bx-wallet bx-sm"></i></span>
-                            <div>
-                                <h5 class="mb-0">Rs. {{ number_format($card->balance(), 2) }}</h5>
-                                <span>Balance</span>
-                            </div>
+                    <div class="d-flex justify-content-around flex-wrap my-4 py-3 border-top border-bottom text-center">
+                        <div class="d-flex flex-column align-items-center mt-3">
+                            <h5 class="mb-0">Rs. {{ number_format($card->balance(), 2) }}</h5>
+                            <small class="text-muted">Balance</small>
+                        </div>
+                        <div class="d-flex flex-column align-items-center mt-3">
+                            <h5 class="mb-0">{{ $travelCount }}</h5>
+                            <small class="text-muted">Rides</small>
                         </div>
                     </div>
-                    <p class="small text-muted text-uppercase mb-3">Ownership</p>
+                    <p class="small text-muted text-uppercase mb-3">Ownership & Features</p>
                     <div class="info-container">
                         <ul class="list-unstyled">
                             <li class="mb-3">
@@ -63,16 +72,30 @@
                                 </span>
                             </li>
                             <li class="mb-3">
-                                <span class="fw-medium me-2">Hardware ID:</span>
-                                <span class="text-muted">{{ $card->hwid }}</span>
+                                <span class="fw-medium me-2">Subscription:</span>
+                                <span class="text-primary fw-bold">
+                                    {{ $card->subscriptionModels->pluck('name')->implode(', ') ?: 'Standard Transit' }}
+                                </span>
                             </li>
                             <li class="mb-3">
-                                <span class="fw-medium me-2">Usage State:</span>
-                                @if($card->hasOngoingRide())
-                                    <span class="badge bg-label-warning">In Use</span>
+                                <span class="fw-medium me-2">Personalized:</span>
+                                @if($card->is_personalized)
+                                    <span class="badge bg-label-success">Yes (KYC Verified)</span>
                                 @else
-                                    <span class="badge bg-label-secondary">Idle</span>
+                                    <span class="badge bg-label-warning">No (Basic)</span>
                                 @endif
+                            </li>
+                            <li class="mb-3">
+                                <span class="fw-medium me-2">Physical Card:</span>
+                                @if($card->is_physical)
+                                    <span class="badge bg-label-info">Issued</span>
+                                @else
+                                    <span class="badge bg-label-secondary">Digital Only</span>
+                                @endif
+                            </li>
+                            <li class="mb-3">
+                                <span class="fw-medium me-2">Hardware ID:</span>
+                                <span class="text-muted">{{ $card->hwid ?? 'N/A' }}</span>
                             </li>
                         </ul>
                     </div>
@@ -94,6 +117,18 @@
                             Raw Taps
                         </button>
                     </li>
+                    <li class="nav-item">
+                        <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-stats" aria-controls="navs-pills-stats" aria-selected="false">
+                            Usage Statistics
+                        </button>
+                    </li>
+                    @if($card->subscriptionModels->isNotEmpty())
+                    <li class="nav-item">
+                        <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-discounts" aria-controls="navs-pills-discounts" aria-selected="false">
+                            Partner Discounts
+                        </button>
+                    </li>
+                    @endif
                 </ul>
                 <div class="tab-content">
                     <!-- Recent Rides -->
@@ -161,6 +196,78 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- Usage Statistics -->
+                    <div class="tab-pane fade" id="navs-pills-stats" role="tabpanel">
+                        <div class="row g-4">
+                            <div class="col-sm-6 col-lg-4">
+                                <div class="d-flex align-items-start border p-3 rounded h-100">
+                                    <div class="badge bg-label-primary p-2 rounded me-3"><i class="bx bx-bus bx-sm"></i></div>
+                                    <div>
+                                        <h5 class="mb-0">{{ $travelCount }}</h5>
+                                        <small class="text-muted">Total Rides</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-4">
+                                <div class="d-flex align-items-start border p-3 rounded h-100">
+                                    <div class="badge bg-label-info p-2 rounded me-3"><i class="bx bx-time bx-sm"></i></div>
+                                    <div>
+                                        <h5 class="mb-0">{{ floor($totalParkingMinutes / 60) }}h {{ $totalParkingMinutes % 60 }}m</h5>
+                                        <small class="text-muted">Parking Duration</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-lg-4">
+                                <div class="d-flex align-items-start border p-3 rounded h-100">
+                                    <div class="badge bg-label-success p-2 rounded me-3"><i class="bx bx-purchase-tag bx-sm"></i></div>
+                                    <div>
+                                        <h5 class="mb-0">{{ $card->subscriptionModels->sum(fn($m) => $m->discounts->count()) }}</h5>
+                                        <small class="text-muted">Active Offers</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Partner Discounts -->
+                    @if($card->subscriptionModels->isNotEmpty())
+                    <div class="tab-pane fade" id="navs-pills-discounts" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Model</th>
+                                        <th>Partner</th>
+                                        <th>Type</th>
+                                        <th>Discount</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $hasDiscounts = false; @endphp
+                                    @foreach($card->subscriptionModels as $model)
+                                        @foreach($model->discounts as $discount)
+                                            @php $hasDiscounts = true; @endphp
+                                            <tr>
+                                                <td><small class="text-muted">{{ $model->name }}</small></td>
+                                                <td>
+                                                    <span class="fw-medium">{{ $discount->servicePartner->name }}</span>
+                                                </td>
+                                                <td><span class="badge bg-label-primary">{{ ucfirst($discount->servicePartner->service_type) }}</span></td>
+                                                <td><span class="text-success fw-bold">{{ $discount->discount_type == 'percentage' ? $discount->discount_value . '%' : 'Rs. ' . $discount->discount_value }} OFF</span></td>
+                                                <td><small>{{ $discount->description }}</small></td>
+                                            </tr>
+                                        @endforeach
+                                    @endforeach
+                                    @if(!$hasDiscounts)
+                                        <tr><td colspan="5" class="text-center py-4 text-muted">No active discounts for your subscriptions.</td></tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    @endif
 
                     <!-- Balance History -->
                     <div class="tab-pane fade" id="navs-pills-balance" role="tabpanel">

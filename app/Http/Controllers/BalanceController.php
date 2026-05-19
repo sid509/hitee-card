@@ -405,7 +405,7 @@ class BalanceController extends Controller
         $purchaseOrderNo = 'TRANS_' . time() . '_' . $user->id;
 
         $response = Http::withHeaders([
-            'Authorization' => 'Key ' . config('services.khalti.secret_key'),
+            'Authorization' => 'Key ' . trim(config('services.khalti.secret_key')),
             'Content-Type' => 'application/json',
         ])->post('https://a.khalti.com/api/v2/epayment/initiate/', [
             'return_url' => route('khalti.verify'),
@@ -448,7 +448,7 @@ class BalanceController extends Controller
         $pidx = $request->pidx;
         
         $response = Http::withHeaders([
-            'Authorization' => 'Key ' . config('services.khalti.secret_key'),
+            'Authorization' => 'Key ' . trim(config('services.khalti.secret_key')),
             'Content-Type' => 'application/json',
         ])->post('https://a.khalti.com/api/v2/epayment/lookup/', [
             'pidx' => $pidx,

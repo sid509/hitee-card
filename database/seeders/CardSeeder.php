@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Card;
 use App\Models\User;
+use App\Models\SubscriptionModel;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -14,6 +15,16 @@ class CardSeeder extends Seeder
      */
     public function run(): void
     {
+        $transitModel = SubscriptionModel::where('category', 'transit')->first();
+        if (!$transitModel) {
+            $transitModel = SubscriptionModel::create([
+                'name' => 'Hitee Transit',
+                'category' => 'transit',
+                'price' => 0.00,
+                'is_active' => true
+            ]);
+        }
+
         $customers = User::whereHas('roles', function($q){
             $q->where('slug', 'customers');
         })->get();
@@ -28,6 +39,8 @@ class CardSeeder extends Seeder
                 'is_currently_active' => true,
                 'user_id' => $user->id,
             ]);
+
+            $card->subscriptionModels()->attach($transitModel->id);
 
             // Initial Balance for User-linked Card
             \App\Models\BalanceIn::create([
@@ -51,6 +64,8 @@ class CardSeeder extends Seeder
                 'user_id' => $user->id,
             ]);
 
+            $card->subscriptionModels()->attach($transitModel->id);
+
             // Initial Balance even for inactive cards (they might have been used before)
             \App\Models\BalanceIn::create([
                 'user_id' => $user->id,
@@ -71,6 +86,8 @@ class CardSeeder extends Seeder
                 'is_currently_active' => false, // Will be set true when used or linked
                 'user_id' => null,
             ]);
+
+            $card->subscriptionModels()->attach($transitModel->id);
 
             // Initial Balance for Orphan/Instant Card
             \App\Models\BalanceIn::create([

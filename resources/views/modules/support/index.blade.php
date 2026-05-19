@@ -70,12 +70,12 @@
                     <input type="hidden" id="support_id">
                     <div class="mb-3" id="reason_container">
                         <label class="form-label fw-bold text-primary">Reason to Close</label>
-                        <textarea name="closing_reason" class="form-control" rows="3" required placeholder="Provide a reason for closing this request..."></textarea>
+                        <textarea name="closing_reason" class="form-control-text" rows="3" required placeholder="Provide a reason for closing this request..."></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
                 <button type="button" class="btn btn-danger" id="btnCloseSupport">Close Ticket</button>
             </div>
         </div>

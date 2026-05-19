@@ -19,12 +19,18 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Fare Name</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name', $fare->name) }}" required>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-detail"></i></span>
+                                <input type="text" name="name" class="form-control" value="{{ old('name', $fare->name) }}" required>
+                            </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Route</label>
-                            <input type="text" class="form-control" value="{{ $fare->route->name }}" disabled>
-                            <input type="hidden" name="route_id" id="route_select_fare" value="{{ $fare->route_id }}">
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-map-pin"></i></span>
+                                <input type="text" class="form-control" value="{{ $fare->route->name }}" disabled>
+                                <input type="hidden" name="route_id" id="route_select_fare" value="{{ $fare->route_id }}">
+                            </div>
                         </div>
                     </div>
 
@@ -42,7 +48,7 @@
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary me-2">Update Fare Details</button>
+                        <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Update Fare Details</button>
                         <a href="{{ route('fares.index') }}" class="btn btn-label-secondary">Back to List</a>
                     </div>
                 </form>

@@ -25,3 +25,34 @@
     </div>
 </div>
 @endsection
+
+@push('page-js')
+<script type="module">
+    document.addEventListener('DOMContentLoaded', function() {
+        const $ = window.jQuery;
+        if (!$) return;
+
+        const roleCheckboxes = $('.role-checkbox');
+        const merchantContainer = $('#merchant-type-container');
+
+        const toggleMerchantType = () => {
+            let isMerchantSelected = false;
+            roleCheckboxes.each(function() {
+                if ($(this).is(':checked') && $(this).data('slug') === 'merchant') {
+                    isMerchantSelected = true;
+                }
+            });
+
+            if (isMerchantSelected) {
+                merchantContainer.slideDown();
+            } else {
+                merchantContainer.slideUp();
+                $('#merchant_type').val('');
+            }
+        };
+
+        roleCheckboxes.on('change', toggleMerchantType);
+        toggleMerchantType(); // Initial check
+    });
+</script>
+@endpush

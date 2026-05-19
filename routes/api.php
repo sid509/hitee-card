@@ -77,6 +77,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Tap Handling
     Route::post('/tap', [TapController::class, 'processTap']);
+
+    // Card Page Stats
+    Route::get('/card/stats', [\App\Http\Controllers\CardPageController::class, 'index']);
 });
 
 

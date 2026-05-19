@@ -108,7 +108,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Remarks</label>
-                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for adding balance"></textarea>
+                                    <textarea name="remarks" class="form-control-text" rows="2" placeholder="Reason for adding balance"></textarea>
                                 </div>
                                 <div class="d-grid">
                                     <button type="submit" class="btn btn-primary">Add Balance</button>
@@ -149,7 +149,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Remarks</label>
-                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for deduction"></textarea>
+                                    <textarea name="remarks" class="form-control-text" rows="2" placeholder="Reason for deduction"></textarea>
                                 </div>
                                 <div class="d-grid">
                                     <button type="submit" class="btn btn-danger">Deduct Balance</button>

@@ -30,7 +30,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Remarks</label>
-                        <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for loading funds"></textarea>
+                        <textarea name="remarks" class="form-control-text" rows="2" placeholder="Reason for loading funds"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -67,7 +67,7 @@
                     </div>
                     <div class="mb-3 text-start">
                         <label class="form-label">Remarks</label>
-                        <textarea name="remarks" class="form-control" rows="2" placeholder="Optional remarks"></textarea>
+                        <textarea name="remarks" class="form-control-text" rows="2" placeholder="Optional remarks"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

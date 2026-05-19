@@ -77,4 +77,30 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Password changed successfully.');
     }
+
+    /**
+     * Submit KYC for verification.
+     */
+    public function submitKyc(Request $request)
+    {
+        $request->validate([
+            'full_name' => 'required|string|max:255',
+            'id_type' => 'required|string',
+            'id_number' => 'required|string|max:255',
+            'kyc_type' => 'required|in:student,old_age,tourist,standard',
+        ]);
+
+        $user = auth()->user();
+        $user->update([
+            'kyc_status' => 'pending',
+            // We could store the other info in a meta field or separate table, 
+            // but for now we'll just flag it as pending.
+        ]);
+
+        logActivity('kyc_submission', 'User submitted KYC for verification', [
+            'kyc_type' => $request->kyc_type
+        ]);
+
+        return back()->with('success', 'KYC submitted successfully. Our team will verify it shortly.');
+    }
 }

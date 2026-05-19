@@ -72,6 +72,8 @@ class RouteController extends Controller
                     $actions .= '<a href="'.route('routes.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
                     if (auth()->user()->hasRole('super-admin')) {
                         $actions .= '<a href="'.route('routes.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
+                    } else if (auth()->user()->hasRole('merchant', 'staff')) {
+                        $actions .= '<button type="button" class="btn btn-sm btn-outline-primary btn-request-change" data-id="'.$row->id.'" data-type="route" title="Request Change">Request Change</button>';
                     }
                     if (auth()->user()->hasRole('super-admin')) {
                         $actions .= '<form action="'.route('routes.destroy', $row->id).'" method="POST" style="display:inline-block">

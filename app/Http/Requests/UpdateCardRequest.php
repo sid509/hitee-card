@@ -26,6 +26,8 @@ class UpdateCardRequest extends BaseRequest
                 Rule::unique('cards')->ignore($cardId),
             ],
             'user_id' => 'nullable|exists:users,id',
+            'subscription_models' => 'nullable|array',
+            'subscription_models.*' => 'exists:subscription_models,id',
             'status' => 'required|in:active,inactive,blocked',
             'is_currently_active' => 'boolean'
         ];

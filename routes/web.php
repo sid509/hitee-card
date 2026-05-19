@@ -26,6 +26,8 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\CardApplicationController;
+use App\Http\Controllers\SubscriptionModelController;
+use App\Http\Controllers\ServicePartnerController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\LogController;
 use App\Models\User;
@@ -131,27 +133,33 @@ Route::middleware(['auth'])->group(function () {
 
         $userCount = User::count();
         $cardCount = Card::count();
-        $transactionCount = BalanceIn::count() + BalanceOut::count();
 
         $busesQuery = Bus::query();
         $parkingsQuery = Parking::query();
+        $servicePartnersQuery = \App\Models\ServicePartner::query();
 
         if ($user->hasRole('merchant')) {
             $busesQuery->where('merchant_id', $user->id);
             $parkingsQuery->where('merchant_id', $user->id);
+            $servicePartnersQuery->where('merchant_id', $user->id);
         } elseif ($user->hasRole('staff')) {
             $busesQuery->whereIn('id', $user->assignedBuses->pluck('id'));
             $parkingsQuery->whereIn('id', $user->assignedParkings->pluck('id'));
+            // Assuming staff are linked to merchants, we could filter by merchant_id
+            $merchantIds = $user->merchants->pluck('id');
+            $servicePartnersQuery->whereIn('merchant_id', $merchantIds);
         }
 
         $busCount = (clone $busesQuery)->count();
         $parkingCount = (clone $parkingsQuery)->count();
+        $servicePartnerCount = (clone $servicePartnersQuery)->count();
         $openSupportCount = \App\Models\SupportRequest::where('status', 'open')->count();
 
         $buses = $busesQuery->with(['route.stops'])->get(['id', 'name', 'bus_number', 'latitude', 'longitude', 'route_id']);
         $parkings = $parkingsQuery->get(['id', 'name', 'location', 'latitude', 'longitude']);
+        $servicePartners = $servicePartnersQuery->get(['id', 'name', 'service_type', 'latitude', 'longitude']);
 
-        return view('dashboard', compact('userCount', 'busCount', 'parkingCount', 'cardCount', 'transactionCount', 'buses', 'parkings', 'openSupportCount'));
+        return view('dashboard', compact('userCount', 'busCount', 'parkingCount', 'servicePartnerCount', 'cardCount', 'buses', 'parkings', 'servicePartners', 'openSupportCount'));
     })->name('dashboard');
 
     // Profile Management
@@ -160,6 +168,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/profile', 'update')->name('profile.update');
         Route::put('/profile/avatar', 'updateAvatar')->name('profile.update-avatar');
         Route::put('/profile/password', 'password')->name('profile.password');
+        Route::post('/profile/kyc', 'submitKyc')->name('profile.kyc');
     });
 
     // Administration (Super Admin Only)
@@ -191,6 +200,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/logs/clear', [LogController::class, 'clear'])->name('logs.clear');
 
         Route::resource('parking-attributes', ParkingAttributeController::class);
+        Route::resource('subscription-models', SubscriptionModelController::class);
         Route::post('/cards/bulk-toggle-status', [CardController::class, 'bulkToggleStatus'])->name('cards.bulk-toggle-status');
         Route::post('/cards/{card}/toggle-status', [CardController::class, 'toggleStatus'])->name('cards.toggle-status');
 
@@ -260,6 +270,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('buses', BusController::class);
     Route::post('/parkings/{parking}/toggle-status', [ParkingController::class, 'toggleStatus'])->name('parkings.toggle-status');
     Route::resource('parkings', ParkingController::class);
+    Route::resource('service-partners', ServicePartnerController::class);
+    Route::post('/service-partners/{service_partner}/discounts', [ServicePartnerController::class, 'storeDiscount'])->name('service-partners.discounts.store');
+    Route::delete('/service-partners/{service_partner}/discounts/{discount}', [ServicePartnerController::class, 'destroyDiscount'])->name('service-partners.discounts.destroy');
     Route::resource('cards', CardController::class);
     Route::post('/cards/{card}/request-change', [CardController::class, 'requestChange'])->name('cards.request-change');
     Route::resource('card-applications', CardApplicationController::class);

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" 
-    class="layout-menu-fixed layout-compact {{ $theme === 'dark' ? 'dark-style' : ($theme === 'light' ? 'light-style' : '') }}" 
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    class="layout-menu-fixed layout-compact {{ $theme === 'dark' ? 'dark-style' : ($theme === 'light' ? 'light-style' : '') }}"
     dir="ltr"
-    data-theme="{{ $theme === 'dark' ? 'theme-dark' : ($theme === 'light' ? 'theme-default' : '') }}" 
-    data-assets-path="{{ asset('assets') }}/" 
+    data-theme="{{ $theme === 'dark' ? 'theme-dark' : ($theme === 'light' ? 'theme-default' : '') }}"
+    data-assets-path="{{ asset('assets') }}/"
     data-template="hitee-vertical-menu-template">
 
 <head>
@@ -26,7 +26,7 @@
                 };
 
                 applyTheme(darkQuery.matches);
-                
+
                 darkQuery.addEventListener('change', e => {
                     if ("{{ $theme }}" === 'system') {
                         applyTheme(e.matches);
@@ -37,7 +37,7 @@
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>@yield('title') | Hitee Platform</title>
+    <title>@yield('title','Card') | Hitee Platform</title>
 
     <meta name="description" content="Hitee Card Platform" />
 
@@ -51,7 +51,7 @@
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -71,46 +71,55 @@
         .dark-style .tooltip .bs-tooltip-bottom .tooltip-arrow::before { border-bottom-color: #fff !important; }
         .dark-style .tooltip .bs-tooltip-start .tooltip-arrow::before { border-left-color: #fff !important; }
         .dark-style .tooltip .bs-tooltip-end .tooltip-arrow::before { border-right-color: #fff !important; }
-        
+
         /* Logo Switching */
         .logo-dark-version, .logo-light-version { display: none !important; }
         .dark-style .logo-dark-version { display: inline-block !important; }
         .light-style .logo-light-version { display: inline-block !important; }
-
-        /* Consistent Sizing for Filters and Buttons */
-        .select2-container--default .select2-selection--single {
-            height: 38px !important;
-            padding: 5px 12px;
-            border: 1px solid #d9dee3;
-            border-radius: 0.375rem;
-        }
-        .dark-style .select2-container--default .select2-selection--single {
-            border-color: #444564;
-            background-color: #232333;
-        }
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 26px !important;
-            padding-left: 0 !important;
-            color: #697a8d;
-        }
-        .dark-style .select2-container--default .select2-selection--single .select2-selection__rendered {
-            color: #a3a4cc;
-        }
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px !important;
-        }
-        .form-select, .form-control {
-            height: 38px !important;
-        }
-        .btn-filter-reset {
-            height: 38px !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
     </style>
 
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
+
+    <style>
+        /* Global Resizable Textareas - Fixed to override framework styles */
+        .form-control-text {
+            display: block;
+            width: 100%;
+            padding: 0.4375rem 0.875rem;
+            font-size: 0.9375rem;
+            font-weight: 400;
+            line-height: 1.53;
+            color: #697a8d;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #d9dee3;
+            appearance: none;
+            border-radius: 0.375rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            resize: vertical !important;
+            overflow: auto !important;
+        }
+
+        .dark-style .form-control-text {
+            color: #cbcbe2;
+            background-color: #232333;
+            border-color: #444564;
+        }
+
+        .form-control-text:focus {
+            color: #697a8d;
+            background-color: #fff;
+            border-color: #696cff;
+            outline: 0;
+            box-shadow: 0 0 0.25rem 0.05rem rgba(105, 108, 255, 0.1);
+        }
+
+        .dark-style .form-control-text:focus {
+            color: #cbcbe2;
+            background-color: #232333;
+            border-color: #696cff;
+        }
+    </style>
 </head>
 
 <body>
@@ -280,7 +289,7 @@
                     });
 
                     modalEl.addEventListener('shown.bs.modal', () => input.focus());
-                    
+
                     modalEl.addEventListener('hidden.bs.modal', () => {
                         input.val('');
                         results.html('<div class="text-center py-5 text-muted"><i class="bx bx-search-alt fs-1 mb-2"></i><p>Search for anything...</p></div>');
@@ -400,5 +409,78 @@
         });
     </script>
     @stack('page-js')
+
+    <!-- Request Change Modal -->
+    <div class="modal fade" id="requestChangeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form id="requestChangeForm">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Request Change</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="rc_item_id" name="item_id">
+                        <input type="hidden" id="rc_item_type" name="item_type">
+                        <div class="row">
+                            <div class="col mb-3">
+                                <label for="rc_message" class="form-label">What would you like to change?</label>
+                                <textarea class="form-control-text" id="rc_message" name="message" rows="4" placeholder="Describe the changes you need (e.g., Update fare to Rs. 25, Add a new stop...)" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', function() {
+            const $ = window.jQuery;
+            if (!$) return;
+
+            // Global handler for Request Change buttons
+            $(document).on('click', '.btn-request-change', function() {
+                const id = $(this).data('id');
+                const type = $(this).data('type');
+                $('#rc_item_id').val(id);
+                $('#rc_item_type').val(type);
+                $('#requestChangeModal').modal('show');
+            });
+
+            $('#requestChangeForm').on('submit', function(e) {
+                e.preventDefault();
+                const btn = $(this).find('button[type="submit"]');
+                const originalText = btn.text();
+                btn.prop('disabled', true).text('Submitting...');
+
+                $.ajax({
+                    url: "{{ route('support.send') }}",
+                    method: 'POST',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        subject: "Change Request: " + $('#rc_item_type').val() + " #" + $('#rc_item_id').val(),
+                        message: $('#rc_message').val() + "\n\n[System ID: " + $('#rc_item_id').val() + ", Type: " + $('#rc_item_type').val() + "]",
+                    },
+                    success: function(response) {
+                        $('#requestChangeModal').modal('hide');
+                        $('#rc_message').val('');
+                        alert('Your change request has been submitted successfully.');
+                    },
+                    error: function() {
+                        alert('Something went wrong. Please try again.');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).text(originalText);
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -31,6 +31,6 @@
 </div>
 
 <div class="mt-4">
-    <button type="submit" class="btn btn-primary me-2">Save Role</button>
-    <a href="{{ route('roles.index') }}" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Save Role</button>
+    <a href="{{ route('roles.index') }}" class="btn btn-label-secondary">Cancel</a>
 </div>

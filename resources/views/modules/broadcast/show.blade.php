@@ -37,7 +37,7 @@
                         </li>
                         <li class="d-flex mb-3">
                             <span class="fw-bold me-2">Date:</span>
-                            <span>{{ $broadcast->created_at->format('M d, Y H:i:s') }}</span>
+                            <span>{{ formatDate($broadcast->created_at) }}</span>
                         </li>
                         <li class="d-flex mb-3">
                             <span class="fw-bold me-2">Total Targeted:</span>

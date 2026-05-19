@@ -69,10 +69,13 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Banner Type</label>
-                            <select name="type" id="bannerType" class="form-select" required>
-                                <option value="single">Single Image</option>
-                                <option value="carousel">Carousel (Multiple Images)</option>
-                            </select>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-chevron-right"></i></span>
+                                <select name="type" id="bannerType" class="form-select" required>
+                                    <option value="single">Single Image</option>
+                                    <option value="carousel">Carousel (Multiple Images)</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Status</label>
@@ -102,11 +105,17 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="bannerTitle">Title</label>
-                            <input type="text" class="form-control" id="bannerTitle" name="title" placeholder="Enter banner title" />
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-heading"></i></span>
+                                <input type="text" class="form-control" id="bannerTitle" name="title" placeholder="Enter banner title" />
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="bannerLink">Link</label>
-                            <input type="url" class="form-control" id="bannerLink" name="link" placeholder="https://example.com" />
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-link"></i></span>
+                                <input type="url" class="form-control" id="bannerLink" name="link" placeholder="https://example.com" />
+                            </div>
                         </div>
                     </div>
 
@@ -125,7 +134,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
+                    <button type="submit" class="btn btn-primary"><i class="bx bx-save me-1"></i> Save changes</button>
                 </div>
             </form>
         </div>
@@ -234,14 +243,23 @@
                         <div class="text-center mb-2">
                             <img src="${imageUrl}" class="rounded img-fluid item-preview" style="max-height: 80px;" />
                         </div>
-                        <input type="file" name="items[${index}][image]" class="form-control form-control-sm carousel-file-input" accept="image/*" />
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-image-add"></i></span>
+                            <input type="file" name="items[${index}][image]" class="form-control form-control-sm carousel-file-input" accept="image/*" />
+                        </div>
                     </div>
                     <div class="col-md-9">
                         <div class="mb-2">
-                            <input type="text" name="items[${index}][title]" class="form-control form-control-sm" placeholder="Item Title" value="${data ? (data.title || '') : ''}" required />
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-heading"></i></span>
+                                <input type="text" name="items[${index}][title]" class="form-control form-control-sm" placeholder="Item Title" value="${data ? (data.title || '') : ''}" required />
+                            </div>
                         </div>
                         <div>
-                            <input type="url" name="items[${index}][link]" class="form-control form-control-sm" placeholder="Item Link" value="${data ? (data.link || '') : ''}" required />
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-link"></i></span>
+                                <input type="url" name="items[${index}][link]" class="form-control form-control-sm" placeholder="Item Link" value="${data ? (data.link || '') : ''}" required />
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -9,7 +9,7 @@
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">{{ __('messages.notification_templates') }}</h5>
-            <a href="{{ route('broadcast.index') }}" class="btn btn-sm btn-secondary">{{ __('messages.back') }}</a>
+            <a href="{{ route('broadcast.index') }}" class="btn btn-sm btn-label-secondary">{{ __('messages.back') }}</a>
         </div>
         <div class="card-body">
             @if ($errors->any())
@@ -27,43 +27,55 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="type">{{ __('messages.type') }}</label>
-                        <select name="type" id="type" class="form-select" required onchange="toggleEditor()">
-                            <option value="fcm">FCM Push Notification</option>
-                            <option value="email">Email</option>
-                            <option value="sms">SMS</option>
-                        </select>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-category"></i></span>
+                            <select name="type" id="type" class="form-select" required onchange="toggleEditor()">
+                                <option value="fcm">FCM Push Notification</option>
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="name">{{ __('messages.template_name') }}</label>
-                        <input type="text" class="form-control" id="name" name="name" required placeholder="e.g. Welcome Message">
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-detail"></i></span>
+                            <input type="text" class="form-control" id="name" name="name" required placeholder="e.g. Welcome Message">
+                        </div>
                     </div>
                 </div>
 
                 <div class="row" id="subjectFields">
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="subject_en">{{ __('messages.subject') }} (English)</label>
-                        <input type="text" class="form-control" id="subject_en" name="subject_en" placeholder="{{ __('messages.subject') }}">
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-heading"></i></span>
+                            <input type="text" class="form-control" id="subject_en" name="subject_en" placeholder="{{ __('messages.subject') }}">
+                        </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="subject_ne">{{ __('messages.subject') }} (Nepali)</label>
-                        <input type="text" class="form-control" id="subject_ne" name="subject_ne" placeholder="{{ __('messages.subject') }}">
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-heading"></i></span>
+                            <input type="text" class="form-control" id="subject_ne" name="subject_ne" placeholder="{{ __('messages.subject') }}">
+                        </div>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="body_en">{{ __('messages.message') }} (English)</label>
-                        <textarea id="body_en" class="form-control" name="body_en" rows="5" required placeholder="Supports variable {name}"></textarea>
+                        <textarea id="body_en" class="form-control-text" name="body_en" rows="5" required placeholder="Supports variable {name}"></textarea>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label" for="body_ne">{{ __('messages.message') }} (Nepali)</label>
-                        <textarea id="body_ne" class="form-control" name="body_ne" rows="5" required placeholder="Supports variable {name}"></textarea>
+                        <textarea id="body_ne" class="form-control-text" name="body_ne" rows="5" required placeholder="Supports variable {name}"></textarea>
                     </div>
                 </div>
 
                 <p class="text-muted"><small>Note: You can use dynamic variables like <code>{name}</code> in both subject and body.</small></p>
 
-                <button type="submit" class="btn btn-primary">{{ __('messages.save') }}</button>
+                <button type="submit" class="btn btn-primary"><i class="bx bx-save me-1"></i> {{ __('messages.save') }}</button>
             </form>
         </div>
     </div>

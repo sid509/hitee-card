@@ -93,6 +93,11 @@
                     @endif
 
                     @if(auth()->user()->hasRole('merchant'))
+                        @php
+                            $merchantType = auth()->user()->merchant_type ?? 'bus_operator';
+                        @endphp
+                        
+                        @if($merchantType === 'bus_operator')
                         <div class="col-md-3 col-6">
                             <a href="{{ route('buses.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-bus fs-3 mb-2 text-primary"></i>
@@ -100,9 +105,30 @@
                             </a>
                         </div>
                         <div class="col-md-3 col-6">
+                            <a href="{{ route('routes.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-map-alt fs-3 mb-2 text-info"></i>
+                                <span class="small fw-medium">Routes & Fares</span>
+                            </a>
+                        </div>
+                        @elseif($merchantType === 'parking_operator')
+                        <div class="col-md-3 col-6">
                             <a href="{{ route('parkings.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                 <i class="bx bx-car fs-3 mb-2 text-primary"></i>
                                 <span class="small fw-medium">My {{ __('messages.parkings') }}</span>
+                            </a>
+                        </div>
+                        @elseif($merchantType === 'service_partner')
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('service-partners.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-store fs-3 mb-2 text-primary"></i>
+                                <span class="small fw-medium">My Services</span>
+                            </a>
+                        </div>
+                        @endif
+                        <div class="col-md-3 col-6">
+                            <a href="{{ route('staff.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
+                                <i class="bx bx-group fs-3 mb-2 text-success"></i>
+                                <span class="small fw-medium">Staff Mgmt</span>
                             </a>
                         </div>
                     @endif
@@ -200,21 +226,6 @@
                 </div>
             </div>
             <div class="col-lg-6 col-md-12 col-6 mb-4">
-                <div class="card">
-                    <div class="card-body p-3">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar flex-shrink-0 me-2">
-                                <span class="avatar-initial rounded bg-label-success"><i class="bx bx-transfer-alt"></i></span>
-                            </div>
-                            <div class="card-info">
-                                <h6 class="mb-0">{{ $transactionCount }}</h6>
-                                <small class="text-muted">Txns</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-12 col-6 mb-4">
                 <a href="{{ route('supports.index') }}" class="card hover-light">
                     <div class="card-body p-3">
                         <div class="d-flex align-items-center">
@@ -241,7 +252,7 @@
                             </div>
                             <div class="card-info">
                                 <h6 class="mb-0">{{ $busCount }}</h6>
-                                <small class="text-muted">{{ auth()->user()->hasRole('merchant') ? __('messages.buses') : 'Fleet' }}</small>
+                                <small class="text-muted">{{ __('messages.buses') }}</small>
                             </div>
                         </div>
                     </div>
@@ -262,6 +273,21 @@
                     </div>
                 </div>
             </div>
+            <div class="col-lg-6 col-md-12 col-6 mb-4">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar flex-shrink-0 me-2">
+                                <span class="avatar-initial rounded bg-label-success"><i class="bx bx-store"></i></span>
+                            </div>
+                            <div class="card-info">
+                                <h6 class="mb-0">{{ $servicePartnerCount ?? 0 }}</h6>
+                                <small class="text-muted">Partners</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             @endif
         </div>
     </div>
@@ -272,9 +298,12 @@
     @if(auth()->user()->hasRole('super-admin', 'merchant'))
     <div class="col-12 mb-4" id="fleet-map-container">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="mb-0">Fleet & Asset Locations</h5>
-                <button id="toggleMapSize" class="btn btn-sm btn-outline-primary"><i class="bx bx-fullscreen"></i> Toggle Fullscreen</button>
+                <div class="d-flex gap-2">
+                    <button id="centerOnMeFleet" class="btn btn-sm btn-outline-secondary"><i class="bx bx-target-lock"></i> Center on Me</button>
+                    <button id="toggleMapSize" class="btn btn-sm btn-outline-primary"><i class="bx bx-fullscreen"></i> Toggle Fullscreen</button>
+                </div>
             </div>
             <div class="card-body">
                 <div id="fleet-map" style="height: 450px; border-radius: 8px;"></div>
@@ -344,6 +373,7 @@
         const createMap = (id) => {
             const el = document.getElementById(id);
             if (!el) return null;
+            // Default to Kathmandu but we will try to center on user location
             const m = L.map(id).setView([27.7172, 85.3240], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
@@ -351,13 +381,59 @@
             return m;
         };
 
+        const centerMapOnUser = (map, defaultZoom = 13, callback = null) => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    map.setView([lat, lng], defaultZoom);
+                    
+                    // Add/Update user marker
+                    if (!window.mapUserMarkers) window.mapUserMarkers = new Map();
+                    if (window.mapUserMarkers.has(map)) {
+                        map.removeLayer(window.mapUserMarkers.get(map));
+                    }
+
+                    const marker = L.circleMarker([lat, lng], {
+                        radius: 8,
+                        fillColor: "#696cff",
+                        color: "#fff",
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).addTo(map).bindPopup("You are here");
+                    
+                    window.mapUserMarkers.set(map, marker);
+
+                    if (callback) callback(true, lat, lng);
+                }, (error) => {
+                    console.warn("Geolocation failed or denied:", error);
+                    if (callback) callback(false);
+                }, { timeout: 5000 });
+            } else {
+                if (callback) callback(false);
+            }
+        };
+
         // 1. Admin/Merchant Fleet Map
         @if(auth()->user()->hasRole('super-admin', 'merchant'))
         try {
             const fleetMap = createMap('fleet-map');
             if (fleetMap) {
+                let userLocated = false;
                 const buses = @json($buses);
                 const parkings = @json($parkings);
+                const servicePartners = @json($servicePartners ?? []);
+                const fleetBounds = L.latLngBounds();
+
+                // 1. Center on user by default
+                centerMapOnUser(fleetMap, 12, (success) => {
+                    userLocated = success;
+                    // If geolocation fails, fallback to bounds
+                    if (!success && fleetBounds.isValid()) {
+                        fleetMap.fitBounds(fleetBounds, {padding: [50, 50]});
+                    }
+                });
 
                 const busIcon = L.divIcon({
                     html: '<i class="bx bx-bus bg-primary text-white p-1 rounded-circle shadow" style="font-size: 20px; border: 2px solid white;"></i>',
@@ -369,7 +445,10 @@
                     className: 'custom-div-icon', iconSize: [26, 26], iconAnchor: [13, 13]
                 });
 
-                const fleetBounds = L.latLngBounds();
+                const serviceIcon = L.divIcon({
+                    html: '<i class="bx bx-store bg-success text-white p-1 rounded-circle shadow" style="font-size: 20px; border: 2px solid white;"></i>',
+                    className: 'custom-div-icon', iconSize: [26, 26], iconAnchor: [13, 13]
+                });
 
                 buses.forEach(bus => {
                     if (bus.latitude && bus.longitude) {
@@ -389,9 +468,18 @@
                     }
                 });
 
-                if (fleetBounds.isValid()) {
-                    fleetMap.fitBounds(fleetBounds, {padding: [50, 50]});
-                }
+                servicePartners.forEach(sp => {
+                    if (sp.latitude && sp.longitude) {
+                        L.marker([sp.latitude, sp.longitude], {icon: serviceIcon})
+                            .addTo(fleetMap)
+                            .bindPopup(`<strong>${sp.name}</strong><br>${sp.service_type}<br><a href="/service-partners/${sp.id}" class="btn btn-xs btn-success mt-1 text-white">View Details</a>`);
+                        fleetBounds.extend([sp.latitude, sp.longitude]);
+                    }
+                });
+
+                $('#centerOnMeFleet').on('click', function() {
+                    centerMapOnUser(fleetMap, 15);
+                });
 
                 $('#toggleMapSize').on('click', function() {
                     const wrapper = $('#fleet-map-container');

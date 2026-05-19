@@ -9,6 +9,7 @@
         "php": "^8.3",
         "dedoc/scramble": "^0.13.20",
         "intervention/image": "^4.0",
+        "kreait/laravel-firebase": "^7.2",
         "lab404/laravel-impersonate": "^1.7",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",

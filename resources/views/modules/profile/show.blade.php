@@ -44,18 +44,27 @@
                     <div class="row">
                         <div class="mb-3 col-md-6">
                             <label for="name" class="form-label">Full Name</label>
-                            <input class="form-control @error('name') is-invalid @enderror" type="text" id="name" name="name" value="{{ old('name', $user->name) }}" autofocus />
-                            @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-user"></i></span>
+                                <input class="form-control @error('name') is-invalid @enderror" type="text" id="name" name="name" value="{{ old('name', $user->name) }}" autofocus />
+                            </div>
+                            @error('name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
                         <div class="mb-3 col-md-6">
                             <label for="email" class="form-label">E-mail</label>
-                            <input class="form-control @error('email') is-invalid @enderror" type="text" id="email" name="email" value="{{ old('email', $user->email) }}" placeholder="john.doe@example.com" />
-                            @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-envelope"></i></span>
+                                <input class="form-control @error('email') is-invalid @enderror" type="text" id="email" name="email" value="{{ old('email', $user->email) }}" placeholder="john.doe@example.com" />
+                            </div>
+                            @error('email') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
                         <div class="mb-3 col-md-6">
                             <label for="phone_number" class="form-label">Phone Number</label>
-                            <input class="form-control @error('phone_number') is-invalid @enderror" type="text" id="phone_number" name="phone_number" value="{{ old('phone_number', $user->phone_number) }}" placeholder="98XXXXXXXX" />
-                            @error('phone_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-phone"></i></span>
+                                <input class="form-control @error('phone_number') is-invalid @enderror" type="text" id="phone_number" name="phone_number" value="{{ old('phone_number', $user->phone_number) }}" placeholder="98XXXXXXXX" />
+                            </div>
+                            @error('phone_number') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
                         <div class="mb-3 col-md-6 d-flex align-items-center">
                             <div class="form-check mt-3">
@@ -66,9 +75,73 @@
                         </div>
                     </div>
                     <div class="mt-2">
-                        <button type="submit" class="btn btn-primary me-2">Save changes</button>
+                        <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Save changes</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <h5 class="card-header">KYC Verification</h5>
+            <div class="card-body">
+                @if($user->kyc_status === 'unverified' || $user->kyc_status === 'rejected')
+                    <div class="alert alert-warning mb-4">
+                        <h6 class="alert-heading mb-1">Your account is not verified!</h6>
+                        <p class="mb-0">Verify your KYC to get a personalized card and avail special discounts (Student, Old Age, etc.).</p>
+                    </div>
+                    <form action="{{ route('profile.kyc') }}" method="POST">
+                        @csrf
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label for="full_name" class="form-label">Full Name (as per ID)</label>
+                                <div class="input-group input-group-merge">
+                                    <span class="input-group-text"><i class="bx bx-user"></i></span>
+                                    <input class="form-control" type="text" id="full_name" name="full_name" value="{{ $user->name }}" required />
+                                </div>
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="id_type" class="form-label">ID Type</label>
+                                <div class="input-group input-group-merge">
+                                    <span class="input-group-text"><i class="bx bx-id-card"></i></span>
+                                    <select class="form-select" id="id_type" name="id_type" required>
+                                        <option value="citizenship">Citizenship</option>
+                                        <option value="passport">Passport</option>
+                                        <option value="license">Driving License</option>
+                                        <option value="student_id">Student ID</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="id_number" class="form-label">ID Number</label>
+                                <div class="input-group input-group-merge">
+                                    <span class="input-group-text"><i class="bx bx-hash"></i></span>
+                                    <input class="form-control" type="text" id="id_number" name="id_number" required />
+                                </div>
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="kyc_type" class="form-label">User Category</label>
+                                <div class="input-group input-group-merge">
+                                    <span class="input-group-text"><i class="bx bx-category"></i></span>
+                                    <select class="form-select" id="kyc_type" name="kyc_type" required>
+                                        <option value="standard">Standard (Adult)</option>
+                                        <option value="student">Student</option>
+                                        <option value="old_age">Old Age (Senior Citizen)</option>
+                                        <option value="tourist">Tourist</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-warning mt-2"><i class="bx bx-check-shield me-1"></i> Submit KYC</button>
+                    </form>
+                @elseif($user->kyc_status === 'pending')
+                    <div class="alert alert-info">
+                        <i class="bx bx-time me-2"></i> Your KYC is currently under review.
+                    </div>
+                @else
+                    <div class="alert alert-success">
+                        <i class="bx bx-check-circle me-2"></i> Your account is verified ({{ ucfirst($user->kyc_status) }}).
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -82,29 +155,32 @@
                         <div class="mb-3 col-md-6 form-password-toggle">
                             <label class="form-label" for="current_password">Current Password</label>
                             <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-lock-alt"></i></span>
                                 <input class="form-control @error('current_password') is-invalid @enderror" type="password" name="current_password" id="current_password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
                                 <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
-                                @error('current_password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
+                            @error('current_password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
                     </div>
                     <div class="row">
                         <div class="mb-3 col-md-6 form-password-toggle">
                             <label class="form-label" for="password">New Password</label>
                             <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-lock-alt"></i></span>
                                 <input class="form-control @error('password') is-invalid @enderror" type="password"
                                     id="password" name="password"
                                     placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
                                 <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
-                                @error('password')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                                @enderror
                             </div>
+                            @error('password')
+                            <span class="invalid-feedback d-block">{{ $message }}</span>
+                            @enderror
                         </div>
 
                         <div class="mb-3 col-md-6 form-password-toggle">
                             <label class="form-label" for="password_confirmation">Confirm New Password</label>
                             <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-lock-alt"></i></span>
                                 <input class="form-control" type="password" name="password_confirmation"
                                     id="password_confirmation"
                                     placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
@@ -113,7 +189,7 @@
                         </div>
                     </div>
                     <div class="mt-2">
-                        <button type="submit" class="btn btn-primary me-2">Update Password</button>
+                        <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Update Password</button>
                     </div>
                 </form>
             </div>

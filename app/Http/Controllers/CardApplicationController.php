@@ -20,6 +20,9 @@ class CardApplicationController extends Controller
 
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->editColumn('created_at', function($row){
+                    return formatDate($row->created_at);
+                })
                 ->editColumn('type', function($row) {
                     return ucfirst($row->type);
                 })

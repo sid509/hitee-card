@@ -28,7 +28,7 @@
                     </div>
                     <div class="row mb-4">
                         <div class="col-sm-4 fw-medium">Submitted Date:</div>
-                        <div class="col-sm-8">{{ $cardApplication->created_at->format('M d, Y h:i A') }}</div>
+                        <div class="col-sm-8">{{ formatDate($cardApplication->created_at) }}</div>
                     </div>
 
                     @if($cardApplication->type == 'personalized')
@@ -106,28 +106,34 @@
                             
                             <div class="mb-3">
                                 <label class="form-label">Action</label>
-                                <select name="status" id="action_status" class="form-select" required>
-                                    <option value="">Select Action</option>
-                                    <option value="approved">Approve & Issue Card</option>
-                                    <option value="rejected">Reject Application</option>
-                                </select>
+                                <div class="input-group input-group-merge">
+                                    <span class="input-group-text"><i class="bx bx-chevron-right"></i></span>
+                                    <select name="status" id="action_status" class="form-select" required>
+                                        <option value="">Select Action</option>
+                                        <option value="approved">Approve & Issue Card</option>
+                                        <option value="rejected">Reject Application</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="mb-3" id="card_selection" style="display: none;">
                                 <label class="form-label">Assign Physical Card</label>
-                                <select name="card_number" class="form-select select2-ajax-cards">
-                                    <option value="">Search Available Cards...</option>
-                                </select>
+                                <div class="input-group input-group-merge">
+                                    <span class="input-group-text"><i class="bx bx-credit-card"></i></span>
+                                    <select name="card_number" class="form-select select2-ajax-cards">
+                                        <option value="">Search Available Cards...</option>
+                                    </select>
+                                </div>
                                 <div class="form-text text-danger small">Only cards NOT assigned to any user will appear here.</div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Admin Remarks</label>
-                                <textarea name="admin_remarks" class="form-control" rows="3" placeholder="Enter remarks..."></textarea>
+                                <textarea name="admin_remarks" class="form-control-text" rows="3" placeholder="Enter remarks..."></textarea>
                             </div>
 
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Submit Decision</button>
+                                <button type="submit" class="btn btn-primary"><i class="bx bx-check-circle me-1"></i> Submit Decision</button>
                             </div>
                         </form>
                     </div>

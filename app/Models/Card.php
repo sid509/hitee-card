@@ -9,7 +9,20 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Card extends Model
 {
     use SoftDeletes;
-    protected $fillable = ['card_number', 'hwid', 'status', 'is_currently_active', 'user_id'];
+    protected $fillable = [
+        'card_number', 
+        'hwid', 
+        'status', 
+        'is_currently_active', 
+        'user_id',
+        'is_physical',
+        'is_personalized'
+    ];
+
+    public function subscriptionModels()
+    {
+        return $this->belongsToMany(SubscriptionModel::class, 'card_subscription_model');
+    }
 
     public function user()
     {

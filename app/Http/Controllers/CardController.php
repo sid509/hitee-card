@@ -21,7 +21,7 @@ class CardController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Card::with('user');
+            $query = Card::with(['user', 'subscriptionModels']);
 
             if (auth()->user()->hasRole('customers')) {
                 $query->where('user_id', auth()->id());
@@ -34,11 +34,17 @@ class CardController extends Controller
                 ->addColumn('checkbox', function($row){
                     return '<input type="checkbox" class="form-check-input row-checkbox" value="'.$row->id.'">';
                 })
+                ->addColumn('subscriptions', function($row){
+                    return $row->subscriptionModels->pluck('name')->implode(', ') ?: '<span class="text-muted">None</span>';
+                })
                 ->addColumn('usage_badge', function($row){
                     $isTraveling = $row->hasOngoingRide();
                     return $isTraveling
                         ? '<span class="badge bg-label-warning">In Use</span>'
                         : '<span class="badge bg-label-secondary">Idle</span>';
+                })
+                ->editColumn('created_at', function($row){
+                    return formatDate($row->created_at);
                 })
                 ->addColumn('action', function($row){
                     $actions = '';
@@ -53,7 +59,6 @@ class CardController extends Controller
                         // View Button
                         $actions .= '<a href="'.route('cards.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
 
-
                         $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-card-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
 
                         // Edit Button
@@ -64,8 +69,7 @@ class CardController extends Controller
                                         '.method_field('DELETE').'
                                         <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete"><i class="bx bx-trash"></i></button>
                                     </form>';
-                    }
- elseif (auth()->user()->hasRole('customers')) {
+                    } elseif (auth()->user()->hasRole('customers')) {
                         // Customer action
                         $canEnable = !$row->is_currently_active || $row->status !== 'active';
                         $canDisable = $row->is_currently_active && $row->status === 'active';
@@ -84,7 +88,7 @@ class CardController extends Controller
                     }
                     return $actions;
                 })
-                ->rawColumns(['action', 'usage_badge', 'checkbox'])
+                ->rawColumns(['action', 'usage_badge', 'checkbox', 'subscriptions'])
                 ->make(true);
         }
 
@@ -119,9 +123,23 @@ class CardController extends Controller
     {
         if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) abort(403);
 
-        $card->load(['user', 'taps.reference', 'rides.reference']);
+        $card->load(['user', 'subscriptionModels.discounts.servicePartner', 'taps.reference', 'rides.reference']);
         $recentTaps = Tap::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
         $recentRides = Ride::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
+
+        // Calculate Stats
+        $travelCount = $card->rides()->where('status', 'completed')->count();
+        $parkingTaps = $card->taps()->where('reference_type', 'App\Models\Parking')->orderBy('created_at', 'asc')->get();
+        
+        $totalParkingMinutes = 0;
+        $tempInTap = null;
+        foreach ($parkingTaps as $tap) {
+            if ($tap->type === 'in') { $tempInTap = $tap; }
+            elseif ($tap->type === 'out' && $tempInTap) {
+                $totalParkingMinutes += $tap->created_at->diffInMinutes($tempInTap->created_at);
+                $tempInTap = null;
+            }
+        }
 
         $ins = \App\Models\BalanceIn::where('card_id', $card->id)->where('status', 'completed')->get()->map(function($item) {
             $item->log_type = 'in';
@@ -133,7 +151,7 @@ class CardController extends Controller
         });
         $balanceLogs = $ins->concat($outs)->sortByDesc('created_at');
 
-        return view('modules.cards.show', compact('card', 'recentTaps', 'recentRides', 'balanceLogs'));
+        return view('modules.cards.show', compact('card', 'recentTaps', 'recentRides', 'balanceLogs', 'travelCount', 'totalParkingMinutes'));
     }
 
     public function create(Request $request)
@@ -170,6 +188,10 @@ class CardController extends Controller
         }
 
         $card = Card::create($data);
+
+        if ($request->has('subscription_models')) {
+            $card->subscriptionModels()->sync($request->subscription_models);
+        }
 
         // Process application if exists
         if ($request->filled('application_id')) {
@@ -217,6 +239,10 @@ class CardController extends Controller
         }
 
         $card->update($request->all());
+
+        if ($request->has('subscription_models')) {
+            $card->subscriptionModels()->sync($request->subscription_models);
+        }
 
         return redirect()->route('cards.index')->with('success', 'Card updated successfully.');
     }

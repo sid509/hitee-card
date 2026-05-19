@@ -2,26 +2,27 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
+use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
         $this->call([
+            SettingSeeder::class, // Run settings first to populate global variables
+            BannerSeeder::class,
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
-
+            SubscriptionModelSeeder::class,
+            NotificationTemplateSeeder::class,
+            
             // 1. COMPREHENSIVE DATA INGESTION
-            // This replaces individual company seeders with the full JSON dataset
             JsonDataSeeder::class,
 
             // 2. Create Buses and link to Routes
@@ -30,11 +31,17 @@ class DatabaseSeeder extends Seeder
             // 3. Create other assets
             ParkingSeeder::class,
             ParkingAttributeSeeder::class,
+            ServicePartnerSeeder::class,
             StaffSeeder::class,
 
-            // 4. Final Step: Simulation (requires Buses with Fares and Customers with Cards)
+            // 4. Create card applications
+            CardApplicationSeeder::class,
+
+            // 5. Final Step: Simulation (requires Buses with Fares and Customers with Cards)
             CardSeeder::class,
             UltraRealisticTransitSeeder::class,
         ]);
+        
+        $this->command->info('Database thoroughly seeded with all modules!');
     }
 }

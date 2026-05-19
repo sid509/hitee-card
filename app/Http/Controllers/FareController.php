@@ -70,6 +70,8 @@ class FareController extends Controller
                         if ($row->status == 'proposed') {
                             $actions .= '<button type="button" class="btn btn-icon btn-sm btn-success me-1 approve-fare" data-id="'.$row->id.'" title="Approve"><i class="bx bx-check"></i></button>';
                         }
+                    } else if (auth()->user()->hasRole('merchant', 'staff')) {
+                        $actions .= '<button type="button" class="btn btn-sm btn-outline-primary btn-request-change" data-id="'.$row->id.'" data-type="fare" title="Request Change">Request Change</button>';
                     }
 
                     if (auth()->user()->hasRole('super-admin', 'merchant', 'staff')) {

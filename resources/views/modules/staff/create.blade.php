@@ -20,9 +20,12 @@
                     
                     <div class="mb-4">
                         <label class="form-label" for="user_search">Search Existing User (Optional)</label>
-                        <select id="user_search" name="user_id" class="form-select select2-ajax-users">
-                            <option value="">-- Create New User --</option>
-                        </select>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-search"></i></span>
+                            <select id="user_search" name="user_id" class="form-select select2-ajax-users">
+                                <option value="">-- Create New User --</option>
+                            </select>
+                        </div>
                         <div class="form-text">If you select an existing user, the details below will be ignored.</div>
                     </div>
 
@@ -31,20 +34,29 @@
                     <div id="new_user_fields">
                         <div class="mb-3">
                             <label class="form-label" for="name">Full Name</label>
-                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="John Doe" value="{{ old('name') }}" />
-                            @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-user"></i></span>
+                                <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" placeholder="John Doe" value="{{ old('name') }}" />
+                            </div>
+                            @error('name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label" for="email">Email</label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="john@example.com" value="{{ old('email') }}" />
-                            @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-envelope"></i></span>
+                                <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="john@example.com" value="{{ old('email') }}" />
+                            </div>
+                            @error('email') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label" for="password">Password</label>
-                            <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
-                            @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-lock-alt"></i></span>
+                                <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+                            </div>
+                            @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
                     </div>
 
@@ -84,8 +96,8 @@
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary me-2">Add Staff</button>
-                        <a href="{{ route('staff.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary me-2"><i class="bx bx-plus me-1"></i> Add Staff</button>
+                        <a href="{{ route('staff.index') }}" class="btn btn-label-secondary">Cancel</a>
                     </div>
                 </form>
             </div>

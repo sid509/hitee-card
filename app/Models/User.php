@@ -38,7 +38,14 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'status',
         'is_tourist',
+        'kyc_status',
+        'merchant_type',
     ];
+
+    public function servicePartners()
+    {
+        return $this->hasMany(ServicePartner::class, 'merchant_id');
+    }
 
     protected $appends = ['avatar_url'];
 
@@ -261,5 +268,24 @@ class User extends Authenticatable implements MustVerifyEmail
             }
         }
         return false;
+    }
+
+    public function issueTransitCard()
+    {
+        $transitType = SubscriptionModel::where('category', 'transit')->first();
+        if (!$transitType) return null;
+
+        $card = Card::create([
+            'user_id' => $this->id,
+            'card_number' => 'HIT' . str_pad($this->id, 8, '0', STR_PAD_LEFT) . rand(1000, 9999),
+            'status' => 'active',
+            'is_currently_active' => true,
+            'is_physical' => false,
+            'is_personalized' => $this->kyc_status === 'verified',
+        ]);
+
+        $card->subscriptionModels()->attach($transitType->id);
+
+        return $card;
     }
 }

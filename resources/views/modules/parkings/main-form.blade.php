@@ -1,46 +1,61 @@
 <div class="mb-3">
     <label class="form-label" for="name">Parking Name</label>
-    <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" 
-        value="{{ old('name', $parking->name) }}" required />
-    @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-buildings"></i></span>
+        <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" 
+            value="{{ old('name', $parking->name) }}" required />
+    </div>
+    @error('name') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
 </div>
 
 <div class="mb-3">
     <label class="form-label" for="location">Location</label>
-    <input type="text" class="form-control @error('location') is-invalid @enderror" id="location" name="location" 
-        value="{{ old('location', $parking->location) }}" required />
-    @error('location') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-map-pin"></i></span>
+        <input type="text" class="form-control @error('location') is-invalid @enderror" id="location" name="location" 
+            value="{{ old('location', $parking->location) }}" required />
+    </div>
+    @error('location') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
 </div>
 
 <div class="mb-3">
     <label class="form-label" for="total_capacity">Total Capacity</label>
-    <input type="number" class="form-control @error('total_capacity') is-invalid @enderror" id="total_capacity" name="total_capacity" 
-        value="{{ old('total_capacity', $parking->total_capacity) }}" required min="0" />
-    @error('total_capacity') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-hash"></i></span>
+        <input type="number" class="form-control @error('total_capacity') is-invalid @enderror" id="total_capacity" name="total_capacity" 
+            value="{{ old('total_capacity', $parking->total_capacity) }}" required min="0" />
+    </div>
+    @error('total_capacity') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
 </div>
 
 @if(auth()->user()->hasRole('super-admin'))
 <div class="mb-3">
     <label class="form-label" for="merchant_id">Merchant</label>
-    <select name="merchant_id" id="merchant_id" class="form-select @error('merchant_id') is-invalid @enderror">
-        <option value="">Select Merchant</option>
-        @foreach($merchants as $merchant)
-            <option value="{{ $merchant->id }}" {{ old('merchant_id', $parking->merchant_id) == $merchant->id ? 'selected' : '' }}>
-                {{ $merchant->name }}
-            </option>
-        @endforeach
-    </select>
-    @error('merchant_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-user"></i></span>
+        <select name="merchant_id" id="merchant_id" class="form-select @error('merchant_id') is-invalid @enderror">
+            <option value="">Select Merchant</option>
+            @foreach($merchants as $merchant)
+                <option value="{{ $merchant->id }}" {{ old('merchant_id', $parking->merchant_id) == $merchant->id ? 'selected' : '' }}>
+                    {{ $merchant->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+    @error('merchant_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
 </div>
 @endif
 
 <div class="mb-3">
     <label class="form-label" for="status">Status</label>
-    <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
-        <option value="opened" {{ old('status', $parking->status) == 'opened' ? 'selected' : '' }}>Opened</option>
-        <option value="closed" {{ old('status', $parking->status) == 'closed' ? 'selected' : '' }}>Closed</option>
-    </select>
-    @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-info-circle"></i></span>
+        <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
+            <option value="opened" {{ old('status', $parking->status) == 'opened' ? 'selected' : '' }}>Opened</option>
+            <option value="closed" {{ old('status', $parking->status) == 'closed' ? 'selected' : '' }}>Closed</option>
+        </select>
+    </div>
+    @error('status') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
 </div>
 
 <div class="card mb-4 border shadow-none">
@@ -60,19 +75,31 @@
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label small">Title (e.g. 1st Hour)</label>
-                        <input type="text" name="fees[{{ $index }}][title]" class="form-control form-control-sm" value="{{ $fee['title'] }}" required>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-heading"></i></span>
+                            <input type="text" name="fees[{{ $index }}][title]" class="form-control form-control-sm" value="{{ $fee['title'] }}" required>
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small">Subtitle (Optional)</label>
-                        <input type="text" name="fees[{{ $index }}][subtitle]" class="form-control form-control-sm" value="{{ $fee['subtitle'] ?? '' }}">
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-detail"></i></span>
+                            <input type="text" name="fees[{{ $index }}][subtitle]" class="form-control form-control-sm" value="{{ $fee['subtitle'] ?? '' }}">
+                        </div>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small">Price (Rs.)</label>
-                        <input type="number" step="0.01" name="fees[{{ $index }}][price_rs]" class="form-control form-control-sm" value="{{ $fee['price_rs'] }}" required>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-money"></i></span>
+                            <input type="number" step="0.01" name="fees[{{ $index }}][price_rs]" class="form-control form-control-sm" value="{{ $fee['price_rs'] }}" required>
+                        </div>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small">Price (Pts)</label>
-                        <input type="number" step="0.01" name="fees[{{ $index }}][price_pts]" class="form-control form-control-sm" value="{{ $fee['price_pts'] }}" required>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-coin"></i></span>
+                            <input type="number" step="0.01" name="fees[{{ $index }}][price_pts]" class="form-control form-control-sm" value="{{ $fee['price_pts'] }}" required>
+                        </div>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button type="button" class="btn btn-sm btn-outline-danger remove-fee-tier w-100" {{ count($fees) <= 1 ? 'disabled' : '' }}>
@@ -88,14 +115,17 @@
 
 <div class="mb-3">
     <label class="form-label" for="attributes">Facilities & Attributes</label>
-    <select name="attributes[]" id="attributes" class="form-select select2 @error('attributes') is-invalid @enderror" multiple>
-        @foreach($allAttributes as $attribute)
-            <option value="{{ $attribute->id }}" {{ (is_array(old('attributes')) && in_array($attribute->id, old('attributes'))) || ($parking->attributes->contains($attribute->id)) ? 'selected' : '' }}>
-                {{ $attribute->name }}
-            </option>
-        @endforeach
-    </select>
-    @error('attributes') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-list-check"></i></span>
+        <select name="attributes[]" id="attributes" class="form-select select2 @error('attributes') is-invalid @enderror" multiple>
+            @foreach($allAttributes as $attribute)
+                <option value="{{ $attribute->id }}" {{ (is_array(old('attributes')) && in_array($attribute->id, old('attributes'))) || ($parking->attributes->contains($attribute->id)) ? 'selected' : '' }}>
+                    {{ $attribute->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+    @error('attributes') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
 </div>
 
 <div class="mb-3">
@@ -105,8 +135,11 @@
             <img src="{{ $parking->featured_image_url }}" alt="Featured" class="rounded" style="width: 100px; height: 100px; object-fit: cover;">
         </div>
     @endif
-    <input type="file" class="form-control @error('featured_image') is-invalid @enderror" id="featured_image" name="featured_image" accept="image/*" />
-    @error('featured_image') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-image-add"></i></span>
+        <input type="file" class="form-control @error('featured_image') is-invalid @enderror" id="featured_image" name="featured_image" accept="image/*" />
+    </div>
+    @error('featured_image') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
 </div>
 
 <div class="mb-3">
@@ -116,13 +149,16 @@
             <img src="{{ $image->url }}" alt="Gallery" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
         @endforeach
     </div>
-    <input type="file" class="form-control @error('gallery_images') is-invalid @enderror" id="gallery_images" name="gallery_images[]" multiple accept="image/*" />
-    @error('gallery_images') <div class="invalid-feedback">{{ $message }}</div> @enderror
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-images"></i></span>
+        <input type="file" class="form-control @error('gallery_images') is-invalid @enderror" id="gallery_images" name="gallery_images[]" multiple accept="image/*" />
+    </div>
+    @error('gallery_images') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
 </div>
 
 <div class="mt-4">
-    <button type="submit" class="btn btn-primary me-2">Save Parking</button>
-    <a href="{{ route('parkings.index') }}" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Save Parking</button>
+    <a href="{{ route('parkings.index') }}" class="btn btn-label-secondary">Cancel</a>
 </div>
 
 @push('page-js')
@@ -144,19 +180,31 @@
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label small">Title (e.g. 1st Hour)</label>
-                            <input type="text" name="fees[${tierIndex}][title]" class="form-control form-control-sm" placeholder="e.g. 2nd Hour" required>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-heading"></i></span>
+                                <input type="text" name="fees[${tierIndex}][title]" class="form-control form-control-sm" placeholder="e.g. 2nd Hour" required>
+                            </div>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small">Subtitle (Optional)</label>
-                            <input type="text" name="fees[${tierIndex}][subtitle]" class="form-control form-control-sm" placeholder="e.g. Standard rate">
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-detail"></i></span>
+                                <input type="text" name="fees[${tierIndex}][subtitle]" class="form-control form-control-sm" placeholder="e.g. Standard rate">
+                            </div>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small">Price (Rs.)</label>
-                            <input type="number" step="0.01" name="fees[${tierIndex}][price_rs]" class="form-control form-control-sm" value="0" required>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-money"></i></span>
+                                <input type="number" step="0.01" name="fees[${tierIndex}][price_rs]" class="form-control form-control-sm" value="0" required>
+                            </div>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small">Price (Pts)</label>
-                            <input type="number" step="0.01" name="fees[${tierIndex}][price_pts]" class="form-control form-control-sm" value="0" required>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-coin"></i></span>
+                                <input type="number" step="0.01" name="fees[${tierIndex}][price_pts]" class="form-control form-control-sm" value="0" required>
+                            </div>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="button" class="btn btn-sm btn-outline-danger remove-fee-tier w-100">

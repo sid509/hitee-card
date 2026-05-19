@@ -65,8 +65,8 @@
         @foreach(\App\Models\Role::all() as $role)
             <div class="col-md-4">
                 <div class="form-check mt-2">
-                    <input class="form-check-input" type="checkbox" name="roles[]" value="{{ $role->id }}" 
-                        id="role-{{ $role->id }}" 
+                    <input class="form-check-input role-checkbox" type="checkbox" name="roles[]" value="{{ $role->id }}" 
+                        id="role-{{ $role->id }}" data-slug="{{ $role->slug }}"
                         {{ $user->roles->contains($role->id) ? 'checked' : '' }}>
                     <label class="form-check-label" for="role-{{ $role->id }}">
                         {{ $role->name }}
@@ -75,6 +75,22 @@
             </div>
         @endforeach
     </div>
+</div>
+
+<div class="mb-3" id="merchant-type-container" style="display: none;">
+    <label class="form-label" for="merchant_type">Merchant Type</label>
+    <div class="input-group input-group-merge">
+        <span class="input-group-text"><i class="bx bx-category"></i></span>
+        <select name="merchant_type" id="merchant_type" class="form-select @error('merchant_type') is-invalid @enderror">
+            <option value="">Select Merchant Type</option>
+            <option value="bus_operator" {{ old('merchant_type', $user->merchant_type) == 'bus_operator' ? 'selected' : '' }}>Bus Operator</option>
+            <option value="service_partner" {{ old('merchant_type', $user->merchant_type) == 'service_partner' ? 'selected' : '' }}>Service Partner</option>
+            <option value="parking_operator" {{ old('merchant_type', $user->merchant_type) == 'parking_operator' ? 'selected' : '' }}>Parking Operator</option>
+        </select>
+    </div>
+    @error('merchant_type')
+        <div class="text-danger small mt-1">{{ $message }}</div>
+    @enderror
 </div>
 
 <div class="mb-3">
@@ -91,5 +107,5 @@
 
 <div class="mt-4">
     <button type="submit" class="btn btn-primary me-2">Save User</button>
-    <a href="{{ route('users.index') }}" class="btn btn-outline-secondary">Cancel</a>
+    <a href="{{ route('users.index') }}" class="btn btn-label-secondary">Cancel</a>
 </div>

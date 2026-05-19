@@ -15,7 +15,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ __('messages.message') }}</label>
-                        <textarea name="message" class="form-control" rows="4" placeholder="{{ __('messages.message') }}..." required></textarea>
+                        <textarea name="message" class="form-control-text" rows="4" placeholder="{{ __('messages.message') }}..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -15,7 +15,8 @@ class StoreUserRequest extends BaseRequest
             'phone_number' => 'required|string|max:20|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'roles' => 'nullable|array',
-            'is_tourist' => 'nullable|boolean'
+            'is_tourist' => 'nullable|boolean',
+            'merchant_type' => 'nullable|string|in:bus_operator,service_partner,parking_operator'
         ];
     }
 }

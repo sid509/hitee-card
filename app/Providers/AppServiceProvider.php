@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
         // Override Config from Database Settings
         try {
             if (\Schema::hasTable('settings')) {
-                $dbSettings = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
+                $dbSettings = \App\Models\Setting::all()->pluck('value', 'key')->map(fn($v) => trim($v))->toArray();
                 
                 // Mail Config Override
                 if (isset($dbSettings['mail_host'])) config(['mail.mailers.smtp.host' => $dbSettings['mail_host']]);
@@ -44,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
                 if (isset($dbSettings['mail_password'])) config(['mail.mailers.smtp.password' => $dbSettings['mail_password']]);
                 if (isset($dbSettings['mail_encryption'])) config(['mail.mailers.smtp.encryption' => $dbSettings['mail_encryption']]);
                 if (isset($dbSettings['mail_from_address'])) config(['mail.from.address' => $dbSettings['mail_from_address']]);
+                if (isset($dbSettings['mail_from_name'])) config(['mail.from.name' => $dbSettings['mail_from_name']]);
 
                 // Services (Khalti, FB, Google)
                 if (isset($dbSettings['khalti_secret_key'])) config(['services.khalti.secret_key' => $dbSettings['khalti_secret_key']]);

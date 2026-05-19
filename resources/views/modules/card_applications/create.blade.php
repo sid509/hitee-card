@@ -181,7 +181,7 @@
                         <i class="bx bx-chevron-left me-1"></i> Back to History
                     </a>
                     <button type="submit" class="btn btn-primary btn-lg px-5">
-                        Submit Application <i class="bx bx-right-arrow-alt ms-1"></i>
+                        <i class="bx bx-send me-1"></i> Submit Application
                     </button>
                 </div>
             </form>

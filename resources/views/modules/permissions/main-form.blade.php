@@ -11,6 +11,6 @@
 </div>
 
 <div class="mt-4">
-    <button type="submit" class="btn btn-primary me-2">Save Permission</button>
-    <a href="{{ route('permissions.index') }}" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary me-2"><i class="bx bx-save me-1"></i> Save Permission</button>
+    <a href="{{ route('permissions.index') }}" class="btn btn-label-secondary">Cancel</a>
 </div>

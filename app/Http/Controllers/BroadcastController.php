@@ -13,8 +13,51 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification;
+use Kreait\Firebase\Factory;
+
 class BroadcastController extends Controller
 {
+    private $messaging;
+
+    public function __construct()
+    {
+        $this->initializeFirebase();
+    }
+
+    private function initializeFirebase()
+    {
+        try {
+            $factory = new Factory();
+            $serviceAccount = \App\Models\Setting::get('FIREBASE_SERVICE_ACCOUNT');
+
+            if ($serviceAccount) {
+                $serviceAccountData = json_decode($serviceAccount, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($serviceAccountData)) {
+                    $factory = $factory->withServiceAccount($serviceAccountData);
+                } else {
+                    // If it's a file path
+                    $factory = $factory->withServiceAccount($serviceAccount);
+                }
+            } else {
+                $configCredentials = config('firebase.projects.app.credentials');
+                if ($configCredentials) {
+                    $factory = $factory->withServiceAccount($configCredentials);
+                } else {
+                    // If no credentials found, we'll let auto-discovery happen 
+                    // or messaging will remain null and be logged later.
+                    Log::warning("Firebase Initialization: No service account credentials found in settings or config.");
+                    return;
+                }
+            }
+
+            $this->messaging = $factory->createMessaging();
+        } catch (\Exception $e) {
+            Log::error("Firebase Initialization Error: " . $e->getMessage());
+        }
+    }
+
     public function index()
     {
         $templates = NotificationTemplate::latest()->paginate(10, ['*'], 'templates_page');
@@ -62,6 +105,7 @@ class BroadcastController extends Controller
         $template = NotificationTemplate::findOrFail($request->template_id);
         
         $users = collect();
+        $extra_emails = [];
         $extra_tokens = [];
         $extra_phones = [];
 
@@ -81,7 +125,9 @@ class BroadcastController extends Controller
                          ->orWhereIn('phone_number', $phones)
                          ->get();
 
-            // Store direct tokens/phones that might not be in our users table
+            // Store direct tokens/phones/emails that might not be in our users table
+            $foundEmails = $users->pluck('email')->toArray();
+            $extra_emails = array_diff($emails, $foundEmails);
             $extra_tokens = $tokens;
             $extra_phones = $phones;
         }
@@ -91,7 +137,7 @@ class BroadcastController extends Controller
             'sent_by' => auth()->id(),
             'type' => $template->type,
             'title' => $template->name,
-            'total_count' => $users->count() + count($extra_tokens) + count($extra_phones),
+            'total_count' => $users->count() + count($extra_emails) + count($extra_tokens) + count($extra_phones),
         ]);
 
         $successCount = 0;
@@ -106,27 +152,47 @@ class BroadcastController extends Controller
             }
         }
 
-        // 2. Send to extra FCM tokens (if target is specific)
+        // 2. Send to extra emails/tokens/phones (if target is specific)
         if ($request->target_type === 'specific') {
+            foreach ($extra_emails as $email) {
+                if ($template->type !== 'email') continue;
+
+                $subject = $template->subject_en ?? $template->name;
+                $body = $template->body_en;
+
+                $subject = str_replace('{name}', 'Valued User', $subject ?? '');
+                $body = str_replace('{name}', 'Valued User', $body ?? '');
+
+                try {
+                    Mail::to($email)->send(new BroadcastEmail($subject, $body));
+                    $successCount++;
+                } catch (\Exception $e) {
+                    Log::error("Broadcast Extra Email Error ($email): " . $e->getMessage());
+                    $failCount++;
+                }
+            }
+
             foreach ($extra_tokens as $token) {
-                // Check if we already sent to this token via identifyUsers (optional optimization)
+                // Try to find if this token belongs to a user for auditing
                 $fcmModel = FcmToken::where('token', $token)->first();
                 $userByToken = $fcmModel?->user;
                 
-                $title = $template->subject_en;
+                if ($userByToken) {
+                    // Use unified sendToUser for better auditing
+                    if ($this->sendToUser($userByToken, $template, $broadcast->id)) {
+                        $successCount++;
+                    } else {
+                        $failCount++;
+                    }
+                    continue;
+                }
+
+                // If no user found, send to raw token (no UserNotification record created as user_id is required)
+                $title = $template->subject_en ?? $template->name;
                 $body = $template->body_en;
 
-                if ($userByToken) {
-                    $lang = $userByToken->preferred_language === 'ne' ? 'ne' : 'en';
-                    $title = $lang === 'ne' ? $template->subject_ne : $template->subject_en;
-                    $body = $lang === 'ne' ? $template->body_ne : $template->body_en;
-                    
-                    $title = str_replace('{name}', $userByToken->name, $title ?? '');
-                    $body = str_replace('{name}', $userByToken->name, $body ?? '');
-                } else {
-                    $title = str_replace('{name}', 'Valued User', $title ?? '');
-                    $body = str_replace('{name}', 'Valued User', $body ?? '');
-                }
+                $title = str_replace('{name}', 'Valued User', $title ?? '');
+                $body = str_replace('{name}', 'Valued User', $body ?? '');
 
                 $result = $this->sendFcmNotification($token, $title, $body);
                 if ($result === true) {
@@ -170,7 +236,7 @@ class BroadcastController extends Controller
     private function sendToUser(User $user, NotificationTemplate $template, $broadcastId = null)
     {
         $lang = $user->preferred_language === 'ne' ? 'ne' : 'en';
-        $subject = $lang === 'ne' ? $template->subject_ne : $template->subject_en;
+        $subject = $lang === 'ne' ? ($template->subject_ne ?? $template->name) : ($template->subject_en ?? $template->name);
         $body = $lang === 'ne' ? $template->body_ne : $template->body_en;
 
         // Variable replacement
@@ -249,29 +315,51 @@ class BroadcastController extends Controller
 
     private function sendFcmNotification($token, $title, $body)
     {
-        $fcmServerKey = \App\Models\Setting::get('NOTIFICATION_TOKEN', env('NOTIFICATION_TOKEN'));
-        if (!$fcmServerKey) return true; // Simulation
+        if (!$this->messaging) {
+            $this->initializeFirebase();
+            if (!$this->messaging) {
+                Log::error("FCM Send Error: Firebase Messaging not initialized.");
+                return false;
+            }
+        }
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'key=' . $fcmServerKey,
-                'Content-Type' => 'application/json',
-            ])->post('https://fcm.googleapis.com/fcm/send', [
-                'to' => $token,
-                'notification' => ['title' => $title, 'body' => strip_tags($body)],
+            $message = CloudMessage::fromArray([
+                'token' => $token,
+                'notification' => [
+                    'title' => $title,
+                    'body' => strip_tags($body),
+                ],
+                'data' => [
+                    'title' => $title,
+                    'body' => strip_tags($body),
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+                ],
+                'android' => [
+                    'priority' => 'high',
+                    'notification' => [
+                        'sound' => 'default',
+                    ],
+                ],
+                'apns' => [
+                    'payload' => [
+                        'aps' => [
+                            'sound' => 'default',
+                        ],
+                    ],
+                ],
             ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                if (isset($data['failure']) && $data['failure'] > 0) {
-                    $error = $data['results'][0]['error'] ?? '';
-                    return in_array($error, ['NotRegistered', 'InvalidRegistration']) ? 'invalid' : false;
-                }
-                return true;
-            }
-            return false;
+            $this->messaging->send($message);
+            return true;
+        } catch (\Kreait\Firebase\Exception\Messaging\NotFound $e) {
+            Log::warning("FCM delivery failure: Token not found/invalid for token $token");
+            return 'invalid';
+        } catch (\Kreait\Firebase\Exception\Messaging\InvalidMessage $e) {
+            Log::warning("FCM delivery failure: Invalid message/token for token $token");
+            return 'invalid';
         } catch (\Exception $e) {
-            Log::error("FCM Send Error: " . $e->getMessage());
+            Log::error("FCM SDK Exception: " . $e->getMessage());
             return false;
         }
     }

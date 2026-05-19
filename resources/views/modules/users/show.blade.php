@@ -204,7 +204,7 @@
                             <tbody>
                                 @forelse($notifications as $notif)
                                     <tr>
-                                        <td>{{ $notif->created_at->format('M d, Y H:i') }}</td>
+                                        <td>{{ formatDate($notif->created_at) }}</td>
                                         <td>{{ $notif->template ? $notif->template->name : 'Custom / Deleted' }}</td>
                                         <td>
                                             @php
@@ -311,7 +311,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Remarks</label>
-                        <textarea name="remarks" class="form-control" rows="2" placeholder="Reason for adding balance"></textarea>
+                        <textarea name="remarks" class="form-control-text" rows="2" placeholder="Reason for adding balance"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

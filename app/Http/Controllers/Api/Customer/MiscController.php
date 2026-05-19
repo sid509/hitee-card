@@ -143,6 +143,83 @@ class MiscController extends Controller
             ];
         }
 
+        // 3. Fetch Service Partners
+        if (!$type || $type === 'service_partner') {
+            $spQuery = \App\Models\ServicePartner::with(['merchant:id,name'])
+                ->where('status', 'active')
+                ->select('*')
+                ->selectRaw("{$haversine} AS distance");
+
+            if ($isSqlite) {
+                $allSp = $spQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
+                $sPartners = new LengthAwarePaginator(
+                    $allSp->forPage($request->input('sp_page', 1), $perPage),
+                    $allSp->count(),
+                    $perPage,
+                    $request->input('sp_page', 1),
+                    ['path' => $request->url(), 'pageName' => 'sp_page']
+                );
+            } else {
+                $spQuery->whereRaw("{$haversine} <= ?", [$radius])->orderBy('distance');
+                $sPartners = $spQuery->paginate($perPage, ['*'], 'sp_page');
+            }
+
+            $results['service_partners'] = collect($sPartners->items())->map(fn($sp) => [
+                'id'          => $sp->id,
+                'name'        => $sp->name,
+                'service_type'=> $sp->service_type,
+                'address'     => $sp->address,
+                'latitude'    => $sp->latitude,
+                'longitude'   => $sp->longitude,
+                'distance_km' => round((float) $sp->distance, 2),
+                'merchant'    => $sp->merchant?->name,
+                'type'        => 'service_partner',
+            ]);
+
+            $pagination['service_partners'] = [
+                'total'        => $sPartners->total(),
+                'per_page'     => $sPartners->perPage(),
+                'current_page' => $sPartners->currentPage(),
+                'last_page'    => $sPartners->lastPage(),
+            ];
+        }
+
+        // 4. Fetch Stops
+        if (!$type || $type === 'stop') {
+            $stopQuery = Stop::select('*')
+                ->selectRaw("{$haversine} AS distance");
+
+            if ($isSqlite) {
+                $allStops = $stopQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
+                $stops = new LengthAwarePaginator(
+                    $allStops->forPage($request->input('stop_page', 1), $perPage),
+                    $allStops->count(),
+                    $perPage,
+                    $request->input('stop_page', 1),
+                    ['path' => $request->url(), 'pageName' => 'stop_page']
+                );
+            } else {
+                $stopQuery->whereRaw("{$haversine} <= ?", [$radius])->orderBy('distance');
+                $stops = $stopQuery->paginate($perPage, ['*'], 'stop_page');
+            }
+
+            $results['stops'] = collect($stops->items())->map(fn($s) => [
+                'id'          => $s->id,
+                'name'        => $s->name,
+                'latitude'    => $s->latitude,
+                'longitude'   => $s->longitude,
+                'distance_km' => round((float) $s->distance, 2),
+                'type'        => 'stop',
+            ]);
+
+            $pagination['stops'] = [
+                'total'        => $stops->total(),
+                'per_page'     => $stops->perPage(),
+                'current_page' => $stops->currentPage(),
+                'last_page'    => $stops->lastPage(),
+            ];
+        }
+
         return apiResponse(true, 'Nearby items fetched successfully', $results, 200, [], $pagination);
     }
 

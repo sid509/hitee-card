@@ -18,16 +18,22 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Proposal Name</label>
-                            <input type="text" name="name" class="form-control" placeholder="e.g. Standard Fare Hike 2026" required>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-detail"></i></span>
+                                <input type="text" name="name" class="form-control" placeholder="e.g. Standard Fare Hike 2026" required>
+                            </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Route</label>
-                            <select name="route_id" id="route_select_fare" class="form-select" required>
-                                <option value="">Select Route</option>
-                                @foreach($routes as $route)
-                                    <option value="{{ $route->id }}">{{ $route->name }} ({{ $route->stops->count() }} stops)</option>
-                                @endforeach
-                            </select>
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-map-pin"></i></span>
+                                <select name="route_id" id="route_select_fare" class="form-select" required>
+                                    <option value="">Select Route</option>
+                                    @foreach($routes as $route)
+                                        <option value="{{ $route->id }}">{{ $route->name }} ({{ $route->stops->count() }} stops)</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -40,7 +46,7 @@
                     </div>
 
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary me-2">Submit Proposal</button>
+                        <button type="submit" class="btn btn-primary me-2"><i class="bx bx-send me-1"></i> Submit Proposal</button>
                         <a href="{{ route('fares.index') }}" class="btn btn-label-secondary">Cancel</a>
                     </div>
                 </form>
