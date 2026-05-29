@@ -27,6 +27,9 @@ Route::group([], function () {
     Route::get('/buses/{id}',   [HomepageController::class, 'showBus']);
     Route::get('/parkings',     [HomepageController::class, 'listParkings']);
     Route::get('/parkings/{id}', [HomepageController::class, 'showParking']);
+
+    // Tap Handling (Public for Validators)
+    Route::post('/tap', [TapController::class, 'processTap'])->middleware('throttle:300,1');
 });
 
 // 2. Customer Authentication
@@ -74,9 +77,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/route-finder',     [MiscController::class, 'routeFinder']);
         Route::get('/nearby',           [MiscController::class, 'nearby']);
     });
-
-    // Tap Handling
-    Route::post('/tap', [TapController::class, 'processTap']);
 
     // Card Page Stats
     Route::get('/card/stats', [\App\Http\Controllers\CardPageController::class, 'index']);

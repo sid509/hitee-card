@@ -117,6 +117,7 @@ return [
     'broadcast_warning' => 'This action will trigger a broadcast message. Please ensure the template and audience are correct.',
     'tap_in_success' => 'Tap In successful at :location',
     'tap_out_success' => 'Tap Out successful at :location. Fare: :amount pts',
+    'tap_too_fast' => 'Too many taps detected. Please wait a few seconds.',
     'insufficient_balance' => 'Insufficient balance (Min 20 pts required to start a journey)',
     'asset_not_found' => 'Scanner (Asset) not found',
     'card_inactive' => 'Card is blocked or inactive',

@@ -14,6 +14,7 @@ use App\Models\BalanceOut;
 use App\Models\MerchantIncome;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class TapController extends Controller
 {
@@ -30,6 +31,13 @@ class TapController extends Controller
             'card_number' => 'required|exists:cards,card_number',
             'hw_id' => 'required|string'
         ]);
+
+        // 0. Anti-Duplicate Throttling (Prevent exact same tap within 2 seconds)
+        $throttleKey = "tap_throttle_{$request->card_number}_{$request->hw_id}";
+        if (Cache::has($throttleKey)) {
+            return apiResponse(false, __('messages.tap_too_fast'), ['retry_after' => 2], 422);
+        }
+        Cache::put($throttleKey, true, 2); // 2 second lockout for this card on this device
 
         $card = Card::where('card_number', $request->card_number)->with('user')->firstOrFail();
         $asset = $this->resolveAsset($request->hw_id);
@@ -48,6 +56,10 @@ class TapController extends Controller
         return DB::transaction(function() use ($request, $user, $card, $asset, $ongoingRide) {
             if ($ongoingRide) {
                 // If already has an ongoing journey -> TAP OUT
+                // Prevent tap-out if tap-in was too recent (e.g. < 5 seconds ago) - likely a mistake
+                if ($ongoingRide->created_at->diffInSeconds(now()) < 5) {
+                    return apiResponse(false, __('messages.tap_too_fast'), ['retry_after' => 5], 422);
+                }
                 return $this->handleTapOut($request, $ongoingRide, $asset);
             } else {
                 // No ongoing journey -> TAP IN
