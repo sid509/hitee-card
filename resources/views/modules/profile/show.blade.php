@@ -84,7 +84,7 @@
         <div class="card mb-4">
             <h5 class="card-header">KYC Verification</h5>
             <div class="card-body">
-                @if($user->kyc_status === 'unverified' || $user->kyc_status === 'rejected')
+                @if($user->kyc_status === 'unverified' || $user->kyc_status === 'declined')
                     <div class="alert alert-warning mb-4">
                         <h6 class="alert-heading mb-1">Your account is not verified!</h6>
                         <p class="mb-0">Verify your KYC to get a personalized card and avail special discounts (Student, Old Age, etc.).</p>
@@ -133,7 +133,7 @@
                         </div>
                         <button type="submit" class="btn btn-warning mt-2"><i class="bx bx-check-shield me-1"></i> Submit KYC</button>
                     </form>
-                @elseif($user->kyc_status === 'pending')
+                @elseif($user->kyc_status === 'requested')
                     <div class="alert alert-info">
                         <i class="bx bx-time me-2"></i> Your KYC is currently under review.
                     </div>

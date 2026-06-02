@@ -290,7 +290,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'status' => 'active',
             'is_currently_active' => true,
             'is_physical' => false,
-            'is_personalized' => $this->kyc_status === 'verified',
+            'is_personalized' => $this->kyc_status === 'approved',
         ]);
 
         $card->subscriptionModels()->attach($transitType->id);

@@ -76,8 +76,21 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'is_tourist' => $c['tourist'],
                 'status' => $index % 5 == 0 ? 'inactive' : 'active',
-                'kyc_status' => $index % 2 == 0 ? 'verified' : 'pending',
             ]);
+
+            // Create KYC verification
+            if (!$user->kycVerification()->exists()) {
+                \App\Models\KycVerification::create([
+                    'user_id' => $user->id,
+                    'full_name' => $user->name,
+                    'id_type' => 'Citizenship',
+                    'id_number' => 'CTZ-' . rand(1000, 9999),
+                    'kyc_type' => 'standard',
+                    'status' => $index % 2 == 0 ? 'approved' : 'requested',
+                    'verified_at' => $index % 2 == 0 ? now() : null,
+                ]);
+            }
+
             if (!$user->hasRole('customers')) {
                 $user->roles()->attach($customerRole);
             }

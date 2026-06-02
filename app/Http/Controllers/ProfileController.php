@@ -91,10 +91,19 @@ class ProfileController extends Controller
         ]);
 
         $user = auth()->user();
-        $user->update([
-            'kyc_status' => 'pending',
-            // We could store the other info in a meta field or separate table, 
-            // but for now we'll just flag it as pending.
+
+        // Check if there is already a pending or approved request
+        if ($user->kycVerification()->whereIn('status', ['requested', 'approved'])->exists()) {
+            return back()->with('error', 'You already have a pending or approved KYC request.');
+        }
+
+        \App\Models\KycVerification::create([
+            'user_id' => $user->id,
+            'full_name' => $request->full_name,
+            'id_type' => $request->id_type,
+            'id_number' => $request->id_number,
+            'kyc_type' => $request->kyc_type,
+            'status' => 'requested',
         ]);
 
         logActivity('kyc_submission', 'User submitted KYC for verification', [
