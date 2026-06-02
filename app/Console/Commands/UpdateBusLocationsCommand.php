@@ -110,6 +110,17 @@ class UpdateBusLocationsCommand extends Command
                     'latitude' => $newLat,
                     'longitude' => $newLng
                 ]);
+
+                // Broadcast the update
+                try {
+                    broadcast(new \App\Events\BusLocationUpdated(
+                        $bus->id,
+                        $newLat,
+                        $newLng
+                    ));
+                } catch (\Exception $e) {
+                    $this->warn("Broadcast failed for bus {$bus->id}: " . $e->getMessage());
+                }
             }
         }
 

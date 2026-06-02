@@ -298,6 +298,16 @@ class BroadcastController extends Controller
             'error_message' => $errorMessage,
         ]);
 
+        // Broadcast unseen count update
+        try {
+            $unseenCount = \App\Models\UserNotification::where('user_id', $user->id)
+                ->whereNull('seen_at')
+                ->count();
+            broadcast(new \App\Events\UnseenNotificationCountUpdated($user->id, $unseenCount));
+        } catch (\Exception $e) {
+            Log::warning('Broadcast failed during broadcast sendToUser: ' . $e->getMessage());
+        }
+
         return $status === 'sent';
     }
 

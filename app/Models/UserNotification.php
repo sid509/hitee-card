@@ -17,7 +17,12 @@ class UserNotification extends Model
         'body',
         'language',
         'status',
+        'seen_at',
         'error_message',
+    ];
+
+    protected $casts = [
+        'seen_at' => 'datetime',
     ];
 
     public function user()

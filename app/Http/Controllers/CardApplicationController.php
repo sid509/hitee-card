@@ -50,11 +50,18 @@ class CardApplicationController extends Controller
 
     public function create()
     {
+        if (auth()->user()->cards()->exists()) {
+            return redirect()->route('cards.index')->with('error', 'You already have a card linked to your account.');
+        }
         return view('modules.card_applications.create');
     }
 
     public function store(Request $request)
     {
+        if (auth()->user()->cards()->exists()) {
+            return redirect()->route('cards.index')->with('error', 'You already have a card linked to your account.');
+        }
+
         $request->validate([
             'type' => 'required|in:personalized,non-personalized',
             'full_name' => 'required_if:type,personalized|string|max:255',

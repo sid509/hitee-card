@@ -118,6 +118,6 @@ class ParkingController extends Controller
                 'url' => $m->url,
             ])->values(),
         ];
-
-        return apiResponse(true, 'Parking details fetched successfully', $data);
-    }}
+return apiResponse(true, 'Parking details fetched successfully', $data);
+}
+}

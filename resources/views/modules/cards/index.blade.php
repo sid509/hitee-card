@@ -7,6 +7,94 @@
     <span class="text-muted fw-light">Management /</span> Cards
 </h4>
 
+@if(auth()->user()->hasRole('customers') && auth()->user()->cards()->count() === 0)
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card text-center py-5">
+            <div class="card-body">
+                <div class="mb-4">
+                    <i class="bx bx-credit-card-front text-primary" style="font-size: 6rem;"></i>
+                </div>
+                <h3>No Card Linked</h3>
+                <p class="text-muted mb-4">You don't have a physical or virtual Hitee card linked to your account yet. <br> Link an existing card or apply for a new one to start your journey.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{{ route('card-applications.create') }}" class="btn btn-primary btn-lg">
+                        <i class="bx bx-plus me-1"></i> Apply for New Card
+                    </a>
+                    <button type="button" class="btn btn-outline-primary btn-lg" data-bs-toggle="modal" data-bs-target="#linkCardModal">
+                        <i class="bx bx-link me-1"></i> Link Physical Card
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Link Card Modal -->
+<div class="modal fade" id="linkCardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Link Physical Card</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="linkCardForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="bx bx-info-circle me-2"></i>
+                        Enter the card number or tap your card if your device supports NFC.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Card Number</label>
+                        <div class="input-group input-group-merge">
+                            <span class="input-group-text"><i class="bx bx-credit-card"></i></span>
+                            <input type="text" name="card_number" class="form-control" placeholder="Enter card number" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" id="btnLinkCard" class="btn btn-primary">Link Card</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('page-js')
+<script type="module">
+    $(function() {
+        $('#linkCardForm').on('submit', function(e) {
+            e.preventDefault();
+            const btn = $('#btnLinkCard');
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Linking...');
+
+            $.ajax({
+                url: "/api/cards/link", // Reusing the API endpoint
+                method: "POST",
+                data: $(this).serialize(),
+                headers: {
+                    'Authorization': 'Bearer ' + document.querySelector('meta[name="api-token"]')?.content // Assuming token is available
+                },
+                success: function(response) {
+                    showToast(response.message, 'Success', 'success');
+                    window.location.reload();
+                },
+                error: function(xhr) {
+                    const msg = xhr.responseJSON?.message || 'Failed to link card';
+                    showAlert(msg, 'error');
+                },
+                complete: function() {
+                    btn.prop('disabled', false).text('Link Card');
+                }
+            });
+        });
+    });
+</script>
+@endpush
+
+@else
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Cards List</h5>
@@ -88,6 +176,7 @@
         </div>
     </div>
 </div>
+@endif
 @endsection
 
 @push('modals')

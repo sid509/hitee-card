@@ -20,6 +20,13 @@ class CardController extends Controller
      */
     public function index(Request $request)
     {
+        if (auth()->user()->hasRole('customers') && !$request->ajax()) {
+            $card = auth()->user()->cards()->where('is_currently_active', true)->first();
+            if ($card) {
+                return redirect()->route('cards.show', $card->id);
+            }
+        }
+
         if ($request->ajax()) {
             $query = Card::with(['user', 'subscriptionModels']);
 
@@ -181,6 +188,11 @@ class CardController extends Controller
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
+        $user = User::find($request->user_id);
+        if ($user && $user->cards()->exists()) {
+            return back()->withInput()->with('error', 'This user already has a card linked to their account.');
+        }
+
         $data = $request->all();
         // If this card is being set as active for a user, deactivate their other cards
         if ($request->is_currently_active && $request->user_id) {
@@ -232,6 +244,13 @@ class CardController extends Controller
     public function update(UpdateCardRequest $request, Card $card)
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
+
+        if ($request->user_id && $request->user_id != $card->user_id) {
+            $user = User::find($request->user_id);
+            if ($user && $user->cards()->where('id', '!=', $card->id)->exists()) {
+                return back()->withInput()->with('error', 'The target user already has a card linked.');
+            }
+        }
 
         // If this card is being set as active for a user, deactivate their other cards
         if ($request->is_currently_active && $request->user_id) {

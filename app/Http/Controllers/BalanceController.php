@@ -397,6 +397,11 @@ class BalanceController extends Controller
 
         $user = auth()->user();
 
+        // Ensure user has a card
+        if (!$user->cards()->where('is_currently_active', true)->exists()) {
+            return back()->with('error', 'You must have an active card linked to your account to add balance.');
+        }
+
         if ($user->is_tourist) {
             return back()->with('error', 'Khalti is only available for local users. Please use Stripe.');
         }
@@ -490,6 +495,11 @@ class BalanceController extends Controller
         ]);
 
         $user = auth()->user();
+
+        // Ensure user has a card
+        if (!$user->cards()->where('is_currently_active', true)->exists()) {
+            return back()->with('error', 'You must have an active card linked to your account to add balance.');
+        }
 
         if (!$user->hasRole('customers')) {
             return back()->with('error', 'Only customers can topup their balance.');

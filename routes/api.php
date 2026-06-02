@@ -58,6 +58,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile/taps',  [ProfileController::class, 'taps']);
     Route::post('/profile/language',      [ProfileController::class, 'updateLanguage']);
     Route::post('/profile/notifications', [ProfileController::class, 'updateNotification']);
+    Route::get('/profile/status',         [ProfileController::class, 'status']);
+    Route::post('/profile/kyc',           [ProfileController::class, 'submitKyc']);
+
+    // Notifications
+    Route::prefix('notifications')->group(function () {
+        Route::get('/',              [\App\Http\Controllers\Api\Customer\NotificationController::class, 'index']);
+        Route::get('/unseen-count',  [\App\Http\Controllers\Api\Customer\NotificationController::class, 'unseenCount']);
+        Route::post('/{id}/mark-seen', [\App\Http\Controllers\Api\Customer\NotificationController::class, 'markSeen']);
+        Route::post('/mark-all-seen', [\App\Http\Controllers\Api\Customer\NotificationController::class, 'markAllSeen']);
+    });
+
+    // Card Management
+    Route::prefix('cards')->group(function () {
+        Route::post('/link', [\App\Http\Controllers\Api\Customer\CardController::class, 'link']);
+    });
 
     // Support
     Route::get('/support', [SupportController::class, 'index']);

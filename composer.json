@@ -12,6 +12,7 @@
         "kreait/laravel-firebase": "^7.2",
         "lab404/laravel-impersonate": "^1.7",
         "laravel/framework": "^13.0",
+        "laravel/reverb": "^1.10",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.26",
         "laravel/tinker": "^3.0",

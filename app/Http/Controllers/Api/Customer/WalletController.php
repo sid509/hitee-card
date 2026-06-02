@@ -22,13 +22,14 @@ class WalletController extends Controller
     {
         $user = $request->user();
 
-        // 1. Balance & Cards
-        $cards = $user->cards()->where('is_currently_active', true)->get()->map(fn($card) => [
+        // 1. Get the single active card
+        $card = $user->cards()->where('is_currently_active', true)->first();
+        $cardDetails = $card ? [
             'id'          => $card->id,
             'card_number' => $card->card_number,
             'status'      => $card->status,
             'balance_pts' => (float) $card->balance(),
-        ]);
+        ] : null;
 
         // 2. Latest 5 Transactions
         $ins  = $user->balanceIns()->latest()->take(5)->get()->map(fn($tx) => $this->mapTopup($tx));
@@ -41,7 +42,7 @@ class WalletController extends Controller
 
         return apiResponse(true, __('messages.wallet_fetched'), [
             'current_balance_pts' => (float) $user->balance(),
-            'active_cards'        => $cards,
+            'card'                => $cardDetails,
             'latest_transactions' => $latestTransactions,
             'disclaimer'          => __('messages.wallet_disclaimer'),
         ]);
@@ -143,6 +144,11 @@ class WalletController extends Controller
         ]);
 
         $user = $request->user();
+
+        // Ensure user has a card
+        if (!$user->cards()->where('is_currently_active', true)->exists()) {
+            return apiResponse(false, 'You must have an active card linked to your account to add balance.', null, 400);
+        }
 
         if ($request->method === 'khalti' && $user->is_tourist) {
             return apiResponse(false, 'Khalti is only available for local users. Please use Stripe.', null, 400);

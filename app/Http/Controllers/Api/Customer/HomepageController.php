@@ -20,10 +20,11 @@ class HomepageController extends Controller
     // ──────────────────────────────────────────────
 
     /**
-     * GET /api/buses
+     * GET /api/buses (socket)
      *
      * Returns a searchable, paginated list of active buses for the homepage.
      * Proximity sorting/filtering is applied only if both latitude and longitude are provided.
+     * Use the 'buses' socket channel for real-time location updates.
      *
      * @queryParam search string (optional) Search by name or bus number. Example: KTM-01
      * @queryParam latitude float (optional) Latitude for proximity search.
@@ -207,7 +208,7 @@ class HomepageController extends Controller
     }
 
     /**
-     * GET /api/buses/{id}
+     * GET /api/buses/{id} (socket)
      */
     public function showBus($id)
     {

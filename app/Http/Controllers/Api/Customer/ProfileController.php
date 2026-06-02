@@ -258,6 +258,55 @@ class ProfileController extends Controller
         $request->user()->update(['notification_enabled' => $request->enabled]);
 
         return apiResponse(true, __('messages.notifications_updated'));
+    }
+
+    /**
+     * Get a lightweight status check for the user (Card & KYC).
+     */
+    public function status(Request $request)
+    {
+        $user = $request->user();
+        
+        return apiResponse(true, 'Status fetched successfully', [
+            'has_card'   => $user->cards()->exists(),
+            'kyc_status' => $user->kyc_status ?? 'unverified',
+        ]);
+    }
+
+    /**
+     * Submit KYC for verification via API.
+     */
+    public function submitKyc(Request $request)
+    {
+        $request->validate([
+            'full_name' => 'required|string|max:255',
+            'id_type'   => 'required|string',
+            'id_number' => 'required|string|max:255',
+            'kyc_type'  => 'required|in:student,old_age,tourist,standard',
+        ]);
+
+        $user = $request->user();
+
+        // Check if there is already a pending or approved request
+        if ($user->kycVerification()->whereIn('status', ['requested', 'approved'])->exists()) {
+            return apiResponse(false, 'You already have a pending or approved KYC request.', '', 400);
         }
-        }
+        
+        // Create new KYC record
+        \App\Models\KycVerification::create([
+            'user_id'   => $user->id,
+            'full_name' => $request->full_name,
+            'id_type'   => $request->id_type,
+            'id_number' => $request->id_number,
+            'kyc_type'  => $request->kyc_type,
+            'status'    => 'requested',
+        ]);
+
+        logActivity('kyc_submission', 'User submitted KYC for verification via API', [
+            'kyc_type' => $request->kyc_type
+        ], $user->id);
+
+        return apiResponse(true, 'KYC submitted successfully. Our team will verify it shortly.');
+    }
+}
 

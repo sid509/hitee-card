@@ -77,6 +77,7 @@
         </li>
         @endif
 
+        @if(auth()->user()->hasRole('super-admin', 'merchant', 'staff'))
         <!-- 2. Asset Management -->
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Asset Management</span>
@@ -99,6 +100,7 @@
                 <div class="text-truncate">Service Partners</div>
             </a>
         </li>
+        @endif
 
         @if(auth()->user()->hasRole('super-admin', 'merchant'))
         <li class="menu-item {{ request()->routeIs('routes.*', 'fares.*', 'stops.*') ? 'active open' : '' }}">

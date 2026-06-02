@@ -38,9 +38,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'status',
         'is_tourist',
-        'kyc_status',
         'merchant_type',
     ];
+
+    public function kycVerification()
+    {
+        return $this->hasOne(KycVerification::class)->latestOfMany();
+    }
+
+    public function getKycStatusAttribute()
+    {
+        return $this->kycVerification?->status ?? 'unverified';
+    }
 
     public function servicePartners()
     {

@@ -266,13 +266,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/route-finder', [RouteFinderController::class, 'index'])->name('route-finder.index');
     Route::get('/my-rides', [RideController::class, 'myRides'])->name('rides.my-rides');
     Route::post('/rides/simulate-tap', [RideController::class, 'simulateTap'])->name('rides.simulate-tap');
-    Route::post('/buses/{bus}/toggle-status', [BusController::class, 'toggleStatus'])->name('buses.toggle-status');
-    Route::resource('buses', BusController::class);
-    Route::post('/parkings/{parking}/toggle-status', [ParkingController::class, 'toggleStatus'])->name('parkings.toggle-status');
-    Route::resource('parkings', ParkingController::class);
-    Route::resource('service-partners', ServicePartnerController::class);
-    Route::post('/service-partners/{service_partner}/discounts', [ServicePartnerController::class, 'storeDiscount'])->name('service-partners.discounts.store');
-    Route::delete('/service-partners/{service_partner}/discounts/{discount}', [ServicePartnerController::class, 'destroyDiscount'])->name('service-partners.discounts.destroy');
+    
+    // Asset Management (Fleet & Parking) - Restricted to management roles
+    Route::middleware(['role:super-admin,merchant,staff'])->group(function () {
+        Route::post('/buses/{bus}/toggle-status', [BusController::class, 'toggleStatus'])->name('buses.toggle-status');
+        Route::resource('buses', BusController::class);
+        Route::post('/parkings/{parking}/toggle-status', [ParkingController::class, 'toggleStatus'])->name('parkings.toggle-status');
+        Route::resource('parkings', ParkingController::class);
+        Route::resource('service-partners', ServicePartnerController::class);
+        Route::post('/service-partners/{service_partner}/discounts', [ServicePartnerController::class, 'storeDiscount'])->name('service-partners.discounts.store');
+        Route::delete('/service-partners/{service_partner}/discounts/{discount}', [ServicePartnerController::class, 'destroyDiscount'])->name('service-partners.discounts.destroy');
+    });
+
     Route::resource('cards', CardController::class);
     Route::post('/cards/{card}/request-change', [CardController::class, 'requestChange'])->name('cards.request-change');
     Route::resource('card-applications', CardApplicationController::class);
