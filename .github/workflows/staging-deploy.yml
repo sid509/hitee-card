@@ -25,7 +25,7 @@ jobs:
             cd /var/www/card-stg.hitee.ai
 
             # Pull latest code
-            git pull origin staging
+            git pull origin develop
 
             # Install dependencies
             composer install --optimize-autoloader
