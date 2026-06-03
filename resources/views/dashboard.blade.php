@@ -143,7 +143,7 @@
                             @else
                                 <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                     <i class="bx bx-plus-circle fs-3 mb-2 text-primary"></i>
-                                    <span class="small fw-medium">Topup Balance</span>
+                                    <span class="small fw-medium">Top up Balance</span>
                                 </a>
                             @endif
                         </div>
