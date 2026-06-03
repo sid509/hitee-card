@@ -38,7 +38,7 @@
                     <div class="card-body">
                         <h5 class="card-title text-primary mb-3">{{ __('messages.welcome') }} {{ auth()->user()->name }}! 🎉</h5>
                         <p class="mb-6">
-                            Welcome back to Hitee Mobility Platform. Here is what is happening with your account today.
+                            Welcome back to Hitee Platform. Here is what is happening with your account today.
                         </p>
 
                         <div class="d-flex flex-wrap gap-2">
