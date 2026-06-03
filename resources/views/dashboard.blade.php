@@ -38,7 +38,7 @@
                     <div class="card-body">
                         <h5 class="card-title text-primary mb-3">{{ __('messages.welcome') }} {{ auth()->user()->name }}! 🎉</h5>
                         <p class="mb-6">
-                            Welcome back to Hitee Platform. Here is what is happening with your account today.
+                            Welcome back to Hitee Mobility Platform. Here is what is happening with your account today.
                         </p>
 
                         <div class="d-flex flex-wrap gap-2">
@@ -96,7 +96,7 @@
                         @php
                             $merchantType = auth()->user()->merchant_type ?? 'bus_operator';
                         @endphp
-                        
+
                         @if($merchantType === 'bus_operator')
                         <div class="col-md-3 col-6">
                             <a href="{{ route('buses.index') }}" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
@@ -387,7 +387,7 @@
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     map.setView([lat, lng], defaultZoom);
-                    
+
                     // Add/Update user marker
                     if (!window.mapUserMarkers) window.mapUserMarkers = new Map();
                     if (window.mapUserMarkers.has(map)) {
@@ -402,7 +402,7 @@
                         opacity: 1,
                         fillOpacity: 0.8
                     }).addTo(map).bindPopup("You are here");
-                    
+
                     window.mapUserMarkers.set(map, marker);
 
                     if (callback) callback(true, lat, lng);
@@ -511,7 +511,7 @@
                 }
 
                 $('#nearby-status').html('<i class="bx bx-loader-alt bx-spin me-2"></i> Requesting location access...');
-                
+
                 navigator.geolocation.getCurrentPosition((position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
@@ -529,7 +529,7 @@
                     let msg = 'Location access denied.';
                     if (error.code === error.TIMEOUT) msg = 'Location request timed out.';
                     if (error.code === error.POSITION_UNAVAILABLE) msg = 'Location unavailable.';
-                    
+
                     $('#nearby-status').removeClass('alert-info').addClass('alert-danger').html('<i class="bx bx-error-circle me-2"></i> ' + msg);
                     processNearby(27.7172, 85.3240); // Default to Kathmandu
                 }, { timeout: 10000 });
@@ -548,7 +548,7 @@
 
             const processNearby = (userLat, userLng) => {
                 $('#nearby-status').html('<i class="bx bx-loader-alt bx-spin me-2"></i> Finding nearby assets...');
-                
+
                 const combined = [
                     ...allBuses.map(b => ({...b, type: 'bus'})),
                     ...allParkings.map(p => ({...p, type: 'parking'}))

@@ -1,0 +1,44 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    name: Deploy to card-stg.hitee.ai
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STG_SSH_HOST }}
+          username: ${{ secrets.STG_SSH_USER }}
+          key: ${{ secrets.STG_SSH_KEY }}
+          port: ${{ secrets.STG_SSH_PORT }}
+          script: |
+            cd /var/www/card-stg.hitee.ai
+
+            # Pull latest code
+            git pull origin staging
+
+            # Install dependencies
+            composer install --optimize-autoloader
+
+            # Clear and cache config
+            php artisan config:clear
+            php artisan cache:clear
+
+            # Run migrations
+            php artisan migrate --force
+
+            # Restart queue worker if running
+            php artisan queue:restart
+
+            # Reload PHP-FPM
+            sudo systemctl reload php8.3-fpm
