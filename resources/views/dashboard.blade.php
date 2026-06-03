@@ -138,7 +138,7 @@
                             @if(auth()->user()->is_tourist)
                                 <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#stripeTopupModal" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
                                     <i class="bx bxl-stripe fs-3 mb-2 text-primary"></i>
-                                    <span class="small fw-medium">Topup Balance</span>
+                                    <span class="small fw-medium">Top up Balance</span>
                                 </a>
                             @else
                                 <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#khaltiTopupModal" class="d-flex flex-column align-items-center text-center p-3 border rounded h-100 transition-all hover-light text-body">
