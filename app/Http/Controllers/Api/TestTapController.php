@@ -20,7 +20,8 @@ class TestTapController extends TapController
         $bus = \App\Models\Bus::first();
 
         if (!$card || !$bus) {
-            return apiResponse(false, 'No active card or bus found for testing', '', 404);
+            return response("FAILED: No active card or bus found for testing", 404)
+                ->header('Content-Type', 'text/plain');
         }
 
         // Mock request data using the found entities
@@ -32,6 +33,18 @@ class TestTapController extends TapController
         ]);
 
         // We use the existing processTap logic which handles the toggle (ongoing ride check)
-        return $this->processTap($request);
+        $jsonResponse = $this->processTap($request);
+        $data = $jsonResponse->getData();
+
+        $status = $data->status ? 'SUCCESS' : 'FAILED';
+        $output = "{$status}: {$data->message}";
+
+        // If tap out, append balance for better testing visibility (Fare is already in the message)
+        if ($data->status && isset($data->content->type) && $data->content->type === 'out') {
+            $output .= " | Balance: {$data->content->new_balance_pts} pts";
+        }
+
+        return response($output, $jsonResponse->getStatusCode())
+            ->header('Content-Type', 'text/plain');
     }
 }
