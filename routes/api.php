@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\TestTapController;
 
 // Test API for Tap Toggle
 Route::match(['get', 'post'], '/test-tap', [TestTapController::class, 'handleTestTap']);
+Route::match(['get', 'post'], '/gps', [TestTapController::class, 'handleTestTap']);
 
 // 1. Public Homepage & Search (No Auth Required)
 Route::group([], function () {
