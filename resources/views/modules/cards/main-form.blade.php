@@ -62,9 +62,10 @@
     <div class="input-group input-group-merge">
         <span class="input-group-text"><i class="bx bx-info-circle"></i></span>
         <select name="status" id="status" class="form-select @error('status') is-invalid @enderror" required>
-            <option value="active" {{ old('status', $card->status) == 'active' ? 'selected' : '' }}>Active</option>
-            <option value="inactive" {{ old('status', $card->status) == 'inactive' ? 'selected' : '' }}>Inactive</option>
-            <option value="blocked" {{ old('status', $card->status) == 'blocked' ? 'selected' : '' }}>Blocked</option>
+            @php $currentStatus = \App\Enums\CardStatus::fromLegacy(old('status', $card->status))->value; @endphp
+            <option value="ACTIVE" {{ $currentStatus === 'ACTIVE' ? 'selected' : '' }}>Active</option>
+            <option value="INACTIVE" {{ $currentStatus === 'INACTIVE' ? 'selected' : '' }}>Inactive</option>
+            <option value="BLOCKED" {{ $currentStatus === 'BLOCKED' ? 'selected' : '' }}>Blocked</option>
         </select>
     </div>
     @error('status') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror

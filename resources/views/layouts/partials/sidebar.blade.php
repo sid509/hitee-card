@@ -173,7 +173,7 @@
                 </li>
                 <li class="menu-item {{ request()->routeIs('card-reader.tap-test') ? 'active' : '' }}">
                     <a href="{{ route('card-reader.tap-test') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-tap"></i>
+                        <i class="menu-icon tf-icons bx bx-podcast"></i>
                         <div class="text-truncate">Tap Test</div>
                     </a>
                 </li>

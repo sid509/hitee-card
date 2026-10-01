@@ -507,13 +507,27 @@ table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::befor
             border-left: 0 !important;
         }
     }
-    
-    &:focus-within {
-        .input-group-text, 
+
+    // Select2 attaches its dropdown to <body>, so :focus-within is lost
+    // when the dropdown search field is focused. The container keeps
+    // --focus/--open classes regardless of where DOM focus sits.
+    &:focus-within,
+    &:has(> .select2-container--focus),
+    &:has(> .select2-container--open) {
+        .input-group-text,
         .select2-container--default .select2-selection--single,
         .select2-container--default .select2-selection--multiple {
             border-color: var(--bs-primary) !important;
         }
+    }
+}
+
+// Select2 focus/open state outside input groups — match .form-control:focus
+.select2-container--default.select2-container--focus,
+.select2-container--default.select2-container--open {
+    .select2-selection--single,
+    .select2-selection--multiple {
+        border-color: var(--bs-primary) !important;
     }
 }
 
@@ -531,8 +545,10 @@ table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::befor
         }
     }
     
-    .input-group-merge:focus-within {
-        .input-group-text, 
+    .input-group-merge:focus-within,
+    .input-group-merge:has(> .select2-container--focus),
+    .input-group-merge:has(> .select2-container--open) {
+        .input-group-text,
         .select2-container--default .select2-selection--single,
         .select2-container--default .select2-selection--multiple {
             border-color: var(--bs-primary) !important;
