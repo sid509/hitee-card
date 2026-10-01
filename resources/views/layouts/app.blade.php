@@ -109,15 +109,15 @@
         .form-control-text:focus {
             color: #697a8d;
             background-color: #fff;
-            border-color: #696cff;
+            border-color: var(--bs-primary);
             outline: 0;
-            box-shadow: 0 0 0.25rem 0.05rem rgba(105, 108, 255, 0.1);
+            box-shadow: 0 0 0.25rem 0.05rem rgba(175, 29, 35, 0.1);
         }
 
         .dark-style .form-control-text:focus {
             color: #cbcbe2;
             background-color: #232333;
-            border-color: #696cff;
+            border-color: var(--bs-primary);
         }
     </style>
 </head>

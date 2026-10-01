@@ -22587,7 +22587,7 @@ li:not(:first-child) .dropdown-item, .dropdown-menu .dropdown-item:not(:first-ch
   }
   /* Menu position */
   .layout-menu-hover.layout-menu-collapsed .layout-menu {
-    margin-inline-end: -calc(var(--bs-menu-width)var(--bs-menu-collapsed-width));
+    margin-inline-end: calc(-1 * (var(--bs-menu-width) + var(--bs-menu-collapsed-width)));
   }
   .layout-menu-hover.layout-menu-collapsed .layout-menu .layout-menu-toggle i {
     transform: rotate(180deg);

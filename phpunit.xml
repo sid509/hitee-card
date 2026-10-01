@@ -19,10 +19,12 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing" force="true"/>
+        <env name="CM_AUTH_REQUIRED" value="false" force="true"/>
         <env name="DB_CONNECTION" value="sqlite" force="true"/>
         <env name="DB_DATABASE" value=":memory:" force="true"/>
         
         <server name="APP_ENV" value="testing" force="true"/>
+        <server name="CM_AUTH_REQUIRED" value="false" force="true"/>
         <server name="DB_CONNECTION" value="sqlite" force="true"/>
         <server name="DB_DATABASE" value=":memory:" force="true"/>
 

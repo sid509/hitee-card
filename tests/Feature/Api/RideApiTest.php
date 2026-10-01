@@ -14,6 +14,7 @@ use App\Models\Stop;
 use App\Models\Route;
 use App\Models\RouteStop;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -128,6 +129,10 @@ class RideApiTest extends TestCase
             'card_number' => '1122334455',
             'hw_id' => 'BUS-HWID-01',
         ]);
+
+        // Simulate 6 seconds passing to bypass the 2s throttle and 5s tap-out guard
+        $this->travel(6)->seconds();
+        Cache::flush();
 
         // Second Tap Out
         $response = $this->postJson('/api/tap', [

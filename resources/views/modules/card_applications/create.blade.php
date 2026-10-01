@@ -16,8 +16,8 @@
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
     .card-type-option.active {
-        border-color: #696cff;
-        background-color: rgba(105, 108, 255, 0.05);
+        border-color: var(--bs-primary);
+        background-color: rgba(175, 29, 35, 0.05);
     }
     .card-type-option .selection-indicator {
         position: absolute;
@@ -33,8 +33,8 @@
         background: white;
     }
     .card-type-option.active .selection-indicator {
-        background: #696cff;
-        border-color: #696cff;
+        background: var(--bs-primary);
+        border-color: var(--bs-primary);
         color: white;
     }
     .card-type-option .selection-indicator i {
@@ -56,11 +56,11 @@
     .icon-box i {
         font-size: 32px;
     }
-    .bg-label-primary .icon-box { background: rgba(105, 108, 255, 0.1); color: #696cff; }
+    .bg-label-primary .icon-box { background: rgba(175, 29, 35, 0.1); color: var(--bs-primary); }
     .bg-label-secondary .icon-box { background: rgba(133, 146, 163, 0.1); color: #8592a3; }
     
     .kyc-step-card {
-        border-left: 4px solid #696cff;
+        border-left: 4px solid var(--bs-primary);
     }
 </style>
 @endpush

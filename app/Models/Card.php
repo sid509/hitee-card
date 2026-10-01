@@ -10,10 +10,12 @@ class Card extends Model
 {
     use SoftDeletes;
     protected $fillable = [
-        'card_number', 
-        'hwid', 
-        'status', 
-        'is_currently_active', 
+        'card_number',
+        'hwid',
+        'card_uid',
+        'hitee_card_number',
+        'status',
+        'is_currently_active',
         'user_id',
         'is_physical',
         'is_personalized'

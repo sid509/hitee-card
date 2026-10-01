@@ -1,0 +1,79 @@
+name: Platform CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  test:
+    name: PHPUnit + Double-Entry Accounting Gate
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: hitee_card_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, mysql, redis, bcmath
+          coverage: xdebug
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare environment
+        run: |
+          cp .env.testing .env
+          php artisan key:generate
+          php artisan config:clear
+
+      - name: Run migrations
+        run: php artisan migrate --force
+        env:
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: hitee_card_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
+      - name: Run PHPUnit (including double-entry accounting tests)
+        run: php artisan test
+        env:
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: hitee_card_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          REDIS_HOST: 127.0.0.1
+
+      - name: Double-Entry Accounting Gate (Target §6)
+        run: |
+          # Target §6: Reversal logic must pass automated double-entry
+          # accounting tests, ensuring total credits equal total debits
+          # across the ledger. This is a targeted run of the accounting
+          # test suite — if it fails, the CI gate blocks the merge.
+          php artisan test --filter=DoubleEntryAccountingTest
+        env:
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: hitee_card_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          REDIS_HOST: 127.0.0.1

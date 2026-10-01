@@ -1,0 +1,59 @@
+# Deptrac configuration for HITEE AFC Platform (Target §2, Debate 2).
+#
+# Enforces strict modular monolith boundaries:
+# - The Debit module cannot directly query the Settlement database tables.
+# - The Wallet module cannot directly access the Card Issuance module.
+# - Each module must use strictly typed internal API contracts.
+#
+# Run: vendor/bin/deptrac analyze deptrac.yaml
+
+deptrac:
+    paths:
+        - ./app/
+    exclude_files:
+        - '#/Console/Kernel\.php#'
+        - '#/Exceptions/Handler\.php#'
+
+    layers:
+        - name: CardManagement
+          collectors:
+              - type: directory
+                value: app/Http/Controllers/CardManagement/
+              - type: directory
+                value: app/Services/CardManagement/
+              - type: directory
+                value: app/Models/CardManagement/
+
+        - name: ApiCustomer
+          collectors:
+              - type: directory
+                value: app/Http/Controllers/Api/Customer/
+
+        - name: Core
+          collectors:
+              - type: directory
+                value: app/Http/Middleware/
+              - type: directory
+                value: app/Providers/
+
+        - name: Infrastructure
+          collectors:
+              - type: directory
+                value: app/Console/
+
+    ruleset:
+        CardManagement:
+            - Core
+            - Infrastructure
+        ApiCustomer:
+            - Core
+            - CardManagement  # API can call Card Management services
+        Core:
+            - Infrastructure
+
+    skip_violations:
+        # Allow existing cross-module references during migration
+        # These should be removed as the modules are properly separated
+        App\Services\CardManagement\SettlementService:
+            - App\Models\CardManagement\ValidatorTrip
+            - App\Models\CardManagement\ValidatorDevice

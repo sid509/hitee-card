@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 */
 use App\Http\Controllers\Api\Customer\AuthController;
 use App\Http\Controllers\Api\Customer\BannerController;
+use App\Http\Controllers\Api\Customer\FareRulesController;
 use App\Http\Controllers\Api\Customer\MiscController;
 use App\Http\Controllers\Api\Customer\ProfileController;
 use App\Http\Controllers\Api\Customer\HomepageController;
@@ -20,10 +21,21 @@ use App\Http\Controllers\Api\Customer\SupportController;
 use App\Http\Controllers\Api\Customer\WalletController;
 use App\Http\Controllers\Api\Customer\TapController;
 use App\Http\Controllers\Api\TestTapController;
+use App\Http\Controllers\CardReaderController;
+use App\Http\Controllers\CardManagement\ValidatorTapController;
+use App\Http\Controllers\CardManagement\CardRegistrationBridgeController;
 
 // Test API for Tap Toggle
 Route::match(['get', 'post'], '/test-tap', [TestTapController::class, 'handleTestTap']);
 Route::match(['get', 'post'], '/gps', [TestTapController::class, 'handleTestTap']);
+
+// Card Reader API — for external scripts / Android apps.
+// Authenticated + throttled: card enrollment and UID lookup expose card data,
+// so they must not be callable anonymously.
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('reader')->group(function () {
+    Route::post('/enroll', [CardReaderController::class, 'enrollStore']);
+    Route::get('/check-uid', [CardReaderController::class, 'checkUid']);
+});
 
 // 1. Public Homepage & Search (No Auth Required)
 Route::group([], function () {
@@ -157,6 +169,37 @@ Route::prefix('merchant')->group(function () {
         // Support
         Route::get('/support', [MerchantSupportController::class, 'index']);
         Route::post('/support', [MerchantSupportController::class, 'store']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Fare Rules Engine API (Phase 15, 35)
+|--------------------------------------------------------------------------
+*/
+// Public sync endpoint for validators (authenticated via device token)
+Route::prefix('v1')->group(function () {
+    Route::get('fare-rules', [FareRulesController::class, 'index']);
+    Route::get('fare-rules/sync', [FareRulesController::class, 'sync']);
+    Route::get('fare-rules/{id}', [FareRulesController::class, 'show']);
+    // Validator tap processing (server-side wallet) — ADR 0013
+    Route::post('validator/tap', [ValidatorTapController::class, 'processTap'])
+        ->middleware('throttle:300,1');
+
+    // Write/monitoring endpoints require the workstation bearer token
+    // (CardManagementAuth — enforced whenever card_management.auth.required is
+    // true, which is the default; set CM_AUTH_REQUIRED=false only for local dev/tests).
+    Route::middleware([\App\Http\Middleware\CardManagement\CardManagementAuth::class])->group(function () {
+        Route::post('fare-rules', [FareRulesController::class, 'store']);
+        Route::put('fare-rules/{id}', [FareRulesController::class, 'update']);
+        Route::delete('fare-rules/{id}', [FareRulesController::class, 'destroy']);
+
+        // Validator tap ledger — read-only JSON for monitoring taps
+        Route::get('validator/taps', [ValidatorTapController::class, 'tapLedger']);
+
+        // Card registration bridge — called by card-management-api
+        Route::post('cards/register-bridge', [CardRegistrationBridgeController::class, 'registerCard'])
+            ->middleware('throttle:60,1');
     });
 });
 

@@ -382,6 +382,6 @@
 </script>
 <style>
     .select2-container--open { z-index: 9999 !important; }
-    .nav-tabs .nav-link.active { background-color: transparent !important; border-bottom: 2px solid #696cff !important; }
+    .nav-tabs .nav-link.active { background-color: transparent !important; border-bottom: 2px solid var(--bs-primary) !important; }
 </style>
 @endpush

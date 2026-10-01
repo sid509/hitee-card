@@ -11,6 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+        then: function (\Illuminate\Foundation\Application $app) {
+            $app['router']->group([
+                'prefix' => 'api',
+                'middleware' => ['api'],
+            ], base_path('routes/card_management.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(append: [
@@ -64,16 +70,22 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        $exceptions->render(function (\App\Services\CardManagement\CardManagementError $e, $request) {
+            if ($request->is('api/v1/*')) {
+                return \App\Services\CardManagement\ResponseEnvelope::fromError($e);
+            }
+        });
+
         $exceptions->render(function (\Throwable $e, $request) {
             if ($request->is('api/*')) {
                 $status = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
                 $message = $e->getMessage() ?: 'Internal Server Error';
-                
+
                 // Hide detailed messages in production if it's a 500 error and not in debug mode
                 if ($status === 500 && !config('app.debug')) {
                     $message = 'Something went wrong on our end.';
                 }
-                
+
                 return apiResponse(false, $message, '', $status);
             }
         });

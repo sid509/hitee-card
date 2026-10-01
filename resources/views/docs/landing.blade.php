@@ -56,11 +56,11 @@
             border: 1px solid transparent;
         }
         .btn-customer {
-            background-color: #696cff;
+            background-color: #AF1D23;
             color: #fff;
         }
         .btn-customer:hover {
-            background-color: #5f61e6;
+            background-color: #8C171C;
             transform: translateY(-1px);
         }
         .btn-merchant {

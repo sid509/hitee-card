@@ -261,12 +261,12 @@
 
         if (routeStops.length > 0) {
             const latlngs = routeStops.map(s => [s.latitude, s.longitude]);
-            L.polyline(latlngs, {color: '#696cff', weight: 5, opacity: 0.6, dashArray: '10, 10'}).addTo(map);
+            L.polyline(latlngs, {color: '#AF1D23', weight: 5, opacity: 0.6, dashArray: '10, 10'}).addTo(map);
             
             routeStops.forEach((s, i) => {
                 L.circleMarker([s.latitude, s.longitude], {
                     radius: 6, 
-                    color: '#696cff', 
+                    color: '#AF1D23', 
                     fillColor: 'white', 
                     fillOpacity: 1,
                     weight: 2

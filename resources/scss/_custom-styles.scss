@@ -512,7 +512,7 @@ table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::befor
         .input-group-text, 
         .select2-container--default .select2-selection--single,
         .select2-container--default .select2-selection--multiple {
-            border-color: #696cff !important; /* bs-primary */
+            border-color: var(--bs-primary) !important;
         }
     }
 }
@@ -535,7 +535,7 @@ table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control::befor
         .input-group-text, 
         .select2-container--default .select2-selection--single,
         .select2-container--default .select2-selection--multiple {
-            border-color: #696cff !important;
+            border-color: var(--bs-primary) !important;
         }
     }
 }

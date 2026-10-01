@@ -26,6 +26,7 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\CardApplicationController;
+use App\Http\Controllers\CardReaderController;
 use App\Http\Controllers\SubscriptionModelController;
 use App\Http\Controllers\ServicePartnerController;
 use App\Http\Controllers\AuditController;
@@ -91,12 +92,12 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
 Route::post('/email/resend', function (Request $request) {
     $request->validate(['phone_number' => 'required|string']);
     $user = User::where('phone_number', $request->phone_number)->first();
-    
+
     if ($user && !$user->hasVerifiedEmail()) {
         $user->sendEmailVerificationNotification();
         return back()->with('success', 'Verification link sent to your registered email!');
     }
-    
+
     return back()->with('info', 'If the account exists and is unverified, a new link has been sent.');
 })->middleware(['throttle:6,1'])->name('verification.resend');
 
@@ -234,6 +235,25 @@ Route::middleware(['auth'])->group(function () {
             auth()->user()->impersonate(User::findOrFail($id));
             return redirect()->route('dashboard');
         })->name('impersonate');
+
+        // Card Management API (cm_* tables — issuer/validator backend)
+        Route::prefix('card-management')->name('card-management.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\CardManagementController::class, 'index'])->name('index');
+            Route::get('/{id}', [\App\Http\Controllers\CardManagementController::class, 'show'])
+                ->whereUuid('id')->name('show');
+
+            Route::prefix('customers')->name('customers.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\CardManagementController::class, 'customers'])->name('index');
+                Route::get('/{id}', [\App\Http\Controllers\CardManagementController::class, 'showCustomer'])
+                    ->whereUuid('id')->name('show');
+            });
+
+            Route::get('/validators', [\App\Http\Controllers\CardManagementController::class, 'validators'])->name('validators.index');
+            Route::get('/validators/{id}', [\App\Http\Controllers\CardManagementController::class, 'showValidator'])
+                ->whereUuid('id')->name('validators.qr');
+            Route::get('/validators/{id}/payload', [\App\Http\Controllers\CardManagementController::class, 'validatorQrPayload'])->name('validators.payload');
+            Route::get('/settlement', [\App\Http\Controllers\CardManagementController::class, 'settlement'])->name('settlement.index');
+        });
     });
 
     // Stop Impersonation
@@ -266,7 +286,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/route-finder', [RouteFinderController::class, 'index'])->name('route-finder.index');
     Route::get('/my-rides', [RideController::class, 'myRides'])->name('rides.my-rides');
     Route::post('/rides/simulate-tap', [RideController::class, 'simulateTap'])->name('rides.simulate-tap');
-    
+
     // Asset Management (Fleet & Parking) - Restricted to management roles
     Route::middleware(['role:super-admin,merchant,staff'])->group(function () {
         Route::post('/buses/{bus}/toggle-status', [BusController::class, 'toggleStatus'])->name('buses.toggle-status');
@@ -281,6 +301,15 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('cards', CardController::class);
     Route::post('/cards/{card}/request-change', [CardController::class, 'requestChange'])->name('cards.request-change');
     Route::resource('card-applications', CardApplicationController::class);
+
+    // Card Reader — Enrollment & Tap Testing (super-admin only)
+    Route::middleware(['role:super-admin'])->prefix('card-reader')->name('card-reader.')->group(function () {
+        Route::get('/enroll', [CardReaderController::class, 'enrollPage'])->name('enroll');
+        Route::post('/enroll', [CardReaderController::class, 'enrollStore'])->name('enroll-store');
+        Route::get('/check-uid', [CardReaderController::class, 'checkUid'])->name('check-uid');
+        Route::get('/tap-test', [CardReaderController::class, 'tapTestPage'])->name('tap-test');
+        Route::post('/tap-test', [CardReaderController::class, 'processTapTest'])->name('tap-test-process');
+    });
 
     // Support
     Route::post('/support/send', [SupportController::class, 'send'])->name('support.send');

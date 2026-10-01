@@ -76,7 +76,14 @@ class BalanceController extends Controller
             return back()->with('error', 'Insufficient balance.');
         }
 
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $user) {
+            // Phase 2: Lock the user row to prevent concurrent deductions
+            // from creating a negative balance race condition.
+            $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
+            if ($lockedUser->balance() < $request->amount) {
+                throw new \Exception('Insufficient balance (concurrent deduction detected).');
+            }
+
             $balanceOut = BalanceOut::create([
                 'user_id' => $request->user_id,
                 'card_id' => $request->card_id,
@@ -319,7 +326,7 @@ class BalanceController extends Controller
                     'card_id' => $item->card_id,
                     'card_number' => $item->card ? $item->card->card_number : 'N/A',
                     'customer' => $item->user ? $item->user->name : ($item->card ? 'Card: ' . $item->card->card_number : 'N/A'),
-                    'amount' => (float)$item->amount,
+                    'amount' => (float)$item->amount / 100,
                     'type' => $item->type,
                     'log_type' => 'in',
                     'remarks' => $item->remarks,
@@ -336,7 +343,7 @@ class BalanceController extends Controller
                     'card_id' => $item->card_id,
                     'card_number' => $item->card ? $item->card->card_number : 'N/A',
                     'customer' => $item->user ? $item->user->name : ($item->card ? 'Card: ' . $item->card->card_number : 'N/A'),
-                    'amount' => (float)$item->amount,
+                    'amount' => (float)$item->amount / 100,
                     'type' => $item->type,
                     'log_type' => 'out',
                     'remarks' => $item->remarks,

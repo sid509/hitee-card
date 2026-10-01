@@ -396,7 +396,7 @@
 
                     const marker = L.circleMarker([lat, lng], {
                         radius: 8,
-                        fillColor: "#696cff",
+                        fillColor: "#AF1D23",
                         color: "#fff",
                         weight: 3,
                         opacity: 1,
@@ -520,7 +520,7 @@
                         customerMap.setView([lat, lng], 15);
                         if (userMarker) customerMap.removeLayer(userMarker);
                         userMarker = L.circleMarker([lat, lng], {
-                            radius: 8, fillColor: "#696cff", color: "#fff", weight: 3, opacity: 1, fillOpacity: 0.8
+                            radius: 8, fillColor: "#AF1D23", color: "#fff", weight: 3, opacity: 1, fillOpacity: 0.8
                         }).addTo(customerMap).bindPopup("Your Location");
                     }
 

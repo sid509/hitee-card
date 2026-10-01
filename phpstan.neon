@@ -1,0 +1,15 @@
+includes:
+    - phpstan-rules.neon
+
+parameters:
+    level: 6
+    paths:
+        - app/
+    excludePaths:
+        - app/Console/Kernel.php
+        - app/Exceptions/Handler.php
+    universalObjectCratesClasses:
+        - stdClass
+        - Illuminate\Support\Collection
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false

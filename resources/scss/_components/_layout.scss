@@ -437,7 +437,7 @@
 
   .layout-menu-hover.layout-menu-collapsed {
     .layout-menu {
-      margin-inline-end: -calc(var(--#{$prefix}menu-width) + var(--#{$prefix}menu-collapsed-width));
+      margin-inline-end: calc(-1 * (var(--#{$prefix}menu-width) + var(--#{$prefix}menu-collapsed-width)));
       .layout-menu-toggle i {
         transform: rotate(180deg);
         transition-duration: .3s;

@@ -57,7 +57,8 @@ class WalletApiTest extends TestCase
                 'current_balance_pts' => 450.0,
             ]);
         
-        $this->assertCount(1, $response->json('content.active_cards'));
+        $this->assertNotNull($response->json('content.card'));
+        $this->assertEquals('1234567890', $response->json('content.card.card_number'));
         $this->assertCount(2, $response->json('content.latest_transactions'));
     }
 
@@ -147,36 +148,58 @@ class WalletApiTest extends TestCase
     }
 
     /**
-     * Test topping up wallet.
+     * Test topping up wallet (validation + active card requirement).
      */
     public function test_user_can_topup_wallet()
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['is_tourist' => true]);
         Sanctum::actingAs($user, ['access']);
 
-        $payload = [
+        // No active card → should be rejected with 400
+        $response = $this->postJson('/api/wallet/topup', [
             'amount' => 100,
-            'type' => 'manual',
+            'method' => 'stripe',
             'remarks' => 'Test Topup',
-        ];
-
-        $response = $this->postJson('/api/wallet/topup', $payload);
-
-        $response->assertStatus(200)
-            ->assertJson([
-                'status' => true,
-                'message' => 'Wallet topped up successfully',
-            ])
-            ->assertJsonFragment([
-                'amount_pts' => 100.0,
-                'current_balance' => 100.0,
-            ]);
-
-        $this->assertDatabaseHas('balance_ins', [
-            'user_id' => $user->id,
-            'amount' => 100,
-            'type' => 'manual',
-            'status' => 'completed',
         ]);
+        $response->assertStatus(400);
+
+        // Create an active card
+        Card::create([
+            'user_id' => $user->id,
+            'card_number' => 'TOPUP12345',
+            'hwid' => 'HWID-TOPUP',
+            'status' => 'active',
+            'is_currently_active' => true,
+        ]);
+
+        // Invalid method → 422 (only khalti/stripe allowed)
+        $response = $this->postJson('/api/wallet/topup', [
+            'amount' => 100,
+            'method' => 'manual',
+            'remarks' => 'Test Topup',
+        ]);
+        $response->assertStatus(422);
+
+        // Missing amount → 422
+        $response = $this->postJson('/api/wallet/topup', [
+            'method' => 'stripe',
+        ]);
+        $response->assertStatus(422);
+
+        // Non-tourist trying stripe → 400
+        $localUser = User::factory()->create(['is_tourist' => false]);
+        Sanctum::actingAs($localUser, ['access']);
+        Card::create([
+            'user_id' => $localUser->id,
+            'card_number' => 'TOPUP67890',
+            'hwid' => 'HWID-TOPUP2',
+            'status' => 'active',
+            'is_currently_active' => true,
+        ]);
+        $response = $this->postJson('/api/wallet/topup', [
+            'amount' => 100,
+            'method' => 'stripe',
+        ]);
+        $response->assertStatus(400);
     }
 }

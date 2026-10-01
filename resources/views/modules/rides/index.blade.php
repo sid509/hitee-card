@@ -209,7 +209,7 @@
                             if (data.routes && data.routes.length > 0) {
                                 const coordinates = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
                                 polyline = L.polyline(coordinates, {
-                                    color: '#696cff',
+                                    color: '#AF1D23',
                                     weight: 5,
                                     opacity: 0.7,
                                     lineJoin: 'round'

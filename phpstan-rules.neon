@@ -1,0 +1,9 @@
+# PHPStan extension config for HITEE AFC Platform.
+#
+# Module-boundary enforcement (Target §2, Debate 2 — e.g. the Debit module
+# must not query Settlement tables directly) lives in deptrac.yaml, which is
+# the right tool for architectural rules. No custom PHPStan Rule classes are
+# registered here yet; add them under `rules:` when implemented.
+
+parameters:
+    level: 6

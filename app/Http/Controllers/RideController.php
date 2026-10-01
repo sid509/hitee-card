@@ -76,7 +76,7 @@ class RideController extends Controller
                     return '<div><a href="'.$link.'" class="fw-medium">'.$name.'</a><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$type.'</small></div>';
                 })
                 ->editColumn('fare_amount', function($row) {
-                    return 'Rs. ' . number_format($row->fare_amount, 2);
+                    return 'Rs. ' . number_format((float) $row->fare_amount / 100, 2);
                 })
                 ->addColumn('tap_in_time', function($row) {
                     $time = formatDate($row->tapIn?->created_at);
@@ -216,7 +216,7 @@ class RideController extends Controller
                     return '<div><a href="'.$link.'" class="fw-medium">'.$name.'</a><br><small class="text-muted" style="font-size: 0.75rem; font-style: italic;">'.$type.'</small></div>';
                 })
                 ->editColumn('fare_amount', function($row) {
-                    return 'Rs. ' . number_format($row->fare_amount, 2);
+                    return 'Rs. ' . number_format((float) $row->fare_amount / 100, 2);
                 })
                 ->addColumn('display_date', function($row) {
                     return formatDate($row->created_at);

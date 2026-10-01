@@ -48,12 +48,18 @@ class TapController extends Controller
         // if (!$user) return apiResponse(false, 'Card is not assigned to a user', '', 400); // Allow orphan cards
         if ($card->status !== 'active') return apiResponse(false, __('messages.card_inactive'), '', 403);
 
-        // Check for an ongoing journey for this card on ANY asset
-        $ongoingRide = Ride::where('card_id', $card->id)
-            ->where('status', 'ongoing')
-            ->first();
+        // Phase 2: Pessimistic locking to prevent race conditions on concurrent taps.
+        // Lock the card row for the duration of the transaction so two simultaneous
+        // taps on the same card cannot create duplicate rides or double-charge.
+        return DB::transaction(function() use ($request, $user, $card, $asset) {
+            // Re-read the card with a pessimistic lock inside the transaction
+            $card = Card::where('id', $card->id)->lockForUpdate()->firstOrFail();
 
-        return DB::transaction(function() use ($request, $user, $card, $asset, $ongoingRide) {
+            // Check for an ongoing journey for this card on ANY asset (locked)
+            $ongoingRide = Ride::where('card_id', $card->id)
+                ->where('status', 'ongoing')
+                ->lockForUpdate()
+                ->first();
             if ($ongoingRide) {
                 // If already has an ongoing journey -> TAP OUT
                 // Prevent tap-out if tap-in was too recent (e.g. < 5 seconds ago) - likely a mistake

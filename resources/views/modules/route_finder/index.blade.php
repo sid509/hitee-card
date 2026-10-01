@@ -4,9 +4,9 @@
 
 @push('page-css')
 <style>
-    .journey-step { position: relative; border-left: 2px solid #696cff; padding-left: 30px; padding-bottom: 30px; }
+    .journey-step { position: relative; border-left: 2px solid var(--bs-primary); padding-left: 30px; padding-bottom: 30px; }
     .journey-step:last-child { border-left: none; padding-bottom: 0; }
-    .step-marker { position: absolute; left: -10px; top: 0; width: 18px; height: 18px; border-radius: 50%; background: #696cff; border: 3px solid #fff; box-shadow: 0 0 0 2px #696cff; z-index: 2; }
+    .step-marker { position: absolute; left: -10px; top: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--bs-primary); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--bs-primary); z-index: 2; }
     .step-marker.transfer { background: #ffab00; box-shadow: 0 0 0 2px #ffab00; }
     .step-marker.destination { background: #71dd37; box-shadow: 0 0 0 2px #71dd37; }
     .intermediate-list { list-style: none; padding-left: 0; border-left: 1px dashed #d9dee3; margin-left: 7px; margin-top: 5px; margin-bottom: 5px; }
