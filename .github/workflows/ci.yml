@@ -1,4 +1,4 @@
-name: Platform CI
+name: Platform CI/CD
 
 on:
   push:
@@ -79,3 +79,44 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: root
           REDIS_HOST: 127.0.0.1
+
+  deploy:
+    name: Deploy to card-stg.hitee.ai
+    runs-on: ubuntu-latest
+    # Staging deploys only after the test gate passes, and only on pushes
+    # to develop — never on pull requests or main-branch pushes.
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STG_SSH_HOST }}
+          username: ${{ secrets.STG_SSH_USER }}
+          key: ${{ secrets.STG_SSH_KEY }}
+          port: ${{ secrets.STG_SSH_PORT }}
+          script: |
+            cd /var/www/card-stg.hitee.ai
+
+            # Pull latest code
+            git pull origin develop
+
+            # Install dependencies
+            composer install --optimize-autoloader
+
+            # Clear and cache config
+            php artisan config:clear
+            php artisan cache:clear
+
+            # Run migrations
+            php artisan migrate --force
+
+            # Restart queue worker if running
+            php artisan queue:restart
+
+            # Reload PHP-FPM
+            sudo systemctl reload php8.3-fpm
