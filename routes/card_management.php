@@ -191,17 +191,6 @@ Route::prefix('v1')->group(function () {
         // ── Receipts (§5.10) ───────────────────────────────────────────
         Route::get('receipts/{operationType}/{operationId}', [ReceiptsController::class, 'getReceipt']);
 
-        // ── Validator Device API (Phases 7, 13-14, 44-46, 48) ──────────
-        // Device registration is public (no auth yet). Other endpoints
-        // require a Bearer device token.
-        Route::post('devices/register', [ValidatorController::class, 'register']);
-        Route::post('devices/heartbeat', [ValidatorController::class, 'heartbeat']);
-        Route::post('devices/{deviceId}/trips/sync', [ValidatorController::class, 'syncTrips'])
-            ->where('deviceId', '[a-zA-Z0-9_-]+');
-        Route::get('blocklist/delta', [ValidatorController::class, 'blocklistDelta']);
-        Route::get('cards/{uid}/blocklist-status', [ValidatorController::class, 'blocklistStatus'])
-            ->where('card_uid', '[0-9A-Fa-f]{8,32}');
-
         // ── Settlement Engine (Phase 61) ──────────────────────────────
         Route::prefix('settlement')->group(function () {
             Route::post('run', [SettlementController::class, 'run']);
@@ -216,6 +205,29 @@ Route::prefix('v1')->group(function () {
                 ->where('batchId', '[0-9a-fA-F\-]{36}');
             Route::get('batches/{batchId}/payout-file', [SettlementController::class, 'payoutFile'])
                 ->where('batchId', '[0-9a-fA-F\-]{36}');
+        });
+    });
+
+    // ── Validator Device API (Phases 7, 13-14, 44-46, 48) ──────────────
+    // Device-facing routes authenticate with the per-device Bearer token
+    // issued at devices/register — NOT the workstation token. They live
+    // outside the workstation-auth group because a single Authorization
+    // header cannot satisfy both token types.
+    // devices/register is public by design; re-registration is guarded
+    // inside the controller (current device token or provisioning secret).
+    Route::middleware([
+        \App\Http\Middleware\CardManagement\CardManagementContext::class,
+        \App\Http\Middleware\CardManagement\IdempotencyKey::class,
+        \App\Http\Middleware\CardManagement\CardManagementAudit::class,
+    ])->group(function () {
+        Route::post('devices/register', [ValidatorController::class, 'register']);
+        Route::middleware([\App\Http\Middleware\CardManagement\ValidatorDeviceAuth::class])->group(function () {
+            Route::post('devices/heartbeat', [ValidatorController::class, 'heartbeat']);
+            Route::post('devices/{deviceId}/trips/sync', [ValidatorController::class, 'syncTrips'])
+                ->where('deviceId', '[a-zA-Z0-9_-]+');
+            Route::get('blocklist/delta', [ValidatorController::class, 'blocklistDelta']);
+            Route::get('cards/{uid}/blocklist-status', [ValidatorController::class, 'blocklistStatus'])
+                ->where('uid', '[0-9A-Fa-f]{8,32}');
         });
     });
 });

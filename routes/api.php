@@ -25,9 +25,12 @@ use App\Http\Controllers\CardReaderController;
 use App\Http\Controllers\CardManagement\ValidatorTapController;
 use App\Http\Controllers\CardManagement\CardRegistrationBridgeController;
 
-// Test API for Tap Toggle
-Route::match(['get', 'post'], '/test-tap', [TestTapController::class, 'handleTestTap']);
-Route::match(['get', 'post'], '/gps', [TestTapController::class, 'handleTestTap']);
+// Test API for Tap Toggle — bench-testing endpoints that debit real
+// wallets, so they require an authenticated super-admin token.
+Route::middleware('auth:sanctum')->group(function () {
+    Route::match(['get', 'post'], '/test-tap', [TestTapController::class, 'handleTestTap']);
+    Route::match(['get', 'post'], '/gps', [TestTapController::class, 'handleTestTap']);
+});
 
 // Card Reader API — for external scripts / Android apps.
 // Authenticated + throttled: card enrollment and UID lookup expose card data,
@@ -49,8 +52,9 @@ Route::group([], function () {
     Route::post('/tap', [TapController::class, 'processTap'])->middleware('throttle:300,1');
 });
 
-// 2. Customer Authentication
-Route::controller(AuthController::class)->prefix('auth')->group(function () {
+// 2. Customer Authentication — throttled against credential/OTP abuse
+Route::controller(AuthController::class)->prefix('auth')
+    ->middleware('throttle:10,1')->group(function () {
     Route::post('/register', 'register');
     Route::post('/login', 'login');
     Route::post('/biometric-login', 'biometricLogin');
@@ -182,9 +186,11 @@ Route::prefix('v1')->group(function () {
     Route::get('fare-rules', [FareRulesController::class, 'index']);
     Route::get('fare-rules/sync', [FareRulesController::class, 'sync']);
     Route::get('fare-rules/{id}', [FareRulesController::class, 'show']);
-    // Validator tap processing (server-side wallet) — ADR 0013
+    // Validator tap processing (server-side wallet) — ADR 0013.
+    // Device-token authenticated: validators send the Bearer token issued
+    // at device registration.
     Route::post('validator/tap', [ValidatorTapController::class, 'processTap'])
-        ->middleware('throttle:300,1');
+        ->middleware([\App\Http\Middleware\CardManagement\ValidatorDeviceAuth::class, 'throttle:300,1']);
 
     // Write/monitoring endpoints require the workstation bearer token
     // (CardManagementAuth — enforced whenever card_management.auth.required is

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CardStatus;
 use App\Http\Requests\StoreCardRequest;
 use App\Http\Requests\UpdateCardRequest;
 use App\Models\Card;
@@ -64,14 +65,14 @@ class CardController extends Controller
                 ->addIndexColumn()
                 ->addColumn('status_badge', function ($row) {
                     $colors = [
-                        'NEW' => 'bg-label-dark',
-                        'REGISTERED' => 'bg-label-secondary',
-                        'INITIALIZED' => 'bg-label-info',
-                        'ISSUED' => 'bg-label-primary',
-                        'ACTIVE' => 'bg-label-success',
-                        'INACTIVE' => 'bg-label-secondary',
-                        'BLOCKED' => 'bg-label-danger',
-                        'REPLACED' => 'bg-label-warning',
+                        CardStatus::NEW->value => 'bg-label-dark',
+                        CardStatus::REGISTERED->value => 'bg-label-secondary',
+                        CardStatus::INITIALIZED->value => 'bg-label-info',
+                        CardStatus::ISSUED->value => 'bg-label-primary',
+                        CardStatus::ACTIVE->value => 'bg-label-success',
+                        CardStatus::INACTIVE->value => 'bg-label-secondary',
+                        CardStatus::BLOCKED->value => 'bg-label-danger',
+                        CardStatus::REPLACED->value => 'bg-label-warning',
                     ];
                     $class = $colors[$row->status] ?? 'bg-label-secondary';
 
@@ -97,7 +98,7 @@ class CardController extends Controller
                     $actions = '<a href="'.route('cards.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
 
                     if (auth()->user()->hasRole('super-admin')) {
-                        $isActive = $row->status === 'ACTIVE';
+                        $isActive = $row->status === CardStatus::ACTIVE->value;
                         $btnClass = $isActive ? 'btn-success' : 'btn-secondary';
                         $btnIcon = $isActive ? 'bx-check-circle' : 'bx-block';
                         $btnTitle = $isActive ? 'Deactivate' : 'Activate';
@@ -117,11 +118,11 @@ class CardController extends Controller
 
         $stats = [
             'total' => DB::table('cards')->count(),
-            'active' => DB::table('cards')->where('status', 'ACTIVE')->count(),
-            'issued' => DB::table('cards')->where('status', 'ISSUED')->count(),
-            'registered' => DB::table('cards')->where('status', 'REGISTERED')->count(),
-            'blocked' => DB::table('cards')->where('status', 'BLOCKED')->count(),
-            'initialized' => DB::table('cards')->where('status', 'INITIALIZED')->count(),
+            'active' => DB::table('cards')->where('status', CardStatus::ACTIVE->value)->count(),
+            'issued' => DB::table('cards')->where('status', CardStatus::ISSUED->value)->count(),
+            'registered' => DB::table('cards')->where('status', CardStatus::REGISTERED->value)->count(),
+            'blocked' => DB::table('cards')->where('status', CardStatus::BLOCKED->value)->count(),
+            'initialized' => DB::table('cards')->where('status', CardStatus::INITIALIZED->value)->count(),
             'production' => DB::table('cards')->where('environment', 'PRODUCTION')->count(),
             'lab' => DB::table('cards')->where('environment', 'LAB')->count(),
         ];
@@ -134,9 +135,7 @@ class CardController extends Controller
      */
     public function show(Card $card)
     {
-        if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) {
-            abort(403);
-        }
+        $this->authorize('view', $card);
 
         $customer = $card->customer_id
             ? DB::table('customers')->where('id', $card->customer_id)->first()
@@ -425,9 +424,7 @@ class CardController extends Controller
      */
     public function create(Request $request)
     {
-        if (! auth()->user()->hasRole('super-admin')) {
-            abort(403);
-        }
+        $this->authorize('create', Card::class);
 
         $card = new Card();
         $application = null;
@@ -451,9 +448,7 @@ class CardController extends Controller
      */
     public function store(StoreCardRequest $request)
     {
-        if (! auth()->user()->hasRole('super-admin')) {
-            abort(403);
-        }
+        $this->authorize('create', Card::class);
 
         $user = User::find($request->user_id);
         if ($user && $user->cards()->exists()) {
@@ -497,9 +492,7 @@ class CardController extends Controller
 
     public function edit(Card $card)
     {
-        if (! auth()->user()->hasRole('super-admin')) {
-            abort(403);
-        }
+        $this->authorize('update', $card);
         $users = User::whereHas('roles', function ($q) {
             $q->where('slug', 'customers');
         })->get();
@@ -509,9 +502,7 @@ class CardController extends Controller
 
     public function update(UpdateCardRequest $request, Card $card)
     {
-        if (! auth()->user()->hasRole('super-admin')) {
-            abort(403);
-        }
+        $this->authorize('update', $card);
 
         if ($request->user_id && $request->user_id != $card->user_id) {
             $user = User::find($request->user_id);
@@ -540,9 +531,7 @@ class CardController extends Controller
 
     public function destroy(Card $card)
     {
-        if (! auth()->user()->hasRole('super-admin')) {
-            abort(403);
-        }
+        $this->authorize('delete', $card);
 
         if ($card->rides()->exists() || $card->taps()->exists()) {
             return redirect()->back()->with('error', 'Cannot delete card because it has usage history.');
@@ -558,9 +547,7 @@ class CardController extends Controller
      */
     public function bulkToggleStatus(Request $request)
     {
-        if (! auth()->user()->hasRole('super-admin')) {
-            abort(403);
-        }
+        $this->authorize('create', Card::class);
 
         $request->validate([
             'ids' => 'required|array',
@@ -582,11 +569,11 @@ class CardController extends Controller
      */
     public function toggleStatus(Card $card)
     {
-        if (! auth()->user()->hasRole('super-admin')) {
-            abort(403);
-        }
+        $this->authorize('update', $card);
 
-        $newStatus = $card->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        $newStatus = $card->status === CardStatus::ACTIVE->value
+            ? CardStatus::INACTIVE->value
+            : CardStatus::ACTIVE->value;
         $card->update(['status' => $newStatus]);
 
         logActivity('card_status_toggle', "Card {$card->card_number} status changed to {$newStatus}", [
@@ -606,10 +593,7 @@ class CardController extends Controller
      */
     public function requestChange(Request $request, Card $card)
     {
-        // Ensure customer only requests for their own card
-        if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) {
-            abort(403);
-        }
+        $this->authorize('requestChange', $card);
 
         $request->validate([
             'type' => 'required|in:upgrade,enable,disable',
@@ -650,11 +634,6 @@ class CardController extends Controller
      */
     private static function mapLegacyStatus(?string $status): string
     {
-        return match (strtolower((string) $status)) {
-            'active' => 'ACTIVE',
-            'inactive' => 'INACTIVE',
-            'blocked' => 'BLOCKED',
-            default => strtoupper((string) $status) ?: 'NEW',
-        };
+        return CardStatus::fromLegacy($status)->value;
     }
 }

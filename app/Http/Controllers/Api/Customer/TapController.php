@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Customer;
 
+use App\Enums\CardStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -10,8 +11,6 @@ use App\Models\Ride;
 use App\Models\Tap;
 use App\Models\RouteStop;
 use App\Models\FareMatrix;
-use App\Models\BalanceOut;
-use App\Models\MerchantIncome;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -46,7 +45,7 @@ class TapController extends Controller
 
         $user = $card->user;
         // if (!$user) return apiResponse(false, 'Card is not assigned to a user', '', 400); // Allow orphan cards
-        if ($card->status !== 'ACTIVE') return apiResponse(false, __('messages.card_inactive'), '', 403);
+        if ($card->status !== CardStatus::ACTIVE->value) return apiResponse(false, __('messages.card_inactive'), '', 403);
 
         // Phase 2: Pessimistic locking to prevent race conditions on concurrent taps.
         // Lock the card row for the duration of the transaction so two simultaneous
@@ -156,26 +155,17 @@ class TapController extends Controller
 
         // 3. Financial Reconciliation (Transaction & Merchant Income)
         if ($fareAmount > 0) {
-            $balanceOut = BalanceOut::create([
+            $isBus = $ride->reference_type === Bus::class;
+            app(\App\Services\LedgerService::class)->debitWithIncome([
                 'user_id' => $user?->id,
                 'card_id' => $ride->card_id,
                 'merchant_id' => $ride->merchant_id,
                 'amount' => $fareAmount,
-                'type' => $ride->reference_type === Bus::class ? 'fare_deduction' : 'parking',
+                'type' => $isBus ? 'fare_deduction' : 'parking',
                 'remarks' => "Journey #{$ride->id} completed. From {$ride->tapIn->resolved_location_name} to {$location['name']}",
                 'reference_id' => $ride->reference_id,
                 'reference_type' => $ride->reference_type,
-                'created_by' => 1 // System
-            ]);
-
-            MerchantIncome::create([
-                'merchant_id' => $ride->merchant_id,
-                'balance_out_id' => $balanceOut->id,
-                'reference_id' => $ride->reference_id,
-                'reference_type' => $ride->reference_type,
-                'amount' => $fareAmount,
-                'type' => $ride->reference_type === Bus::class ? 'fare' : 'parking',
-            ]);
+            ], $isBus ? 'fare' : 'parking');
         }
 
         // 4. Update Reconciled Ride
@@ -207,13 +197,13 @@ class TapController extends Controller
 
     private function resolveLocation($lat, $lon, $asset)
     {
-        $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude)) * cos(radians(longitude) - radians($lon)) + sin(radians($lat)) * sin(radians(latitude))))";
+        $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
 
         if ($asset instanceof Bus) {
             // Find nearest stop on the bus route
             $stop = RouteStop::where('route_id', $asset->route_id)
                 ->select('*')
-                ->selectRaw("$haversine AS distance")
+                ->selectRaw("$haversine AS distance", [$lat, $lon, $lat])
                 ->orderBy('distance')
                 ->first();
             

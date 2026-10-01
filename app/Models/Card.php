@@ -15,7 +15,40 @@ class Card extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $guarded = [];
+    protected $fillable = [
+        'card_uid',
+        'card_number',
+        'card_number_prefix',
+        'card_number_sequence',
+        'card_type_code',
+        'card_type_label',
+        'status',
+        'metadata',
+        'card_structure_version',
+        'key_profile_version',
+        'current_initialization_operation_id',
+        'environment',
+        'production_eligible',
+        'installed_key_profile_version',
+        'installed_card_structure_version',
+        'last_card_verification_at',
+        'customer_id',
+        'issued_at',
+        'activated_at',
+        'blocked_at',
+        'lifecycle_reason',
+        'current_issuance_operation_id',
+        'current_replacement_operation_id',
+        'replaces_card_id',
+        'replaced_by_card_id',
+        'initialized_at',
+        'hwid',
+        'hitee_card_number',
+        'is_currently_active',
+        'is_physical',
+        'is_personalized',
+        'user_id',
+    ];
 
     protected $casts = [
         'metadata' => 'array',

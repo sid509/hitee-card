@@ -188,7 +188,7 @@ class WalletController extends Controller
         if ($response->successful()) {
             $data = $response->json();
             
-            BalanceIn::create([
+            app(\App\Services\LedgerService::class)->credit([
                 'user_id' => $user->id,
                 'amount' => $amount,
                 'type' => 'khalti',
@@ -250,9 +250,9 @@ class WalletController extends Controller
             'customer_email' => $user->email,
         ]);
 
-        BalanceIn::create([
+        app(\App\Services\LedgerService::class)->credit([
             'user_id' => $user->id,
-            'amount' => $amount, 
+            'amount' => $amount,
             'type' => 'stripe',
             'remarks' => $remarks ?? 'Stripe Topup Initiation',
             'transaction_id' => $session->id,

@@ -31,6 +31,10 @@ class TestTapApiTest extends TestCase
 
         $this->user = User::factory()->create();
 
+        $role = \App\Models\Role::firstOrCreate(['slug' => 'super-admin'], ['name' => 'Super Admin']);
+        $this->admin = User::factory()->create();
+        $this->admin->roles()->attach($role);
+
         BalanceIn::create([
             'user_id' => $this->user->id,
             'amount' => 100,
@@ -83,6 +87,8 @@ class TestTapApiTest extends TestCase
 
     public function test_test_tap_route_accepts_get_and_post()
     {
+        \Laravel\Sanctum\Sanctum::actingAs($this->admin, ['*']);
+
         // 1. Send GET request to /api/test-tap (Tap In)
         $response = $this->get('/api/test-tap');
         $response->assertStatus(200);
@@ -102,6 +108,8 @@ class TestTapApiTest extends TestCase
 
     public function test_gps_route_accepts_get_and_post()
     {
+        \Laravel\Sanctum\Sanctum::actingAs($this->admin, ['*']);
+
         // 1. Send GET request to /api/gps (Tap In)
         $response = $this->get('/api/gps');
         $response->assertStatus(200);

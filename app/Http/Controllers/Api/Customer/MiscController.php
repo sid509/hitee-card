@@ -43,7 +43,8 @@ class MiscController extends Controller
         $type = $request->get('type');
         $perPage = 25;
 
-        $haversine = "(6371 * acos(cos(radians({$lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$lng})) + sin(radians({$lat})) * sin(radians(latitude))))";
+        $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
+        $haversineBindings = [(float) $lat, (float) $lng, (float) $lat];
 
         $results = [];
         $pagination = [];
@@ -55,7 +56,7 @@ class MiscController extends Controller
             $busQuery = Bus::with(['merchant:id,name', 'route:id,name,direction'])
                 ->where('status', 'active')
                 ->select('*')
-                ->selectRaw("{$haversine} AS distance");
+                ->selectRaw("{$haversine} AS distance", $haversineBindings);
 
             if ($isSqlite) {
                 $allBuses = $busQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
@@ -67,7 +68,7 @@ class MiscController extends Controller
                     ['path' => $request->url(), 'pageName' => 'bus_page']
                 );
             } else {
-                $busQuery->whereRaw("{$haversine} <= ?", [$radius])->orderBy('distance');
+                $busQuery->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])->orderBy('distance');
                 $buses = $busQuery->paginate($perPage, ['*'], 'bus_page');
             }
 
@@ -102,7 +103,7 @@ class MiscController extends Controller
             $parkingQuery = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
                 ->where('status', 'opened')
                 ->select('*')
-                ->selectRaw("{$haversine} AS distance");
+                ->selectRaw("{$haversine} AS distance", $haversineBindings);
 
             if ($isSqlite) {
                 $allParkings = $parkingQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
@@ -114,7 +115,7 @@ class MiscController extends Controller
                     ['path' => $request->url(), 'pageName' => 'parking_page']
                 );
             } else {
-                $parkingQuery->whereRaw("{$haversine} <= ?", [$radius])->orderBy('distance');
+                $parkingQuery->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])->orderBy('distance');
                 $parkings = $parkingQuery->paginate($perPage, ['*'], 'parking_page');
             }
 
@@ -148,7 +149,7 @@ class MiscController extends Controller
             $spQuery = \App\Models\ServicePartner::with(['merchant:id,name'])
                 ->where('status', 'active')
                 ->select('*')
-                ->selectRaw("{$haversine} AS distance");
+                ->selectRaw("{$haversine} AS distance", $haversineBindings);
 
             if ($isSqlite) {
                 $allSp = $spQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
@@ -160,7 +161,7 @@ class MiscController extends Controller
                     ['path' => $request->url(), 'pageName' => 'sp_page']
                 );
             } else {
-                $spQuery->whereRaw("{$haversine} <= ?", [$radius])->orderBy('distance');
+                $spQuery->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])->orderBy('distance');
                 $sPartners = $spQuery->paginate($perPage, ['*'], 'sp_page');
             }
 
@@ -187,7 +188,7 @@ class MiscController extends Controller
         // 4. Fetch Stops
         if (!$type || $type === 'stop') {
             $stopQuery = Stop::select('*')
-                ->selectRaw("{$haversine} AS distance");
+                ->selectRaw("{$haversine} AS distance", $haversineBindings);
 
             if ($isSqlite) {
                 $allStops = $stopQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
@@ -199,7 +200,7 @@ class MiscController extends Controller
                     ['path' => $request->url(), 'pageName' => 'stop_page']
                 );
             } else {
-                $stopQuery->whereRaw("{$haversine} <= ?", [$radius])->orderBy('distance');
+                $stopQuery->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])->orderBy('distance');
                 $stops = $stopQuery->paginate($perPage, ['*'], 'stop_page');
             }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\CardManagement;
 
+use App\Enums\CardStatus;
 use App\Models\Card;
 use App\Models\CardInitializationOperation;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,7 @@ final class CardsService
                 'card_number_sequence' => $allocation['sequence'],
                 'card_type_code' => $cardTypeCode,
                 'card_type_label' => 'STANDARD',
-                'status' => 'REGISTERED',
+                'status' => CardStatus::REGISTERED->value,
                 'metadata' => ['remarks' => $remarks],
                 'card_structure_version' => config('card_management.card_profile.structure_version'),
                 'key_profile_version' => config('card_management.card_profile.key_profile_version'),
@@ -116,7 +117,7 @@ final class CardsService
             throw new CardManagementError('AMOUNT_INVALID', 400, 'mode must be INITIALIZE or REINITIALIZE.');
         }
 
-        if ($mode === 'INITIALIZE' && $card->status === 'INITIALIZED') {
+        if ($mode === 'INITIALIZE' && $card->status === CardStatus::INITIALIZED->value) {
             throw new CardAlreadyInitializedError();
         }
 

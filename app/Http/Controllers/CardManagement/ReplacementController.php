@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
+use App\Enums\CardStatus;
 use App\Models\Card;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\KeyServiceClient;
@@ -307,22 +308,22 @@ final class ReplacementController extends BaseCardManagementController
 
         // Update new card status to ACTIVE
         DB::table('cards')->where('id', $operation->new_card_id)->update([
-            'status' => 'ACTIVE',
+            'status' => CardStatus::ACTIVE->value,
             'updated_at' => now(),
         ]);
 
         // Block old card if old_card_id is set
         if ($operation->old_card_id) {
             DB::table('cards')->where('id', $operation->old_card_id)->update([
-                'status' => 'BLOCKED',
+                'status' => CardStatus::BLOCKED->value,
                 'updated_at' => now(),
             ]);
 
             DB::table('card_lifecycle_events')->insert([
                 'id' => Str::uuid()->toString(),
                 'card_id' => $operation->old_card_id,
-                'from_status' => 'ACTIVE',
-                'to_status' => 'BLOCKED',
+                'from_status' => CardStatus::ACTIVE->value,
+                'to_status' => CardStatus::BLOCKED->value,
                 'reason' => 'Replaced by ' . $operation->new_card_id,
                 'workstation_id' => $operation->workstation_id,
                 'created_at' => now(),
@@ -332,8 +333,8 @@ final class ReplacementController extends BaseCardManagementController
         DB::table('card_lifecycle_events')->insert([
             'id' => Str::uuid()->toString(),
             'card_id' => $operation->new_card_id,
-            'from_status' => 'ISSUED',
-            'to_status' => 'ACTIVE',
+            'from_status' => CardStatus::ISSUED->value,
+            'to_status' => CardStatus::ACTIVE->value,
             'reason' => 'Replacement completed',
             'workstation_id' => $operation->workstation_id,
             'created_at' => now(),

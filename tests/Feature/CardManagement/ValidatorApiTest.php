@@ -225,7 +225,9 @@ class ValidatorApiTest extends TestCase
 
     public function test_blocklist_status_unblocked(): void
     {
-        $response = $this->getJson('/api/v1/cards/A1B2C3D4/blocklist-status');
+        $device = $this->registerDevice();
+        $response = $this->withHeaders($this->authHeaders($device['apiToken']))
+            ->getJson('/api/v1/cards/A1B2C3D4/blocklist-status');
 
         $response->assertOk()
             ->assertJsonPath('success', true)
@@ -234,6 +236,7 @@ class ValidatorApiTest extends TestCase
 
     public function test_blocklist_status_blocked(): void
     {
+        $device = $this->registerDevice();
         BlocklistEntry::create([
             'card_uid' => 'AABBCCDD',
             'reason' => 'FRAUD',
@@ -241,7 +244,8 @@ class ValidatorApiTest extends TestCase
             'source' => 'SYSTEM',
         ]);
 
-        $response = $this->getJson('/api/v1/cards/AABBCCDD/blocklist-status');
+        $response = $this->withHeaders($this->authHeaders($device['apiToken']))
+            ->getJson('/api/v1/cards/AABBCCDD/blocklist-status');
 
         $response->assertOk()
             ->assertJsonPath('data.blocked', true)
@@ -250,6 +254,7 @@ class ValidatorApiTest extends TestCase
 
     public function test_blocklist_status_ignores_lifted_entries(): void
     {
+        $device = $this->registerDevice();
         BlocklistEntry::create([
             'card_uid' => 'AABBCCDD',
             'reason' => 'STOLEN',
@@ -258,7 +263,8 @@ class ValidatorApiTest extends TestCase
             'source' => 'MANUAL',
         ]);
 
-        $response = $this->getJson('/api/v1/cards/AABBCCDD/blocklist-status');
+        $response = $this->withHeaders($this->authHeaders($device['apiToken']))
+            ->getJson('/api/v1/cards/AABBCCDD/blocklist-status');
 
         $response->assertOk()
             ->assertJsonPath('data.blocked', false);

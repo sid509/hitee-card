@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CardStatus;
 use App\Models\Card;
 use App\Models\Bus;
 use App\Models\Parking;
@@ -23,7 +24,7 @@ class CardReaderController extends Controller
      */
     public function enrollPage(Request $request)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $this->authorize('create', Card::class);
 
         $recentCards = Card::with(['user', 'subscriptionModels'])
             ->latest()
@@ -40,7 +41,7 @@ class CardReaderController extends Controller
      */
     public function enrollStore(Request $request)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $this->authorize('create', Card::class);
 
         $request->validate([
             'card_number' => 'required|string|unique:cards,card_number',
@@ -64,12 +65,9 @@ class CardReaderController extends Controller
             'card_number' => $request->card_number,
             'hwid' => $hwid,
             'user_id' => $request->user_id,
-            'status' => match ($request->status) {
-                'active' => 'ACTIVE',
-                'inactive' => 'INACTIVE',
-                'blocked' => 'BLOCKED',
-                default => 'REGISTERED',
-            },
+            'status' => $request->filled('status')
+                ? CardStatus::fromLegacy($request->status)->value
+                : CardStatus::REGISTERED->value,
             'is_currently_active' => $request->boolean('is_currently_active'),
             'is_physical' => $request->boolean('is_physical', true),
             'is_personalized' => false,
@@ -77,14 +75,13 @@ class CardReaderController extends Controller
 
         // Add initial balance if specified
         if ($request->filled('initial_balance') && $request->initial_balance > 0) {
-            BalanceIn::create([
+            app(\App\Services\LedgerService::class)->credit([
                 'user_id' => $request->user_id,
                 'card_id' => $card->id,
                 'amount' => $request->initial_balance,
                 'type' => 'manual',
                 'remarks' => 'Initial balance at card enrollment',
                 'created_by' => auth()->id(),
-                'status' => 'completed',
                 'gateway_name' => 'System',
                 'transaction_id' => 'ENROLL-' . time(),
             ]);
@@ -141,9 +138,9 @@ class CardReaderController extends Controller
      */
     public function tapTestPage(Request $request)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $this->authorize('create', Card::class);
 
-        $cards = Card::where('status', 'ACTIVE')->with('user')->latest()->get();
+        $cards = Card::where('status', CardStatus::ACTIVE->value)->with('user')->latest()->get();
         $buses = Bus::with('route')->where('status', 'active')->get();
         $parkings = Parking::where('status', 'active')->get();
 
@@ -158,7 +155,7 @@ class CardReaderController extends Controller
      */
     public function processTapTest(Request $request)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $this->authorize('create', Card::class);
 
         $request->validate([
             'card_number' => 'required|string',
@@ -221,7 +218,7 @@ class CardReaderController extends Controller
      */
     public function getReaderInfo()
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $this->authorize('create', Card::class);
 
         return response()->json([
             'supported' => true,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\CardManagement;
 
+use App\Enums\CardStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Card;
 use App\Models\User;
@@ -82,7 +83,7 @@ class CardRegistrationBridgeController extends Controller
                         'user_id'             => $user->id,
                         'hwid'                => $card->hwid ?? $hwid,
                         'hitee_card_number'   => $card->hitee_card_number ?? $validated['card_number'],
-                        'status'              => 'ACTIVE',
+                        'status'              => CardStatus::ACTIVE->value,
                         'is_currently_active' => true,
                         'is_physical'         => true,
                     ]);
@@ -101,7 +102,7 @@ class CardRegistrationBridgeController extends Controller
                         'hitee_card_number'   => $validated['card_number'],
                         'card_type_code'      => $validated['card_type_code'] ?? '0100',
                         'card_type_label'     => $validated['card_type_label'] ?? 'STANDARD',
-                        'status'              => 'ACTIVE',
+                        'status'              => CardStatus::ACTIVE->value,
                         'is_currently_active' => true,
                         'is_physical'         => true,
                         'is_personalized'     => false,
@@ -110,16 +111,15 @@ class CardRegistrationBridgeController extends Controller
                 }
 
                 // Create an initial wallet top-up (BalanceIn).
+                // The issuer sends minor units (5000 = Rs 50.00); the
+                // legacy ledger stores major units — convert on the way in.
                 if ($initialBalance > 0) {
-                    DB::table('balance_ins')->insert([
+                    app(\App\Services\LedgerService::class)->credit([
                         'user_id'      => $user->id,
                         'card_id'      => $card->id,
-                        'amount'       => $initialBalance,
+                        'amount'       => $initialBalance / 100,
                         'type'         => 'topup',
                         'remarks'      => 'Initial top-up at card registration',
-                        'status'       => 'completed',
-                        'created_at'   => now(),
-                        'updated_at'   => now(),
                     ]);
                 }
 
@@ -137,7 +137,7 @@ class CardRegistrationBridgeController extends Controller
                         'card_number' => $card->card_number,
                         'card_uid'    => $validated['card_uid'],
                         'user_id'     => $user->id,
-                        'status'      => 'ACTIVE',
+                        'status'      => CardStatus::ACTIVE->value,
                         'balance'     => $initialBalance,
                         'already_registered' => false,
                     ],

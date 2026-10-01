@@ -13,7 +13,33 @@ class CardInitializationOperation extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $guarded = [];
+    protected $fillable = [
+        'card_id',
+        'idempotency_key',
+        'expected_uid',
+        'status',
+        'current_step',
+        'last_successful_step',
+        'last_attempted_step',
+        'physical_state_uncertain',
+        'lock_version',
+        'workstation_id',
+        'card_structure_version',
+        'key_profile_version',
+        'key_service_request_id',
+        'key_manifest',
+        'failure_code',
+        'failure_message',
+        'operation_mode',
+        'write_mode',
+        'authorization_key_profile_version',
+        'physical_write_authorized_at',
+        'operator_confirmation_sha256',
+        'profile_snapshot',
+        'started_at',
+        'completed_at',
+        'failed_at',
+    ];
 
     protected $casts = [
         'key_manifest' => 'array',

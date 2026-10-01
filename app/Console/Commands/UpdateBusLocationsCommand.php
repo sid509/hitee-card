@@ -63,11 +63,11 @@ class UpdateBusLocationsCommand extends Command
                 $currentLng = $currentPos->longitude;
 
                 // Find nearest stop
-                $haversine = "(6371 * acos(cos(radians({$currentLat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$currentLng})) + sin(radians({$currentLat})) * sin(radians(latitude))))";
-                
+                $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
+
                 $nearestStop = RouteStop::where('route_id', $bus->route_id)
                     ->select('*')
-                    ->selectRaw("$haversine AS distance")
+                    ->selectRaw("$haversine AS distance", [(float) $currentLat, (float) $currentLng, (float) $currentLat])
                     ->orderBy('distance')
                     ->first();
 

@@ -60,14 +60,16 @@ class HomepageController extends Controller
             );
         }
 
-        // Proximity filter/sort
+        // Proximity filter/sort — inputs validated before reaching SQL
         $lat = $request->get('latitude') ?? $request->get('lat');
         $lng = $request->get('longitude') ?? $request->get('lon') ?? $request->get('lng');
+        $lat = is_numeric($lat) ? (float) $lat : null;
+        $lng = is_numeric($lng) ? (float) $lng : null;
 
-        if ($lat && $lng) {
-            $haversine = "(6371 * acos(cos(radians({$lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$lng})) + sin(radians({$lat})) * sin(radians(latitude))))";
+        if ($lat !== null && $lng !== null) {
+            $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
             $radius = (float) $request->get('radius', 10);
-            $query->selectRaw("{$haversine} AS distance")
+            $query->selectRaw("{$haversine} AS distance", [$lat, $lng, $lat])
                   ->having('distance', '<=', $radius)
                   ->orderBy('distance');
         } else {
@@ -149,14 +151,16 @@ class HomepageController extends Controller
             );
         }
 
-        // Proximity filter/sort
+        // Proximity filter/sort — inputs validated before reaching SQL
         $lat = $request->get('latitude') ?? $request->get('lat');
         $lng = $request->get('longitude') ?? $request->get('lon') ?? $request->get('lng');
+        $lat = is_numeric($lat) ? (float) $lat : null;
+        $lng = is_numeric($lng) ? (float) $lng : null;
 
-        if ($lat && $lng) {
-            $haversine = "(6371 * acos(cos(radians({$lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$lng})) + sin(radians({$lat})) * sin(radians(latitude))))";
+        if ($lat !== null && $lng !== null) {
+            $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
             $radius = (float) $request->get('radius', 10);
-            $query->selectRaw("{$haversine} AS distance")
+            $query->selectRaw("{$haversine} AS distance", [$lat, $lng, $lat])
                   ->having('distance', '<=', $radius)
                   ->orderBy('distance');
         } else {

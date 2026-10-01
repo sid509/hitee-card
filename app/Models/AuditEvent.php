@@ -14,7 +14,24 @@ class AuditEvent extends Model
     protected $keyType = 'string';
     public $timestamps = false;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'request_id',
+        'action',
+        'entity_type',
+        'entity_id',
+        'operation_type',
+        'operation_id',
+        'card_id',
+        'card_number',
+        'card_uid',
+        'workstation_id',
+        'operator_id',
+        'http_method',
+        'http_path',
+        'result',
+        'operation_state',
+        'recorded_at',
+    ];
 
     protected $casts = [
         'operation_state' => 'array',

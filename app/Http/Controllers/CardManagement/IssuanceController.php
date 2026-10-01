@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
+use App\Enums\CardStatus;
 use App\Models\Card;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\KeyServiceClient;
@@ -377,7 +378,7 @@ final class IssuanceController extends BaseCardManagementController
 
         // Update card status to ISSUED
         DB::table('cards')->where('id', $operation->card_id)->update([
-            'status' => 'ISSUED',
+            'status' => CardStatus::ISSUED->value,
             'updated_at' => now(),
         ]);
 
@@ -385,8 +386,8 @@ final class IssuanceController extends BaseCardManagementController
         DB::table('card_lifecycle_events')->insert([
             'id' => Str::uuid()->toString(),
             'card_id' => $operation->card_id,
-            'from_status' => 'INITIALIZED',
-            'to_status' => 'ISSUED',
+            'from_status' => CardStatus::INITIALIZED->value,
+            'to_status' => CardStatus::ISSUED->value,
             'reason' => 'Issuance completed',
             'workstation_id' => $operation->workstation_id,
             'created_at' => now(),
@@ -433,10 +434,10 @@ final class IssuanceController extends BaseCardManagementController
         }
 
         $actionMap = [
-            'ACTIVATE' => 'ACTIVE',
-            'DEACTIVATE' => 'INACTIVE',
-            'BLOCK' => 'BLOCKED',
-            'UNBLOCK' => 'ACTIVE',
+            'ACTIVATE' => CardStatus::ACTIVE->value,
+            'DEACTIVATE' => CardStatus::INACTIVE->value,
+            'BLOCK' => CardStatus::BLOCKED->value,
+            'UNBLOCK' => CardStatus::ACTIVE->value,
         ];
 
         $oldStatus = $card->status;

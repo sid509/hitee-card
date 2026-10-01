@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CardStatus;
 use App\Models\CardApplication;
 use App\Models\Card;
 use Illuminate\Http\Request;
@@ -92,7 +93,7 @@ class CardApplicationController extends Controller
 
     public function show(CardApplication $cardApplication)
     {
-        if (auth()->user()->hasRole('customers') && $cardApplication->user_id !== auth()->id()) abort(403);
+        $this->authorize('view', $cardApplication);
 
         $cardApplication->load('user');
         return view('modules.card_applications.show', compact('cardApplication'));
@@ -100,7 +101,7 @@ class CardApplicationController extends Controller
 
     public function update(Request $request, CardApplication $cardApplication)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        $this->authorize('update', $cardApplication);
 
         $request->validate([
             'status' => 'required|in:approved,rejected',
@@ -129,7 +130,7 @@ class CardApplicationController extends Controller
             $card->update([
                 'user_id' => $cardApplication->user_id,
                 'is_currently_active' => true,
-                'status' => 'ACTIVE'
+                'status' => CardStatus::ACTIVE->value,
             ]);
         }
 

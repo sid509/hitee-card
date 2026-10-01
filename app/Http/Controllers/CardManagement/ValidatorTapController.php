@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\CardManagement;
 
+use App\Enums\CardStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
 use App\Models\Card;
 use App\Models\Ride;
 use App\Models\Tap;
-use App\Models\BalanceOut;
-use App\Models\MerchantIncome;
 use App\Models\RouteStop;
 use App\Models\FareMatrix;
 use Illuminate\Http\JsonResponse;
@@ -50,7 +49,7 @@ class ValidatorTapController extends Controller
             return $this->error('CARD_NOT_FOUND', 'Card not registered on platform.', 404);
         }
 
-        if ($card->status !== 'ACTIVE') {
+        if ($card->status !== CardStatus::ACTIVE->value) {
             return $this->error('CARD_INACTIVE', 'Card is ' . $card->status . '.', 403);
         }
 
@@ -217,7 +216,7 @@ class ValidatorTapController extends Controller
                 ? "Journey #{$ride->id} completed. From {$ride->tapIn->resolved_location_name} to {$location['name']}. Shortfall of {$shortfall} points recorded as debt."
                 : "Journey #{$ride->id} completed. From {$ride->tapIn->resolved_location_name} to {$location['name']}";
 
-            $balanceOut = BalanceOut::create([
+            app(\App\Services\LedgerService::class)->debitWithIncome([
                 'user_id'   => $user?->id,
                 'card_id'   => $ride->card_id,
                 'merchant_id' => $ride->merchant_id,
@@ -226,19 +225,7 @@ class ValidatorTapController extends Controller
                 'remarks'   => $remarks,
                 'reference_id'   => $ride->reference_id,
                 'reference_type' => $ride->reference_type,
-                'created_by' => 1,
-            ]);
-
-            if ($ride->merchant_id) {
-                MerchantIncome::create([
-                    'merchant_id'     => $ride->merchant_id,
-                    'balance_out_id'  => $balanceOut->id,
-                    'reference_id'    => $ride->reference_id,
-                    'reference_type'  => $ride->reference_type,
-                    'amount'          => $fareAmount,
-                    'type'            => 'fare',
-                ]);
-            }
+            ], 'fare');
         }
 
         $ride->update([
@@ -341,11 +328,11 @@ class ValidatorTapController extends Controller
         }
 
         if ($asset instanceof Bus) {
-            $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude)) * cos(radians(longitude) - radians($lon)) + sin(radians($lat)) * sin(radians(latitude))))";
+            $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
 
             $stop = RouteStop::where('route_id', $asset->route_id)
                 ->select('*')
-                ->selectRaw("$haversine AS distance")
+                ->selectRaw("$haversine AS distance", [$lat, $lon, $lat])
                 ->orderBy('distance')
                 ->first();
 

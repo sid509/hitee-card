@@ -31,14 +31,13 @@ class BalanceController extends Controller
             return back()->with('error', 'Unauthorized action.');
         }
 
-        BalanceIn::create([
+        app(\App\Services\LedgerService::class)->credit([
             'user_id' => $request->user_id,
             'card_id' => $request->card_id,
             'amount' => $request->amount,
             'type' => $request->type,
             'remarks' => $request->remarks,
             'created_by' => auth()->id(),
-            'status' => 'completed',
         ]);
 
         logActivity('balance_addition', 'Balance added manually', [
@@ -84,7 +83,10 @@ class BalanceController extends Controller
                 throw new \Exception('Insufficient balance (concurrent deduction detected).');
             }
 
-            $balanceOut = BalanceOut::create([
+            $ledger = app(\App\Services\LedgerService::class);
+            $isMerchantCharge = in_array($request->type, ['fare_deduction', 'parking']);
+
+            $balanceOut = $ledger->debit([
                 'user_id' => $request->user_id,
                 'card_id' => $request->card_id,
                 'merchant_id' => $request->merchant_id,
@@ -92,17 +94,15 @@ class BalanceController extends Controller
                 'type' => $request->type,
                 'remarks' => $request->remarks,
                 'reference_id' => $request->reference_id,
-                'reference_type' => in_array($request->type, ['fare_deduction', 'parking']) ? ($request->type === 'fare_deduction' ? 'App\Models\Bus' : 'App\Models\Parking') : null,
+                'reference_type' => $isMerchantCharge ? ($request->type === 'fare_deduction' ? 'App\Models\Bus' : 'App\Models\Parking') : null,
                 'created_by' => auth()->id(),
             ]);
 
             // If a merchant is involved, record their income
-            if ($request->merchant_id && in_array($request->type, ['fare_deduction', 'parking'])) {
-                MerchantIncome::create([
+            if ($request->merchant_id && $isMerchantCharge) {
+                $ledger->merchantIncome($balanceOut, [
                     'merchant_id' => $request->merchant_id,
-                    'balance_out_id' => $balanceOut->id,
                     'reference_id' => $request->reference_id,
-                    'reference_type' => $balanceOut->reference_type,
                     'amount' => $request->amount,
                     'type' => $request->type === 'fare_deduction' ? 'fare' : 'parking',
                 ]);
@@ -435,7 +435,7 @@ class BalanceController extends Controller
             $data = $response->json();
             
             // Create a pending balance in record
-            BalanceIn::create([
+            app(\App\Services\LedgerService::class)->credit([
                 'user_id' => $user->id,
                 'amount' => $request->amount,
                 'type' => 'khalti',
@@ -556,9 +556,9 @@ class BalanceController extends Controller
         ]);
 
         // Create a pending balance in record
-        BalanceIn::create([
+        app(\App\Services\LedgerService::class)->credit([
             'user_id' => $user->id,
-            'amount' => $request->amount, // We'll treat 1 USD = 1 Point for simplicity, or add conversion logic
+            'amount' => $request->amount,
             'type' => 'stripe',
             'remarks' => 'Stripe Topup Initiation',
             'transaction_id' => $session->id,

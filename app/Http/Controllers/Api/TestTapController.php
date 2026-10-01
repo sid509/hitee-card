@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\CardStatus;
 use App\Http\Controllers\Api\Customer\TapController;
 use Illuminate\Http\Request;
 
@@ -15,8 +16,13 @@ class TestTapController extends TapController
      */
     public function handleTestTap(Request $request)
     {
+        if (!$request->user()?->hasRole('super-admin')) {
+            return response("FAILED: Super-admin token required", 403)
+                ->header('Content-Type', 'text/plain');
+        }
+
         // Dynamically find the first available entities
-        $card = \App\Models\Card::where('status', 'ACTIVE')->first();
+        $card = \App\Models\Card::where('status', CardStatus::ACTIVE->value)->first();
         $bus = \App\Models\Bus::first();
 
         if (!$card || !$bus) {

@@ -135,12 +135,13 @@ class DashboardController extends Controller
         $lng = $request->long;
         $radius = $request->get('radius', 2);
 
-        $haversine = "(6371 * acos(cos(radians({$lat})) * cos(radians(latitude)) * cos(radians(longitude) - radians({$lng})) + sin(radians({$lat})) * sin(radians(latitude))))";
+        $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
+        $haversineBindings = [(float) $lat, (float) $lng, (float) $lat];
         
         $isSqlite = config('database.default') === 'sqlite';
         
         $query = Stop::select('*')
-            ->selectRaw("{$haversine} AS distance");
+            ->selectRaw("{$haversine} AS distance", $haversineBindings);
 
         if ($isSqlite) {
             $nearbyStops = $query->get()->where('distance', '<=', $radius)->sortBy('distance');

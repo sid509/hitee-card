@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
+use App\Enums\CardStatus;
 use App\Models\Card;
 use App\Models\CardInitializationOperation;
 use App\Services\CardManagement\CardManagementError;
@@ -293,7 +294,7 @@ final class InitializationController extends BaseCardManagementController
             ]);
 
             Card::where('id', $operation->card_id)->update([
-                'status' => 'INITIALIZED',
+                'status' => CardStatus::INITIALIZED->value,
                 'initialized_at' => now(),
                 'installed_key_profile_version' => $operation->key_profile_version,
                 'installed_card_structure_version' => $operation->card_structure_version,

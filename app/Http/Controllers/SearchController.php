@@ -339,37 +339,38 @@ class SearchController extends Controller
      */
     public function nearby(Request $request)
     {
-        $lat = $request->get('lat');
-        $lng = $request->get('lng');
+        $validated = $request->validate([
+            'lat' => 'required|numeric|between:-90,90',
+            'lng' => 'required|numeric|between:-180,180',
+        ]);
+        $lat = (float) $validated['lat'];
+        $lng = (float) $validated['lng'];
         $radius = 5; // km
 
-        if (!$lat || !$lng) {
-            return response()->json(['error' => 'Coordinates required'], 400);
-        }
-
-        // Haversine formula
-        $haversine = "(6371 * acos(cos(radians($lat)) * cos(radians(latitude)) * cos(radians(longitude) - radians($lng)) + sin(radians($lat)) * sin(radians(latitude))))";
+        // Haversine formula — bound parameters, never interpolated
+        $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
+        $bindings = [$lat, $lng, $lat];
 
         $buses = Bus::select(['id', 'name', 'bus_number', 'latitude', 'longitude'])
-            ->selectRaw("$haversine AS distance")
+            ->selectRaw("$haversine AS distance", $bindings)
             ->having("distance", "<=", $radius)
             ->orderBy("distance")
             ->get();
 
         $parkings = Parking::select(['id', 'name', 'location', 'latitude', 'longitude'])
-            ->selectRaw("$haversine AS distance")
+            ->selectRaw("$haversine AS distance", $bindings)
             ->having("distance", "<=", $radius)
             ->orderBy("distance")
             ->get();
 
         $servicePartners = \App\Models\ServicePartner::select(['id', 'name', 'service_type', 'address', 'latitude', 'longitude'])
-            ->selectRaw("$haversine AS distance")
+            ->selectRaw("$haversine AS distance", $bindings)
             ->having("distance", "<=", $radius)
             ->orderBy("distance")
             ->get();
 
         $stops = \App\Models\Stop::select(['id', 'name', 'latitude', 'longitude'])
-            ->selectRaw("$haversine AS distance")
+            ->selectRaw("$haversine AS distance", $bindings)
             ->having("distance", "<=", $radius)
             ->orderBy("distance")
             ->get();
