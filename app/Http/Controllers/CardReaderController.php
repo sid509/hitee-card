@@ -12,9 +12,10 @@ use App\Models\Ride;
 use App\Models\BalanceIn;
 use App\Models\BalanceOut;
 use App\Models\MerchantIncome;
+use App\Services\Tap\TapRejected;
+use App\Services\Tap\TapService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 
 class CardReaderController extends Controller
 {
@@ -164,17 +165,40 @@ class CardReaderController extends Controller
             'lon' => 'required|numeric',
         ]);
 
-        // Call the internal /api/tap endpoint
-        $apiUrl = config('app.url') . '/api/tap';
+        // Run the tap through the shared engine directly — no HTTP
+        // self-call, no dependence on the external route's auth surface.
+        $card = Card::where('card_number', $request->card_number)->with('user')->first();
+        if (!$card) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Card not found.',
+            ], 404);
+        }
 
-        $response = Http::timeout(10)->post($apiUrl, [
-            'card_number' => $request->card_number,
-            'hw_id' => $request->hw_id,
-            'lat' => $request->lat,
-            'lon' => $request->lon,
-        ]);
+        $asset = app(TapService::class)->resolveAsset($request->hw_id);
+        if (!$asset) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Asset not found.',
+            ], 404);
+        }
 
-        $data = $response->json();
+        try {
+            $outcome = app(TapService::class)->tap($card, $asset, (float) $request->lat, (float) $request->lon);
+            $data = [
+                'status' => true,
+                'content' => [
+                    'type' => $outcome->type,
+                    'location' => $outcome->locationName,
+                    'fare_pts' => $outcome->fare,
+                    'new_balance_pts' => $outcome->balanceAfter,
+                ],
+            ];
+            $status = 200;
+        } catch (TapRejected $e) {
+            $data = ['status' => false, 'message' => $e->getMessage(), 'content' => $e->data];
+            $status = $e->httpStatus;
+        }
 
         // Enrich with card details
         $card = Card::where('card_number', $request->card_number)->with('user')->first();
@@ -209,7 +233,7 @@ class CardReaderController extends Controller
             }
         }
 
-        return response()->json($data, $response->status());
+        return response()->json($data, $status);
     }
 
     /**

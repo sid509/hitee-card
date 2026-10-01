@@ -264,40 +264,41 @@ class RideController extends Controller
             return response()->json(['status' => false, 'message' => 'You do not have an active card.']);
         }
 
-        // Forward to API controller logic
-        $tapApi = new \App\Http\Controllers\Api\TapController();
-        
+        $taps = app(\App\Services\Tap\TapService::class);
         $ongoingRide = Ride::where('card_id', $card->id)->where('status', 'ongoing')->first();
 
-        // Prepare simulation data
-        $simData = [
-            'card_number' => $card->card_number,
-            'lat' => 27.7172,
-            'lon' => 85.3240,
-        ];
-
         if ($ongoingRide) {
-            // Use same asset for tap out
-            $hwId = $ongoingRide->reference_type === \App\Models\Bus::class 
-                ? \App\Models\Bus::find($ongoingRide->reference_id)->hwid 
-                : $ongoingRide->reference_id;
-            $simData['hw_id'] = (string)$hwId;
+            // Tap out on the same asset the ride started on
+            $asset = $ongoingRide->reference;
+            if (!$asset) {
+                return response()->json(['status' => false, 'message' => 'Ride asset could not be resolved.']);
+            }
         } else {
-            // Pick a random bus for tap in
-            $bus = \App\Models\Bus::inRandomOrder()->first();
-            if ($bus) {
-                $simData['hw_id'] = (string)$bus->hwid;
-            } else {
-                // If no buses, try a parking lot
-                $parking = \App\Models\Parking::inRandomOrder()->first();
-                if (!$parking) return response()->json(['status' => false, 'message' => 'No assets (bus/parking) available for simulation.']);
-                $simData['hw_id'] = (string)$parking->id;
+            // Pick a random bus for tap in, else a parking lot
+            $asset = \App\Models\Bus::inRandomOrder()->first()
+                ?? \App\Models\Parking::inRandomOrder()->first();
+            if (!$asset) {
+                return response()->json(['status' => false, 'message' => 'No assets (bus/parking) available for simulation.']);
             }
         }
 
-        $request->merge($simData);
-        
-        $response = $tapApi->processTap($request);
-        return $response;
+        try {
+            $outcome = $taps->tap($card, $asset, 27.7172, 85.3240);
+        } catch (\App\Services\Tap\TapRejected $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], $e->httpStatus);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => $outcome->type === 'in'
+                ? __('messages.tap_in_success', ['location' => $outcome->locationName])
+                : __('messages.tap_out_success', ['location' => $outcome->locationName, 'amount' => $outcome->fare]),
+            'content' => [
+                'type' => $outcome->type,
+                'location' => $outcome->locationName,
+                'fare_pts' => $outcome->fare,
+                'new_balance_pts' => $outcome->balanceAfter,
+            ],
+        ]);
     }
 }

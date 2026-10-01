@@ -47,10 +47,12 @@ Route::group([], function () {
     Route::get('/buses/{id}',   [HomepageController::class, 'showBus']);
     Route::get('/parkings',     [HomepageController::class, 'listParkings']);
     Route::get('/parkings/{id}', [HomepageController::class, 'showParking']);
-
-    // Tap Handling (Public for Validators)
-    Route::post('/tap', [TapController::class, 'processTap'])->middleware('throttle:300,1');
 });
+
+// Tap Handling — debits real wallets, so it requires a sanctum token.
+// Validators use /api/v1/validator/tap (device-token auth) instead.
+Route::post('/tap', [TapController::class, 'processTap'])
+    ->middleware(['auth:sanctum', 'throttle:300,1']);
 
 // 2. Customer Authentication — throttled against credential/OTP abuse
 Route::controller(AuthController::class)->prefix('auth')
