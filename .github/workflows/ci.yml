@@ -43,7 +43,9 @@ jobs:
 
       - name: Prepare environment
         run: |
-          cp .env.testing .env
+          # .env.testing is gitignored — use the tracked example as the base;
+          # test overrides come from phpunit.xml and the step env below.
+          cp .env.example .env
           php artisan key:generate
           php artisan config:clear
 
