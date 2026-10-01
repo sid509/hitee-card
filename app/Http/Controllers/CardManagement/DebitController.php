@@ -160,7 +160,7 @@ final class DebitController extends BaseCardManagementController
         return ResponseEnvelope::success(['operation' => $this->operations->toPublicArray($updated)]);
     }
 
-    public function authorize(Request $request, string $operationId)
+    public function authorizeOperation(Request $request, string $operationId)
     {
         $operation = $this->operations->findOrFail($operationId);
         $this->assertVersion((int) $request->input('expectedVersion'), $operation->lock_version);

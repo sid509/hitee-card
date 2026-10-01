@@ -172,7 +172,7 @@ final class WalletController extends BaseCardManagementController
         return $this->prepareKeys($request, $operationId);
     }
 
-    public function authorize(Request $request, string $operationId)
+    public function authorizeOperation(Request $request, string $operationId)
     {
         $operation = $this->operations->findOrFail($operationId);
         $this->assertVersion((int) $request->input('expectedVersion'), $operation->lock_version);

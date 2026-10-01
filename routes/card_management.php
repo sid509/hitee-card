@@ -76,7 +76,7 @@ Route::prefix('v1')->group(function () {
             Route::get('recharges/{operationId}', [WalletController::class, 'getRecharge']);
             Route::post('recharges/{operationId}/prepare-keys', [WalletController::class, 'prepareKeys']);
             Route::post('recharges/{operationId}/prepare-reconciliation-keys', [WalletController::class, 'prepareReconciliationKeys']);
-            Route::post('recharges/{operationId}/authorize', [WalletController::class, 'authorize']);
+            Route::post('recharges/{operationId}/authorize', [WalletController::class, 'authorizeOperation']);
             Route::get('recharges/{operationId}/key-envelope', [WalletController::class, 'getEnvelope']);
             Route::post('recharges/{operationId}/key-envelope/acknowledge', [WalletController::class, 'acknowledgeEnvelope']);
             Route::post('recharges/{operationId}/attempt-credit', [WalletController::class, 'attemptCredit']);
@@ -98,7 +98,7 @@ Route::prefix('v1')->group(function () {
                 ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('operations/{operationId}', [DebitController::class, 'getDebit']);
             Route::post('operations/{operationId}/prepare-keys', [DebitController::class, 'prepareKeys']);
-            Route::post('operations/{operationId}/authorize', [DebitController::class, 'authorize']);
+            Route::post('operations/{operationId}/authorize', [DebitController::class, 'authorizeOperation']);
             Route::get('operations/{operationId}/key-envelope', [DebitController::class, 'getEnvelope']);
             Route::post('operations/{operationId}/key-envelope/acknowledge', [DebitController::class, 'acknowledgeEnvelope']);
             Route::post('operations/{operationId}/attempt-debit', [DebitController::class, 'attemptDebit']);
@@ -119,7 +119,7 @@ Route::prefix('v1')->group(function () {
                 ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('operations/{operationId}', [ReversalController::class, 'getReversal']);
             Route::post('operations/{operationId}/prepare-keys', [ReversalController::class, 'prepareKeys']);
-            Route::post('operations/{operationId}/authorize', [ReversalController::class, 'authorize']);
+            Route::post('operations/{operationId}/authorize', [ReversalController::class, 'authorizeOperation']);
             Route::get('operations/{operationId}/key-envelope', [ReversalController::class, 'getEnvelope']);
             Route::post('operations/{operationId}/key-envelope/acknowledge', [ReversalController::class, 'acknowledgeEnvelope']);
             Route::post('operations/{operationId}/attempt-debit', [ReversalController::class, 'attemptDebit']);
@@ -143,7 +143,7 @@ Route::prefix('v1')->group(function () {
             Route::get('cards/{uid}/issuance-details', [IssuanceController::class, 'getIssuanceDetails'])
                 ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::post('operations/{operationId}/prepare-keys', [IssuanceController::class, 'prepareKeys']);
-            Route::post('operations/{operationId}/authorize', [IssuanceController::class, 'authorize']);
+            Route::post('operations/{operationId}/authorize', [IssuanceController::class, 'authorizeOperation']);
             Route::get('operations/{operationId}/key-envelope', [IssuanceController::class, 'getEnvelope']);
             Route::post('operations/{operationId}/key-envelope/acknowledge', [IssuanceController::class, 'acknowledgeEnvelope']);
             Route::post('operations/{operationId}/checkpoints', [IssuanceController::class, 'checkpoint']);
@@ -168,7 +168,7 @@ Route::prefix('v1')->group(function () {
             Route::get('operations/{operationId}', [ReplacementController::class, 'getOperation']);
             Route::post('operations/{operationId}/balance-evidence', [ReplacementController::class, 'recordBalanceEvidence']);
             Route::post('operations/{operationId}/prepare-keys', [ReplacementController::class, 'prepareKeys']);
-            Route::post('operations/{operationId}/authorize', [ReplacementController::class, 'authorize']);
+            Route::post('operations/{operationId}/authorize', [ReplacementController::class, 'authorizeOperation']);
             Route::get('operations/{operationId}/key-envelope', [ReplacementController::class, 'getEnvelope']);
             Route::post('operations/{operationId}/key-envelope/acknowledge', [ReplacementController::class, 'acknowledgeEnvelope']);
             Route::post('operations/{operationId}/checkpoints', [ReplacementController::class, 'checkpoint']);
