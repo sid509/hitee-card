@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\CardManagement;
 
-use App\Models\CardManagement\Card;
-use App\Models\CardManagement\CardInitializationOperation;
+use App\Models\Card;
+use App\Models\CardInitializationOperation;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\KeyServiceClient;
 use App\Services\CardManagement\ResponseEnvelope;
@@ -75,7 +75,7 @@ final class InitializationController extends BaseCardManagementController
         ], $this->requestId($request));
 
         DB::transaction(function () use ($operation, $result, $recipientKeyId, $fingerprint) {
-            DB::table('cm_initialization_key_envelopes')->insert([
+            DB::table('initialization_key_envelopes')->insert([
                 'id' => Str::uuid()->toString(),
                 'operation_id' => $operation->id,
                 'key_service_request_id' => Str::uuid()->toString(),
@@ -105,7 +105,7 @@ final class InitializationController extends BaseCardManagementController
     {
         $operation = $this->findOperation($operationId);
 
-        $envelopeRow = DB::table('cm_initialization_key_envelopes')
+        $envelopeRow = DB::table('initialization_key_envelopes')
             ->where('operation_id', $operation->id)
             ->first();
 
@@ -123,14 +123,14 @@ final class InitializationController extends BaseCardManagementController
         }
 
         // Block delivery after physical checkpoint
-        $hasCheckpoint = DB::table('cm_card_initialization_checkpoints')
+        $hasCheckpoint = DB::table('card_initialization_checkpoints')
             ->where('operation_id', $operation->id)
             ->exists();
         if ($hasCheckpoint) {
             throw new CardManagementError('KEY_ENVELOPE_ALREADY_DELIVERED', 409, 'Envelope delivery blocked after physical checkpoint.');
         }
 
-        DB::table('cm_initialization_key_envelopes')
+        DB::table('initialization_key_envelopes')
             ->where('operation_id', $operation->id)
             ->update([
                 'delivery_count' => $envelopeRow->delivery_count + 1,
@@ -162,7 +162,7 @@ final class InitializationController extends BaseCardManagementController
             throw new CardManagementError('AMOUNT_INVALID', 400, 'recipientKeyId is required.');
         }
 
-        $updated = DB::table('cm_initialization_key_envelopes')
+        $updated = DB::table('initialization_key_envelopes')
             ->where('operation_id', $operation->id)
             ->whereNull('acknowledged_at')
             ->update(['acknowledged_at' => now(), 'updated_at' => now()]);
@@ -223,7 +223,7 @@ final class InitializationController extends BaseCardManagementController
         }
 
         // Enforce ordering
-        $existingSteps = DB::table('cm_card_initialization_checkpoints')
+        $existingSteps = DB::table('card_initialization_checkpoints')
             ->where('operation_id', $operation->id)
             ->pluck('step')
             ->toArray();
@@ -237,7 +237,7 @@ final class InitializationController extends BaseCardManagementController
 
         $sequenceNo = count($existingSteps) + 1;
 
-        DB::table('cm_card_initialization_checkpoints')->insert([
+        DB::table('card_initialization_checkpoints')->insert([
             'id' => Str::uuid()->toString(),
             'operation_id' => $operation->id,
             'step' => $step,
@@ -344,7 +344,7 @@ final class InitializationController extends BaseCardManagementController
         $this->assertVersion((int) $request->input('expectedVersion'), $operation->lock_version);
 
         // Cancellation blocked after physical write boundary (any checkpoint at or after CARD_FORMATTED)
-        $hasPhysicalWrite = DB::table('cm_card_initialization_checkpoints')
+        $hasPhysicalWrite = DB::table('card_initialization_checkpoints')
             ->where('operation_id', $operation->id)
             ->whereIn('step', ['CARD_FORMATTED', 'MF_KEY_FILE_CREATED', 'DCCK_INSTALLED', 'DCMK_INSTALLED', 'MF_FILES_CREATED', 'ADF_CREATED', 'ADF_KEY_FILE_CREATED', 'APPLICATION_KEYS_INSTALLED', 'APPLICATION_FILES_CREATED', 'INITIAL_DATA_WRITTEN', 'VERIFICATION_STARTED', 'VERIFIED'])
             ->exists();

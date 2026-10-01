@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // ── Validator devices ─────────────────────────────────────────
-        Schema::create('cm_validator_devices', function (Blueprint $table) {
+        Schema::create('validator_devices', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('device_id', 128)->unique();        // hardware/device identifier
             $table->string('vehicle_id', 128)->nullable();
@@ -27,10 +27,10 @@ return new class extends Migration
         });
 
         // ── Trips synced from validators ──────────────────────────────
-        Schema::create('cm_validator_trips', function (Blueprint $table) {
+        Schema::create('validator_trips', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('device_id');
-            $table->foreign('device_id', 'fk_vtrips_device')->references('id')->on('cm_validator_devices')->onDelete('cascade');
+            $table->foreign('device_id', 'fk_vtrips_device')->references('id')->on('validator_devices')->onDelete('cascade');
             $table->string('trip_id', 128);                     // validator-generated trip ID
             $table->string('card_uid', 32);
             $table->string('card_type', 32)->nullable();
@@ -58,7 +58,7 @@ return new class extends Migration
         });
 
         // ── Blocklist entries ─────────────────────────────────────────
-        Schema::create('cm_blocklist_entries', function (Blueprint $table) {
+        Schema::create('blocklist_entries', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('card_uid', 32)->unique('uq_blocklist_uid');
             $table->string('card_number', 20)->nullable();
@@ -74,10 +74,10 @@ return new class extends Migration
         });
 
         // ── Blocklist sync cursors (per-device) ───────────────────────
-        Schema::create('cm_blocklist_cursors', function (Blueprint $table) {
+        Schema::create('blocklist_cursors', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('device_id');
-            $table->foreign('device_id', 'fk_blcursor_device')->references('id')->on('cm_validator_devices')->onDelete('cascade');
+            $table->foreign('device_id', 'fk_blcursor_device')->references('id')->on('validator_devices')->onDelete('cascade');
             $table->timestamp('last_synced_at', 3)->nullable();
             $table->integer('last_synced_sequence')->default(0);
             $table->timestamps(3);
@@ -88,9 +88,9 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('cm_blocklist_cursors');
-        Schema::dropIfExists('cm_blocklist_entries');
-        Schema::dropIfExists('cm_validator_trips');
-        Schema::dropIfExists('cm_validator_devices');
+        Schema::dropIfExists('blocklist_cursors');
+        Schema::dropIfExists('blocklist_entries');
+        Schema::dropIfExists('validator_trips');
+        Schema::dropIfExists('validator_devices');
     }
 };

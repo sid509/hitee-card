@@ -29,7 +29,7 @@ namespace App\Services\CardManagement;
  * }
  *
  * The first matching rule wins. If no rule matches, the default rate is used.
- * Rules are stored in cm_settlement_rules and versioned.
+ * Rules are stored in settlement_rules and versioned.
  */
 class SettlementRulesEngine
 {

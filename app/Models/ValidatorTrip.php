@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\CardManagement;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class ValidatorTrip extends Model
 {
-    protected $table = 'cm_validator_trips';
+    protected $table = 'validator_trips';
     public $incrementing = false;
     protected $keyType = 'string';
 

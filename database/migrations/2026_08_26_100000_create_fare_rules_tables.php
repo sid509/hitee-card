@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('cm_fare_rules', function (Blueprint $table) {
+        Schema::create('fare_rules', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('rule_code', 32)->unique('uq_fare_rule_code');
             $table->string('description', 500)->nullable();
@@ -30,10 +30,10 @@ return new class extends Migration
             $table->index('effective_from');
         });
 
-        Schema::create('cm_fare_rule_versions', function (Blueprint $table) {
+        Schema::create('fare_rule_versions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('fare_rule_id');
-            $table->foreign('fare_rule_id')->references('id')->on('cm_fare_rules')->onDelete('cascade');
+            $table->foreign('fare_rule_id')->references('id')->on('fare_rules')->onDelete('cascade');
             $table->integer('version');
             $table->json('snapshot');
             $table->string('changed_by', 128)->nullable();
@@ -46,7 +46,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('cm_fare_rule_versions');
-        Schema::dropIfExists('cm_fare_rules');
+        Schema::dropIfExists('fare_rule_versions');
+        Schema::dropIfExists('fare_rules');
     }
 };

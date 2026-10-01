@@ -37,7 +37,7 @@ $(function() {
     $('#cm-validators-table').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ route("card-management.validators.index") }}',
+        ajax: '{{ route("cards.validators.index") }}',
         columns: [
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'device_id', name: 'device_id' },

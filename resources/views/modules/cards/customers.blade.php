@@ -36,7 +36,7 @@ $(function() {
     $('#cm-customers-table').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ route("card-management.customers.index") }}',
+        ajax: '{{ route("cards.customers.index") }}',
         columns: [
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'customer_number', name: 'customer_number' },

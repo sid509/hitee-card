@@ -41,13 +41,13 @@ Route::prefix('v1')->group(function () {
             Route::post('check', [CardsController::class, 'check']);
             Route::post('register', [CardsController::class, 'register']);
             Route::get('{uid}', [CardsController::class, 'get'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::post('{uid}/assign-lab-profile', [CardsController::class, 'assignLabProfile'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('{uid}/initialization-operation', [CardsController::class, 'getInitializationOperation'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::post('{uid}/initialization-operations', [CardsController::class, 'createInitializationOperation'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
         });
 
         // ── Initialization Operations (§5.2) ───────────────────────────
@@ -68,11 +68,11 @@ Route::prefix('v1')->group(function () {
         Route::prefix('wallet')->group(function () {
             Route::get('configuration', [WalletController::class, 'getConfiguration']);
             Route::get('cards/{uid}/active', [WalletController::class, 'getActiveByCard'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/recharges', [WalletController::class, 'getHistoryByCard'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::post('cards/{uid}/recharges', [WalletController::class, 'createRecharge'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('recharges/{operationId}', [WalletController::class, 'getRecharge']);
             Route::post('recharges/{operationId}/prepare-keys', [WalletController::class, 'prepareKeys']);
             Route::post('recharges/{operationId}/prepare-reconciliation-keys', [WalletController::class, 'prepareReconciliationKeys']);
@@ -91,11 +91,11 @@ Route::prefix('v1')->group(function () {
         Route::prefix('debit')->group(function () {
             Route::get('configuration', [DebitController::class, 'getConfiguration']);
             Route::get('cards/{uid}/active', [DebitController::class, 'getActiveByCard'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/debits', [DebitController::class, 'getHistoryByCard'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::post('cards/{uid}/debits', [DebitController::class, 'createDebit'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('operations/{operationId}', [DebitController::class, 'getDebit']);
             Route::post('operations/{operationId}/prepare-keys', [DebitController::class, 'prepareKeys']);
             Route::post('operations/{operationId}/authorize', [DebitController::class, 'authorize']);
@@ -112,11 +112,11 @@ Route::prefix('v1')->group(function () {
         Route::prefix('reversal')->group(function () {
             Route::get('configuration', [ReversalController::class, 'getConfiguration']);
             Route::get('cards/{uid}/active', [ReversalController::class, 'getActiveByCard'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/reversals', [ReversalController::class, 'getHistoryByCard'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::post('cards/{uid}/reversals', [ReversalController::class, 'createReversal'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('operations/{operationId}', [ReversalController::class, 'getReversal']);
             Route::post('operations/{operationId}/prepare-keys', [ReversalController::class, 'prepareKeys']);
             Route::post('operations/{operationId}/authorize', [ReversalController::class, 'authorize']);
@@ -135,13 +135,13 @@ Route::prefix('v1')->group(function () {
             Route::post('customers', [IssuanceController::class, 'createCustomer']);
             Route::get('customers', [IssuanceController::class, 'searchCustomers']);
             Route::post('cards/{uid}/operations', [IssuanceController::class, 'createIssuance'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/active', [IssuanceController::class, 'getActive'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/history', [IssuanceController::class, 'getHistory'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/issuance-details', [IssuanceController::class, 'getIssuanceDetails'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::post('operations/{operationId}/prepare-keys', [IssuanceController::class, 'prepareKeys']);
             Route::post('operations/{operationId}/authorize', [IssuanceController::class, 'authorize']);
             Route::get('operations/{operationId}/key-envelope', [IssuanceController::class, 'getEnvelope']);
@@ -151,20 +151,20 @@ Route::prefix('v1')->group(function () {
             Route::post('operations/{operationId}/cancel', [IssuanceController::class, 'cancel']);
             Route::post('operations/{operationId}/fail', [IssuanceController::class, 'fail']);
             Route::post('cards/{uid}/lifecycle', [IssuanceController::class, 'lifecycleAction'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/lifecycle', [IssuanceController::class, 'lifecycleHistory'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
         });
 
         // ── Replacement (§5.7) ─────────────────────────────────────────
         Route::prefix('replacement')->group(function () {
             Route::get('configuration', [ReplacementController::class, 'getConfiguration']);
             Route::post('cards/{uid}/operations', [ReplacementController::class, 'createReplacement'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/active', [ReplacementController::class, 'getActiveByCard'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('cards/{uid}/history', [ReplacementController::class, 'getHistoryByCard'])
-                ->where('uid', '[0-9A-Fa-f]{8,32}');
+                ->where('card_uid', '[0-9A-Fa-f]{8,32}');
             Route::get('operations/{operationId}', [ReplacementController::class, 'getOperation']);
             Route::post('operations/{operationId}/balance-evidence', [ReplacementController::class, 'recordBalanceEvidence']);
             Route::post('operations/{operationId}/prepare-keys', [ReplacementController::class, 'prepareKeys']);
@@ -200,7 +200,7 @@ Route::prefix('v1')->group(function () {
             ->where('deviceId', '[a-zA-Z0-9_-]+');
         Route::get('blocklist/delta', [ValidatorController::class, 'blocklistDelta']);
         Route::get('cards/{uid}/blocklist-status', [ValidatorController::class, 'blocklistStatus'])
-            ->where('uid', '[0-9A-Fa-f]{8,32}');
+            ->where('card_uid', '[0-9A-Fa-f]{8,32}');
 
         // ── Settlement Engine (Phase 61) ──────────────────────────────
         Route::prefix('settlement')->group(function () {

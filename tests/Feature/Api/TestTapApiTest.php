@@ -44,7 +44,7 @@ class TestTapApiTest extends TestCase
             'user_id' => $this->user->id,
             'card_number' => '1122334455',
             'hwid' => 'CARD-HWID-01',
-            'status' => 'active',
+            'status' => 'ACTIVE',
         ]);
 
         $this->route = Route::create(['name' => 'Route 1', 'direction' => 'inbound']);
@@ -59,7 +59,7 @@ class TestTapApiTest extends TestCase
             'name' => 'Bus 1',
             'bus_number' => 'BA 1 PA 1111',
             'hwid' => 'BUS-HWID-01',
-            'status' => 'active',
+            'status' => 'ACTIVE',
             'route_id' => $this->route->id,
             'merchant_id' => 1,
         ]);

@@ -18,12 +18,12 @@ use Illuminate\Support\Facades\DB;
 final class ReceiptsController extends BaseCardManagementController
 {
     private const OPERATION_TABLES = [
-        'INITIALIZATION' => 'cm_card_initialization_operations',
-        'RECHARGE' => 'cm_wallet_recharge_operations',
-        'DEBIT' => 'cm_wallet_debit_operations',
-        'REVERSAL' => 'cm_wallet_recharge_reversal_operations',
-        'ISSUANCE' => 'cm_card_issuance_operations',
-        'REPLACEMENT' => 'cm_card_replacement_operations',
+        'INITIALIZATION' => 'card_initialization_operations',
+        'RECHARGE' => 'wallet_recharge_operations',
+        'DEBIT' => 'wallet_debit_operations',
+        'REVERSAL' => 'wallet_recharge_reversal_operations',
+        'ISSUANCE' => 'card_issuance_operations',
+        'REPLACEMENT' => 'card_replacement_operations',
     ];
 
     public function getReceipt(string $operationType, string $operationId)
@@ -51,7 +51,7 @@ final class ReceiptsController extends BaseCardManagementController
 
         // Look up card info
         $cardId = $operation->card_id ?? $operation->new_card_id ?? null;
-        $card = $cardId ? DB::table('cm_cards')->where('id', $cardId)->first() : null;
+        $card = $cardId ? DB::table('cards')->where('id', $cardId)->first() : null;
 
         // Build receipt payload
         $receipt = [
@@ -60,7 +60,7 @@ final class ReceiptsController extends BaseCardManagementController
             'operationId' => $operationId,
             'operationStatus' => $operation->status,
             'workstationId' => $operation->workstation_id ?? null,
-            'cardUid' => $card?->uid,
+            'cardUid' => $card?->card_uid,
             'cardNumber' => $card?->card_number ?? $operation->card_number ?? null,
             'amountMinorUnits' => $operation->amount_minor_units ?? null,
             'balanceBefore' => $operation->balance_before ?? null,
@@ -93,7 +93,7 @@ final class ReceiptsController extends BaseCardManagementController
     private function getCustomerName(?string $customerId): ?string
     {
         if (!$customerId) return null;
-        $customer = DB::table('cm_customers')->where('id', $customerId)->first();
+        $customer = DB::table('customers')->where('id', $customerId)->first();
         return $customer?->full_name;
     }
 }

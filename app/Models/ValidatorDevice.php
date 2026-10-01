@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\CardManagement;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class ValidatorDevice extends Model
 {
-    protected $table = 'cm_validator_devices';
+    protected $table = 'validator_devices';
     public $incrementing = false;
     protected $keyType = 'string';
 

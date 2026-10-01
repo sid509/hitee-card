@@ -17,12 +17,12 @@ use Illuminate\Support\Facades\DB;
 final class RecoveryController extends BaseCardManagementController
 {
     private const RECOVERY_TABLES = [
-        'INITIALIZATION' => 'cm_card_initialization_operations',
-        'RECHARGE' => 'cm_wallet_recharge_operations',
-        'DEBIT' => 'cm_wallet_debit_operations',
-        'REVERSAL' => 'cm_wallet_recharge_reversal_operations',
-        'ISSUANCE' => 'cm_card_issuance_operations',
-        'REPLACEMENT' => 'cm_card_replacement_operations',
+        'INITIALIZATION' => 'card_initialization_operations',
+        'RECHARGE' => 'wallet_recharge_operations',
+        'DEBIT' => 'wallet_debit_operations',
+        'REVERSAL' => 'wallet_recharge_reversal_operations',
+        'ISSUANCE' => 'card_issuance_operations',
+        'REPLACEMENT' => 'card_replacement_operations',
     ];
 
     private const RECOVERY_STATUSES = ['AMBIGUOUS', 'RECOVERY_REQUIRED', 'CREDIT_PENDING_VERIFICATION', 'DEBIT_PENDING_VERIFICATION'];

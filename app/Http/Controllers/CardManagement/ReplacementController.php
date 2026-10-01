@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
-use App\Models\CardManagement\Card;
+use App\Models\Card;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\KeyServiceClient;
 use App\Services\CardManagement\OperationService;
@@ -25,9 +25,9 @@ final class ReplacementController extends BaseCardManagementController
     public function __construct()
     {
         $this->operations = new OperationService(
-            'cm_card_replacement_operations',
-            'cm_card_replacement_checkpoints',
-            'cm_card_replacement_key_envelopes',
+            'card_replacement_operations',
+            'card_replacement_checkpoints',
+            'card_replacement_key_envelopes',
         );
     }
 
@@ -67,7 +67,7 @@ final class ReplacementController extends BaseCardManagementController
             'expiryDate' => 'required|date|after:enableDate',
         ]);
 
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
@@ -101,28 +101,28 @@ final class ReplacementController extends BaseCardManagementController
 
     public function getActiveByCard(string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operation' => null]);
         }
 
         $operation = $this->operations->findActiveByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operation' => $operation ? $this->operations->toPublicArray($operation) : null,
         ]);
     }
 
     public function getHistoryByCard(Request $request, string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operations' => []]);
         }
 
         $operations = $this->operations->findByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operations' => array_map(fn ($op) => $this->operations->toPublicArray($op), $operations),
         ]);
     }
@@ -151,7 +151,7 @@ final class ReplacementController extends BaseCardManagementController
             'extra' => $validated['evidence'] ?? null,
         ];
 
-        DB::table('cm_card_replacement_operations')->where('id', $operation->id)->update([
+        DB::table('card_replacement_operations')->where('id', $operation->id)->update([
             'balance_evidence' => json_encode($evidence),
             'lock_version' => $operation->lock_version + 1,
             'updated_at' => now(),
@@ -196,7 +196,7 @@ final class ReplacementController extends BaseCardManagementController
             'recipient' => ['keyId' => $recipientKeyId, 'publicKey' => $recipientPublicKey],
         ], $this->requestId($request));
 
-        DB::table('cm_card_replacement_key_envelopes')->insert([
+        DB::table('card_replacement_key_envelopes')->insert([
             'operation_id' => $operation->id,
             'key_service_request_id' => Str::uuid()->toString(),
             'recipient_key_id' => $recipientKeyId,
@@ -227,7 +227,7 @@ final class ReplacementController extends BaseCardManagementController
             throw new CardManagementError('INVALID_CONFIRMATION_PHRASE', 403, 'confirmationPhrase is required.');
         }
 
-        DB::table('cm_card_replacement_operations')->where('id', $operation->id)->update([
+        DB::table('card_replacement_operations')->where('id', $operation->id)->update([
             'status' => 'AUTHORIZED',
             'expected_confirmation_sha256' => hash('sha256', $phrase),
             'physical_write_authorized_at' => now(),
@@ -244,7 +244,7 @@ final class ReplacementController extends BaseCardManagementController
     {
         $operation = $this->operations->findOrFail($operationId);
 
-        $envelopeRow = DB::table('cm_card_replacement_key_envelopes')
+        $envelopeRow = DB::table('card_replacement_key_envelopes')
             ->where('operation_id', $operation->id)
             ->first();
 
@@ -270,7 +270,7 @@ final class ReplacementController extends BaseCardManagementController
     {
         $operation = $this->operations->findOrFail($operationId);
 
-        DB::table('cm_card_replacement_key_envelopes')
+        DB::table('card_replacement_key_envelopes')
             ->where('operation_id', $operation->id)
             ->whereNull('acknowledged_at')
             ->update(['acknowledged_at' => now(), 'updated_at' => now()]);
@@ -306,19 +306,19 @@ final class ReplacementController extends BaseCardManagementController
         $this->operations->recordCheckpoint($operation->id, 'COMPLETED');
 
         // Update new card status to ACTIVE
-        DB::table('cm_cards')->where('id', $operation->new_card_id)->update([
+        DB::table('cards')->where('id', $operation->new_card_id)->update([
             'status' => 'ACTIVE',
             'updated_at' => now(),
         ]);
 
         // Block old card if old_card_id is set
         if ($operation->old_card_id) {
-            DB::table('cm_cards')->where('id', $operation->old_card_id)->update([
+            DB::table('cards')->where('id', $operation->old_card_id)->update([
                 'status' => 'BLOCKED',
                 'updated_at' => now(),
             ]);
 
-            DB::table('cm_card_lifecycle_events')->insert([
+            DB::table('card_lifecycle_events')->insert([
                 'id' => Str::uuid()->toString(),
                 'card_id' => $operation->old_card_id,
                 'from_status' => 'ACTIVE',
@@ -329,7 +329,7 @@ final class ReplacementController extends BaseCardManagementController
             ]);
         }
 
-        DB::table('cm_card_lifecycle_events')->insert([
+        DB::table('card_lifecycle_events')->insert([
             'id' => Str::uuid()->toString(),
             'card_id' => $operation->new_card_id,
             'from_status' => 'ISSUED',
@@ -376,7 +376,7 @@ final class ReplacementController extends BaseCardManagementController
             throw new CardManagementError('INVALID_STATE_TRANSITION', 409, 'Transfer must be in PENDING status.');
         }
 
-        DB::table('cm_card_replacement_operations')->where('id', $operation->id)->update([
+        DB::table('card_replacement_operations')->where('id', $operation->id)->update([
             'transfer_status' => 'PREPARED',
             'lock_version' => $operation->lock_version + 1,
             'updated_at' => now(),
@@ -399,7 +399,7 @@ final class ReplacementController extends BaseCardManagementController
             'reconciled' => 'required|boolean',
         ]);
 
-        DB::table('cm_card_replacement_operations')->where('id', $operation->id)->update([
+        DB::table('card_replacement_operations')->where('id', $operation->id)->update([
             'transfer_status' => $validated['reconciled'] ? 'COMPLETED' : 'FAILED',
             'approved_transfer_amount_minor_units' => $validated['transferredAmountMinorUnits'],
             'physical_state_uncertain' => !$validated['reconciled'],

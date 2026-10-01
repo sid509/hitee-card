@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\CardManagement;
 
-use App\Models\CardManagement\BlocklistEntry;
-use App\Models\CardManagement\ValidatorDevice;
+use App\Models\BlocklistEntry;
+use App\Models\ValidatorDevice;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

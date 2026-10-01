@@ -46,7 +46,7 @@ class TapController extends Controller
 
         $user = $card->user;
         // if (!$user) return apiResponse(false, 'Card is not assigned to a user', '', 400); // Allow orphan cards
-        if ($card->status !== 'active') return apiResponse(false, __('messages.card_inactive'), '', 403);
+        if ($card->status !== 'ACTIVE') return apiResponse(false, __('messages.card_inactive'), '', 403);
 
         // Phase 2: Pessimistic locking to prevent race conditions on concurrent taps.
         // Lock the card row for the duration of the transaction so two simultaneous

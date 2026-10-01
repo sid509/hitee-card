@@ -8,7 +8,7 @@
         <h4 class="mb-0">
             <span class="text-muted fw-light">Card Management / Customers /</span> {{ $customer->full_name }}
         </h4>
-        <a href="{{ route('card-management.customers.index') }}" class="btn btn-secondary">Back to List</a>
+        <a href="{{ route('cards.customers.index') }}" class="btn btn-secondary">Back to List</a>
     </div>
 
     <div class="row">
@@ -58,11 +58,11 @@
                                     @endphp
                                     <tr>
                                         <td>{{ $c->card_number }}</td>
-                                        <td><code>{{ $c->uid }}</code></td>
+                                        <td><code>{{ $c->card_uid }}</code></td>
                                         <td><span class="badge {{ $cls }}">{{ $c->status }}</span></td>
                                         <td><span class="badge {{ $c->environment === 'PRODUCTION' ? 'bg-label-success' : 'bg-label-warning' }}">{{ $c->environment }}</span></td>
                                         <td><small>{{ $c->issued_at ? \Carbon\Carbon::parse($c->issued_at)->format('M d, Y') : '—' }}</small></td>
-                                        <td><a href="{{ route('card-management.show', $c->id) }}" class="btn btn-sm btn-outline-primary">View</a></td>
+                                        <td><a href="{{ route('cards.show', $c->id) }}" class="btn btn-sm btn-outline-primary">View</a></td>
                                     </tr>
                                     @endforeach
                                 </tbody>

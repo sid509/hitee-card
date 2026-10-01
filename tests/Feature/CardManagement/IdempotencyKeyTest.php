@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\CardManagement;
 
-use App\Models\CardManagement\BlocklistEntry;
+use App\Models\BlocklistEntry;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

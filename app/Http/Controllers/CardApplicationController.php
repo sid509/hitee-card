@@ -129,7 +129,7 @@ class CardApplicationController extends Controller
             $card->update([
                 'user_id' => $cardApplication->user_id,
                 'is_currently_active' => true,
-                'status' => 'active'
+                'status' => 'ACTIVE'
             ]);
         }
 

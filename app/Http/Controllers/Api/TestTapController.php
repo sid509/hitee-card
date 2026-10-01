@@ -16,7 +16,7 @@ class TestTapController extends TapController
     public function handleTestTap(Request $request)
     {
         // Dynamically find the first available entities
-        $card = \App\Models\Card::where('status', 'active')->first();
+        $card = \App\Models\Card::where('status', 'ACTIVE')->first();
         $bus = \App\Models\Bus::first();
 
         if (!$card || !$bus) {

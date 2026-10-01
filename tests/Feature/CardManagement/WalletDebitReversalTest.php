@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\CardManagement;
 
-use App\Models\CardManagement\Card;
+use App\Models\Card;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -24,7 +24,7 @@ class WalletDebitReversalTest extends TestCase
             'environment' => 'LAB',
         ]);
 
-        return Card::where('uid', 'DEADFBEB')->firstOrFail();
+        return Card::where('card_uid', 'DEADFBEB')->firstOrFail();
     }
 
     public function test_wallet_create_recharge(): void

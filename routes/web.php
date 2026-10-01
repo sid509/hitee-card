@@ -236,23 +236,19 @@ Route::middleware(['auth'])->group(function () {
             return redirect()->route('dashboard');
         })->name('impersonate');
 
-        // Card Management API (cm_* tables — issuer/validator backend)
-        Route::prefix('card-management')->name('card-management.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\CardManagementController::class, 'index'])->name('index');
-            Route::get('/{id}', [\App\Http\Controllers\CardManagementController::class, 'show'])
-                ->whereUuid('id')->name('show');
-
-            Route::prefix('customers')->name('customers.')->group(function () {
-                Route::get('/', [\App\Http\Controllers\CardManagementController::class, 'customers'])->name('index');
-                Route::get('/{id}', [\App\Http\Controllers\CardManagementController::class, 'showCustomer'])
-                    ->whereUuid('id')->name('show');
-            });
-
-            Route::get('/validators', [\App\Http\Controllers\CardManagementController::class, 'validators'])->name('validators.index');
-            Route::get('/validators/{id}', [\App\Http\Controllers\CardManagementController::class, 'showValidator'])
+        // Card registry subsections — customers, validators, settlement.
+        // Static paths are declared before the cards/{card} resource so they
+        // are not shadowed by it.
+        Route::prefix('cards')->name('cards.')->group(function () {
+            Route::get('/customers', [CardController::class, 'customers'])->name('customers.index');
+            Route::get('/customers/{id}', [CardController::class, 'showCustomer'])
+                ->whereUuid('id')->name('customers.show');
+            Route::get('/validators', [CardController::class, 'validators'])->name('validators.index');
+            Route::get('/validators/{id}', [CardController::class, 'showValidator'])
                 ->whereUuid('id')->name('validators.qr');
-            Route::get('/validators/{id}/payload', [\App\Http\Controllers\CardManagementController::class, 'validatorQrPayload'])->name('validators.payload');
-            Route::get('/settlement', [\App\Http\Controllers\CardManagementController::class, 'settlement'])->name('settlement.index');
+            Route::get('/validators/{id}/payload', [CardController::class, 'validatorQrPayload'])
+                ->whereUuid('id')->name('validators.payload');
+            Route::get('/settlement', [CardController::class, 'settlement'])->name('settlement.index');
         });
     });
 
@@ -298,7 +294,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/service-partners/{service_partner}/discounts/{discount}', [ServicePartnerController::class, 'destroyDiscount'])->name('service-partners.discounts.destroy');
     });
 
-    Route::resource('cards', CardController::class);
+    Route::resource('cards', CardController::class)
+        ->where(['card' => '[0-9a-fA-F-]{36}']);
     Route::post('/cards/{card}/request-change', [CardController::class, 'requestChange'])->name('cards.request-change');
     Route::resource('card-applications', CardApplicationController::class);
 

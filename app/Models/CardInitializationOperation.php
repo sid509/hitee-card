@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\CardManagement;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -9,7 +9,7 @@ class CardInitializationOperation extends Model
 {
     use HasUuids;
 
-    protected $table = 'cm_card_initialization_operations';
+    protected $table = 'card_initialization_operations';
     public $incrementing = false;
     protected $keyType = 'string';
 

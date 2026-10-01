@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\CardManagement;
 
-use App\Models\CardManagement\ValidatorDevice;
+use App\Models\ValidatorDevice;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,7 +35,7 @@ class ValidatorQrTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->superAdmin())
-            ->get(route('card-management.validators.qr', $device->id));
+            ->get(route('cards.validators.qr', $device->id));
 
         $response->assertOk()
             ->assertSee('VAL-E60-001', false)
@@ -56,7 +56,7 @@ class ValidatorQrTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->superAdmin())
-            ->getJson(route('card-management.validators.payload', $device->id));
+            ->getJson(route('cards.validators.payload', $device->id));
 
         $response->assertOk()
             ->assertJsonPath('deviceId', 'VAL-E60-002')
@@ -68,7 +68,7 @@ class ValidatorQrTest extends TestCase
     public function test_qr_page_404_for_unknown_device(): void
     {
         $this->actingAs($this->superAdmin())
-            ->get(route('card-management.validators.qr', 'non-existent-uuid'))
+            ->get(route('cards.validators.qr', 'non-existent-uuid'))
             ->assertNotFound();
     }
 
@@ -80,7 +80,7 @@ class ValidatorQrTest extends TestCase
         ]);
 
         // Unauthenticated -> redirect to login
-        $this->get(route('card-management.validators.qr', $device->id))
+        $this->get(route('cards.validators.qr', $device->id))
             ->assertRedirect(route('login'));
 
         // Authenticated non-admin -> 403
@@ -89,7 +89,7 @@ class ValidatorQrTest extends TestCase
         $user->roles()->attach(Role::where('slug', 'customers')->first());
 
         $this->actingAs($user)
-            ->get(route('card-management.validators.qr', $device->id))
+            ->get(route('cards.validators.qr', $device->id))
             ->assertForbidden();
     }
 }

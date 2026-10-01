@@ -49,7 +49,7 @@ class RideApiTest extends TestCase
             'user_id' => $this->user->id,
             'card_number' => '1122334455',
             'hwid' => 'CARD-HWID-01',
-            'status' => 'active',
+            'status' => 'ACTIVE',
         ]);
 
         $this->route = Route::create(['name' => 'Route 1', 'direction' => 'inbound']);
@@ -64,7 +64,7 @@ class RideApiTest extends TestCase
             'name' => 'Bus 1',
             'bus_number' => 'BA 1 PA 1111',
             'hwid' => 'BUS-HWID-01',
-            'status' => 'active',
+            'status' => 'ACTIVE',
             'route_id' => $this->route->id,
             'merchant_id' => 1, // Dummy merchant id
         ]);
@@ -168,7 +168,7 @@ class RideApiTest extends TestCase
             'user_id' => $poorUser->id,
             'card_number' => '9988776655',
             'hwid' => 'POOR-HWID',
-            'status' => 'active',
+            'status' => 'ACTIVE',
         ]);
 
         Sanctum::actingAs($poorUser, ['access']);

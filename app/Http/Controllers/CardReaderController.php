@@ -64,7 +64,12 @@ class CardReaderController extends Controller
             'card_number' => $request->card_number,
             'hwid' => $hwid,
             'user_id' => $request->user_id,
-            'status' => $request->status,
+            'status' => match ($request->status) {
+                'active' => 'ACTIVE',
+                'inactive' => 'INACTIVE',
+                'blocked' => 'BLOCKED',
+                default => 'REGISTERED',
+            },
             'is_currently_active' => $request->boolean('is_currently_active'),
             'is_physical' => $request->boolean('is_physical', true),
             'is_personalized' => false,
@@ -138,7 +143,7 @@ class CardReaderController extends Controller
     {
         if (!auth()->user()->hasRole('super-admin')) abort(403);
 
-        $cards = Card::where('status', 'active')->with('user')->latest()->get();
+        $cards = Card::where('status', 'ACTIVE')->with('user')->latest()->get();
         $buses = Bus::with('route')->where('status', 'active')->get();
         $parkings = Parking::where('status', 'active')->get();
 

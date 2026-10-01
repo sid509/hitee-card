@@ -9,13 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         // Add rules_config column to settlement batches
-        if (!Schema::hasColumn('cm_settlement_batches', 'rules_config')) {
-            Schema::table('cm_settlement_batches', function (Blueprint $table) {
+        if (!Schema::hasColumn('settlement_batches', 'rules_config')) {
+            Schema::table('settlement_batches', function (Blueprint $table) {
                 $table->json('rules_config')->nullable()->after('commission_rate');
             });
         }
 
-        Schema::create('cm_settlement_rules', function (Blueprint $table) {
+        Schema::create('settlement_rules', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name', 128);
             $table->json('rules_json');
@@ -29,9 +29,9 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('cm_settlement_rules');
-        if (Schema::hasColumn('cm_settlement_batches', 'rules_config')) {
-            Schema::table('cm_settlement_batches', function (Blueprint $table) {
+        Schema::dropIfExists('settlement_rules');
+        if (Schema::hasColumn('settlement_batches', 'rules_config')) {
+            Schema::table('settlement_batches', function (Blueprint $table) {
                 $table->dropColumn('rules_config');
             });
         }

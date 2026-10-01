@@ -2,8 +2,8 @@
 
 namespace App\Services\CardManagement;
 
-use App\Models\CardManagement\Card;
-use App\Models\CardManagement\CardInitializationOperation;
+use App\Models\Card;
+use App\Models\CardInitializationOperation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -15,7 +15,7 @@ final class CardsService
     public function checkCard(string $uid): array
     {
         $this->validateUid($uid);
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
 
         return $card
             ? ['registered' => true, 'card' => $card->toPublicArray()]
@@ -35,7 +35,7 @@ final class CardsService
             throw new CardManagementError('AMOUNT_INVALID', 400, 'cardTypeCode must be 4 digits.');
         }
 
-        if (Card::where('uid', $uid)->exists()) {
+        if (Card::where('card_uid', $uid)->exists()) {
             throw new CardAlreadyRegisteredError();
         }
 
@@ -44,7 +44,7 @@ final class CardsService
 
             $card = Card::create([
                 'id' => Str::uuid()->toString(),
-                'uid' => $uid,
+                'card_uid' => $uid,
                 'card_number' => $allocation['cardNumber'],
                 'card_number_prefix' => $allocation['prefix'],
                 'card_number_sequence' => $allocation['sequence'],
@@ -68,7 +68,7 @@ final class CardsService
     public function getCard(string $uid): Card
     {
         $this->validateUid($uid);
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             throw new CardNotRegisteredError();
         }
@@ -169,19 +169,19 @@ final class CardsService
         $suffixDigits = 16 - strlen($prefix);
 
         return DB::transaction(function () use ($prefix, $suffixDigits) {
-            $row = DB::table('cm_card_number_allocations')
+            $row = DB::table('card_number_allocations')
                 ->where('prefix', $prefix)
                 ->lockForUpdate()
                 ->first();
 
             if ($row) {
                 $next = $row->last_sequence + 1;
-                DB::table('cm_card_number_allocations')
+                DB::table('card_number_allocations')
                     ->where('prefix', $prefix)
                     ->update(['last_sequence' => $next, 'updated_at' => now()]);
             } else {
                 $next = 1;
-                DB::table('cm_card_number_allocations')->insert([
+                DB::table('card_number_allocations')->insert([
                     'prefix' => $prefix,
                     'last_sequence' => $next,
                     'created_at' => now(),

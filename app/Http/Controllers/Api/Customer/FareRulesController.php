@@ -18,7 +18,7 @@ class FareRulesController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DB::table('cm_fare_rules')->where('is_active', true);
+        $query = DB::table('fare_rules')->where('is_active', true);
 
         if ($routeId = $request->input('routeId')) {
             $query->where(function ($q) use ($routeId) {
@@ -38,7 +38,7 @@ class FareRulesController extends Controller
 
     public function show(string $id)
     {
-        $rule = DB::table('cm_fare_rules')->where('id', $id)->first();
+        $rule = DB::table('fare_rules')->where('id', $id)->first();
         if (!$rule) {
             return response()->json([
                 'success' => false,
@@ -71,7 +71,7 @@ class FareRulesController extends Controller
 
         $id = Str::uuid()->toString();
 
-        DB::table('cm_fare_rules')->insert([
+        DB::table('fare_rules')->insert([
             'id' => $id,
             'rule_code' => $validated['ruleCode'],
             'description' => $validated['description'] ?? null,
@@ -91,7 +91,7 @@ class FareRulesController extends Controller
             'updated_at' => now(),
         ]);
 
-        $rule = DB::table('cm_fare_rules')->where('id', $id)->first();
+        $rule = DB::table('fare_rules')->where('id', $id)->first();
 
         // Record initial version
         $this->recordVersion($rule, 'system', 'Initial creation');
@@ -104,7 +104,7 @@ class FareRulesController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $rule = DB::table('cm_fare_rules')->where('id', $id)->first();
+        $rule = DB::table('fare_rules')->where('id', $id)->first();
         if (!$rule) {
             return response()->json([
                 'success' => false,
@@ -145,9 +145,9 @@ class FareRulesController extends Controller
         $updates['version'] = $rule->version + 1;
         $updates['updated_at'] = now();
 
-        DB::table('cm_fare_rules')->where('id', $id)->update($updates);
+        DB::table('fare_rules')->where('id', $id)->update($updates);
 
-        $updated = DB::table('cm_fare_rules')->where('id', $id)->first();
+        $updated = DB::table('fare_rules')->where('id', $id)->first();
         $this->recordVersion($updated, $request->user()->name ?? 'admin', 'Updated');
 
         return response()->json([
@@ -158,7 +158,7 @@ class FareRulesController extends Controller
 
     public function destroy(string $id)
     {
-        $rule = DB::table('cm_fare_rules')->where('id', $id)->first();
+        $rule = DB::table('fare_rules')->where('id', $id)->first();
         if (!$rule) {
             return response()->json([
                 'success' => false,
@@ -167,7 +167,7 @@ class FareRulesController extends Controller
         }
 
         // Soft delete — just deactivate
-        DB::table('cm_fare_rules')->where('id', $id)->update([
+        DB::table('fare_rules')->where('id', $id)->update([
             'is_active' => false,
             'updated_at' => now(),
         ]);
@@ -184,7 +184,7 @@ class FareRulesController extends Controller
         $validatorVersion = (int) $request->input('version', 0);
         $validatorHash = $request->input('rulesetHash');
 
-        $query = DB::table('cm_fare_rules')
+        $query = DB::table('fare_rules')
             ->where('is_active', true)
             ->where('effective_from', '<=', now()->toDateString())
             ->where(function ($q) {
@@ -251,7 +251,7 @@ class FareRulesController extends Controller
 
     private function recordVersion(object $rule, string $changedBy, string $reason): void
     {
-        DB::table('cm_fare_rule_versions')->insert([
+        DB::table('fare_rule_versions')->insert([
             'id' => Str::uuid()->toString(),
             'fare_rule_id' => $rule->id,
             'version' => $rule->version,

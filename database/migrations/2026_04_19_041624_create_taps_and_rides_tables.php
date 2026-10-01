@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('taps', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('card_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('card_id')->constrained()->onDelete('cascade');
             $table->foreignId('bus_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['in', 'out']);
             $table->decimal('latitude', 10, 8);
@@ -25,7 +25,7 @@ return new class extends Migration
         Schema::create('rides', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('card_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('card_id')->constrained()->onDelete('cascade');
             $table->foreignId('bus_id')->constrained()->onDelete('cascade');
             $table->foreignId('tap_in_id')->constrained('taps')->onDelete('cascade');
             $table->foreignId('tap_out_id')->nullable()->constrained('taps')->onDelete('cascade');

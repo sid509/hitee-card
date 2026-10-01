@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Models\CardManagement;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class BlocklistCursor extends Model
 {
-    protected $table = 'cm_blocklist_cursors';
+    protected $table = 'blocklist_cursors';
     public $incrementing = false;
     protected $keyType = 'string';
 

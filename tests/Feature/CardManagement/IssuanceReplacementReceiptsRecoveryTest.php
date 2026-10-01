@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\CardManagement;
 
-use App\Models\CardManagement\Card;
+use App\Models\Card;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -24,7 +24,7 @@ class IssuanceReplacementReceiptsRecoveryTest extends TestCase
             'environment' => 'LAB',
         ]);
 
-        return Card::where('uid', 'DEADFBEB')->firstOrFail();
+        return Card::where('card_uid', 'DEADFBEB')->firstOrFail();
     }
 
     // ── Issuance ──────────────────────────────────────────────────
@@ -147,7 +147,7 @@ class IssuanceReplacementReceiptsRecoveryTest extends TestCase
             ->assertJsonPath('data.operation.status', 'COMPLETED');
 
         // Card status should be ISSUED
-        $card = Card::where('uid', 'DEADFBEB')->first();
+        $card = Card::where('card_uid', 'DEADFBEB')->first();
         $this->assertEquals('ISSUED', $card->status);
     }
 
@@ -356,7 +356,7 @@ class IssuanceReplacementReceiptsRecoveryTest extends TestCase
 
         // Authorize first (need to go through state machine)
         // For this test, manually set status to AMBIGUOUS
-        \Illuminate\Support\Facades\DB::table('cm_wallet_recharge_operations')
+        \Illuminate\Support\Facades\DB::table('wallet_recharge_operations')
             ->where('id', $operationId)
             ->update(['status' => 'AMBIGUOUS', 'physical_state_uncertain' => true]);
 

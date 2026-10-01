@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\CardManagement;
 
-use App\Models\CardManagement\ValidatorDevice;
-use App\Models\CardManagement\ValidatorTrip;
+use App\Models\ValidatorDevice;
+use App\Models\ValidatorTrip;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\CardManagement;
 
-use App\Models\CardManagement\BlocklistCursor;
-use App\Models\CardManagement\BlocklistEntry;
-use App\Models\CardManagement\ValidatorDevice;
-use App\Models\CardManagement\ValidatorTrip;
+use App\Models\BlocklistCursor;
+use App\Models\BlocklistEntry;
+use App\Models\ValidatorDevice;
+use App\Models\ValidatorTrip;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\ResponseEnvelope;
 use Illuminate\Http\Request;

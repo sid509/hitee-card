@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\CardManagement;
 
-use App\Models\CardManagement\ValidatorDevice;
-use App\Models\CardManagement\ValidatorTrip;
+use App\Models\ValidatorDevice;
+use App\Models\ValidatorTrip;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -61,7 +61,7 @@ class DoubleEntryAccountingTest extends TestCase
         $deviceId = $this->createDevice();
         $this->createTrip($deviceId, 'TRIP-DE-01', 500);
 
-        $totalDebits = DB::table('cm_validator_trips')
+        $totalDebits = DB::table('validator_trips')
             ->whereNotNull('fare_minor_units')
             ->sum('fare_minor_units');
 
@@ -115,7 +115,7 @@ class DoubleEntryAccountingTest extends TestCase
         // Reversal — negative fare
         $this->createTrip($deviceId, 'TRIP-DE-03-REV', -500);
 
-        $netFare = DB::table('cm_validator_trips')->sum('fare_minor_units');
+        $netFare = DB::table('validator_trips')->sum('fare_minor_units');
         $this->assertEquals(0, $netFare, 'Net fare after reversal must be zero');
     }
 

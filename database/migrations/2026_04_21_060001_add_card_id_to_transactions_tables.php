@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('balance_ins', function (Blueprint $table) {
-            $table->foreignId('card_id')->nullable()->after('user_id')->constrained()->onDelete('set null');
+            $table->foreignUuid('card_id')->nullable()->after('user_id')->constrained()->onDelete('set null');
         });
 
         Schema::table('balance_outs', function (Blueprint $table) {
-            $table->foreignId('card_id')->nullable()->after('user_id')->constrained()->onDelete('set null');
+            $table->foreignUuid('card_id')->nullable()->after('user_id')->constrained()->onDelete('set null');
         });
     }
 

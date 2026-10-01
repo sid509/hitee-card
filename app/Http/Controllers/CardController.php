@@ -2,21 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Card;
-use App\Models\User;
-use App\Models\Tap;
-use App\Models\Ride;
 use App\Http\Requests\StoreCardRequest;
 use App\Http\Requests\UpdateCardRequest;
+use App\Models\Card;
+use App\Models\Ride;
+use App\Models\Tap;
+use App\Models\User;
+use Carbon\Carbon;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class CardController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     *
-     * Handles DataTable AJAX requests and initial page load.
+     * Card registry — the system-of-record listing (formerly Card Management).
      */
     public function index(Request $request)
     {
@@ -28,143 +33,402 @@ class CardController extends Controller
         }
 
         if ($request->ajax()) {
-            $query = Card::with(['user', 'subscriptionModels']);
+            $query = DB::table('cards')
+                ->leftJoin('customers', 'cards.customer_id', '=', 'customers.id')
+                ->leftJoin('users', 'cards.user_id', '=', 'users.id')
+                ->select(
+                    'cards.id',
+                    'cards.card_uid',
+                    'cards.card_number',
+                    'cards.status',
+                    'cards.environment',
+                    'cards.key_profile_version',
+                    'cards.installed_key_profile_version',
+                    'cards.production_eligible',
+                    'cards.is_physical',
+                    'cards.is_currently_active',
+                    'cards.issued_at',
+                    'cards.activated_at',
+                    'cards.blocked_at',
+                    'cards.created_at',
+                    'customers.full_name as customer_name',
+                    'users.name as user_name',
+                )
+                ->latest('cards.created_at');
 
             if (auth()->user()->hasRole('customers')) {
-                $query->where('user_id', auth()->id());
+                $query->where('cards.user_id', auth()->id());
             }
-
-            $query->latest();
 
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->addColumn('checkbox', function($row){
-                    return '<input type="checkbox" class="form-check-input row-checkbox" value="'.$row->id.'">';
+                ->addColumn('status_badge', function ($row) {
+                    $colors = [
+                        'NEW' => 'bg-label-dark',
+                        'REGISTERED' => 'bg-label-secondary',
+                        'INITIALIZED' => 'bg-label-info',
+                        'ISSUED' => 'bg-label-primary',
+                        'ACTIVE' => 'bg-label-success',
+                        'INACTIVE' => 'bg-label-secondary',
+                        'BLOCKED' => 'bg-label-danger',
+                        'REPLACED' => 'bg-label-warning',
+                    ];
+                    $class = $colors[$row->status] ?? 'bg-label-secondary';
+
+                    return '<span class="badge '.$class.'">'.e($row->status).'</span>';
                 })
-                ->addColumn('subscriptions', function($row){
-                    return $row->subscriptionModels->pluck('name')->implode(', ') ?: '<span class="text-muted">None</span>';
+                ->addColumn('env_badge', function ($row) {
+                    $class = $row->environment === 'PRODUCTION' ? 'bg-label-success' : 'bg-label-warning';
+
+                    return '<span class="badge '.$class.'">'.e($row->environment).'</span>';
                 })
-                ->addColumn('usage_badge', function($row){
-                    $isTraveling = $row->hasOngoingRide();
-                    return $isTraveling
-                        ? '<span class="badge bg-label-warning">In Use</span>'
-                        : '<span class="badge bg-label-secondary">Idle</span>';
+                ->addColumn('profile_info', function ($row) {
+                    $installed = $row->installed_key_profile_version ?: '—';
+
+                    return '<small>Expected: '.e($row->key_profile_version ?? '—').'<br>Installed: '.e($installed).'</small>';
                 })
-                ->editColumn('created_at', function($row){
-                    return formatDate($row->created_at);
+                ->editColumn('created_at', function ($row) {
+                    return Carbon::parse($row->created_at)->format('M d, Y H:i');
                 })
-                ->addColumn('action', function($row){
-                    $actions = '';
-                    // Super Admin actions
+                ->editColumn('issued_at', function ($row) {
+                    return $row->issued_at ? Carbon::parse($row->issued_at)->format('M d, Y') : '—';
+                })
+                ->addColumn('action', function ($row) {
+                    $actions = '<a href="'.route('cards.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
+
                     if (auth()->user()->hasRole('super-admin')) {
-                        // Toggle Status Button
-                        $isActive = $row->status === 'active';
+                        $isActive = $row->status === 'ACTIVE';
                         $btnClass = $isActive ? 'btn-success' : 'btn-secondary';
                         $btnIcon = $isActive ? 'bx-check-circle' : 'bx-block';
                         $btnTitle = $isActive ? 'Deactivate' : 'Activate';
 
-                        // View Button
-                        $actions .= '<a href="'.route('cards.show', $row->id).'" class="btn btn-icon btn-sm btn-dark me-1" title="View"><i class="bx bx-show"></i></a>';
-
                         $actions .= '<button type="button" class="btn btn-icon btn-sm '.$btnClass.' me-1 toggle-card-status" data-id="'.$row->id.'" title="'.$btnTitle.'"><i class="bx '.$btnIcon.'"></i></button>';
-
-                        // Edit Button
                         $actions .= '<a href="'.route('cards.edit', $row->id).'" class="btn btn-icon btn-sm btn-primary me-1" title="Edit"><i class="bx bx-edit-alt"></i></a>';
-                        // Delete Button
-                        $actions .= '<form action="'.route('cards.destroy', $row->id).'" method="POST" style="display:inline-block">
-                                        '.csrf_field().'
-                                        '.method_field('DELETE').'
-                                        <button type="submit" class="btn btn-icon btn-sm btn-danger delete-btn" title="Delete"><i class="bx bx-trash"></i></button>
-                                    </form>';
-                    } elseif (auth()->user()->hasRole('customers')) {
-                        // Customer action
-                        $canEnable = !$row->is_currently_active || $row->status !== 'active';
-                        $canDisable = $row->is_currently_active && $row->status === 'active';
-                        $canUpgrade = $row->status === 'active' && $row->is_currently_active;
-
-                        if ($canEnable || $canDisable || $canUpgrade) {
-                            $actions .= '<button class="btn btn-sm btn-outline-primary btn-request-change"
-                                            data-id="'.$row->id.'"
-                                            data-card-number="'.$row->card_number.'"
-                                            data-can-enable="'.($canEnable ? '1' : '0').'"
-                                            data-can-disable="'.($canDisable ? '1' : '0').'"
-                                            data-can-upgrade="'.($canUpgrade ? '1' : '0').'">
-                                            Request Change
-                                         </button>';
-                        }
+                        $actions .= '<form action="'.route('cards.destroy', $row->id).'" method="POST" style="display:inline-block">'
+                            .csrf_field().method_field('DELETE')
+                            .'<button type="submit" class="btn btn-icon btn-sm btn-danger delete-card-btn" title="Delete"><i class="bx bx-trash"></i></button></form>';
                     }
+
                     return $actions;
                 })
-                ->rawColumns(['action', 'usage_badge', 'checkbox', 'subscriptions'])
+                ->rawColumns(['status_badge', 'env_badge', 'profile_info', 'action'])
                 ->make(true);
         }
 
-        return view('modules.cards.index');
+        $stats = [
+            'total' => DB::table('cards')->count(),
+            'active' => DB::table('cards')->where('status', 'ACTIVE')->count(),
+            'issued' => DB::table('cards')->where('status', 'ISSUED')->count(),
+            'registered' => DB::table('cards')->where('status', 'REGISTERED')->count(),
+            'blocked' => DB::table('cards')->where('status', 'BLOCKED')->count(),
+            'initialized' => DB::table('cards')->where('status', 'INITIALIZED')->count(),
+            'production' => DB::table('cards')->where('environment', 'PRODUCTION')->count(),
+            'lab' => DB::table('cards')->where('environment', 'LAB')->count(),
+        ];
+
+        return view('modules.cards.index', compact('stats'));
     }
 
     /**
-     * Bulk toggle card status
-     */
-    public function bulkToggleStatus(Request $request)
-    {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
-
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:cards,id',
-            'status' => 'required|in:active,inactive'
-        ]);
-
-        Card::whereIn('id', $request->ids)->update(['status' => $request->status]);
-
-        return response()->json([
-            'status' => true,
-            'message' => count($request->ids) . ' cards updated to ' . $request->status . '.'
-        ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
+     * Card detail — lifecycle, operations, wallet ledger, trips, rides.
      */
     public function show(Card $card)
     {
-        if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) abort(403);
+        if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) {
+            abort(403);
+        }
 
-        $card->load(['user', 'subscriptionModels.discounts.servicePartner', 'taps.reference', 'rides.reference']);
+        $customer = $card->customer_id
+            ? DB::table('customers')->where('id', $card->customer_id)->first()
+            : null;
+
+        $issuanceOps = DB::table('card_issuance_operations')
+            ->where('card_id', $card->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $initOps = DB::table('card_initialization_operations')
+            ->where('card_id', $card->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $lifecycleEvents = DB::table('card_lifecycle_events')
+            ->where('card_id', $card->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $recharges = DB::table('wallet_recharge_operations')
+            ->where('card_id', $card->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        $debits = DB::table('wallet_debit_operations')
+            ->where('card_id', $card->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        $reversals = DB::table('wallet_recharge_reversal_operations')
+            ->where('card_id', $card->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        // Replacement operations reference cards via old_card_id/new_card_id —
+        // the table has no card_id column.
+        $replacementOps = DB::table('card_replacement_operations')
+            ->where('old_card_id', $card->id)
+            ->orWhere('new_card_id', $card->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $validatorTrips = DB::table('validator_trips')
+            ->where('card_uid', $card->card_uid)
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        // Legacy wallet/usage context — taps, rides, balance ledger.
+        $card->load(['user', 'subscriptionModels.discounts.servicePartner']);
         $recentTaps = Tap::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
         $recentRides = Ride::where('card_id', $card->id)->with('reference')->latest()->limit(10)->get();
 
-        // Calculate Stats
         $travelCount = $card->rides()->where('status', 'completed')->count();
         $parkingTaps = $card->taps()->where('reference_type', 'App\Models\Parking')->orderBy('created_at', 'asc')->get();
-        
+
         $totalParkingMinutes = 0;
         $tempInTap = null;
         foreach ($parkingTaps as $tap) {
-            if ($tap->type === 'in') { $tempInTap = $tap; }
-            elseif ($tap->type === 'out' && $tempInTap) {
+            if ($tap->type === 'in') {
+                $tempInTap = $tap;
+            } elseif ($tap->type === 'out' && $tempInTap) {
                 $totalParkingMinutes += $tap->created_at->diffInMinutes($tempInTap->created_at);
                 $tempInTap = null;
             }
         }
 
-        $ins = \App\Models\BalanceIn::where('card_id', $card->id)->where('status', 'completed')->get()->map(function($item) {
+        $ins = \App\Models\BalanceIn::where('card_id', $card->id)->where('status', 'completed')->get()->map(function ($item) {
             $item->log_type = 'in';
             return $item;
         });
-        $outs = \App\Models\BalanceOut::where('card_id', $card->id)->get()->map(function($item) {
+        $outs = \App\Models\BalanceOut::where('card_id', $card->id)->get()->map(function ($item) {
             $item->log_type = 'out';
             return $item;
         });
         $balanceLogs = $ins->concat($outs)->sortByDesc('created_at');
 
-        return view('modules.cards.show', compact('card', 'recentTaps', 'recentRides', 'balanceLogs', 'travelCount', 'totalParkingMinutes'));
+        return view('modules.cards.show', compact(
+            'card',
+            'customer',
+            'issuanceOps',
+            'initOps',
+            'lifecycleEvents',
+            'recharges',
+            'debits',
+            'reversals',
+            'replacementOps',
+            'validatorTrips',
+            'recentTaps',
+            'recentRides',
+            'balanceLogs',
+            'travelCount',
+            'totalParkingMinutes',
+        ));
     }
 
+    public function customers(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = DB::table('customers')->latest('created_at');
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->editColumn('created_at', function ($row) {
+                    return Carbon::parse($row->created_at)->format('M d, Y H:i');
+                })
+                ->addColumn('cards_count', function ($row) {
+                    return DB::table('cards')->where('customer_id', $row->id)->count();
+                })
+                ->addColumn('action', function ($row) {
+                    return '<a href="'.route('cards.customers.show', $row->id).'" class="btn btn-sm btn-outline-primary"><i class="bx bx-show me-1"></i> View</a>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+
+        return view('modules.cards.customers');
+    }
+
+    public function showCustomer(string $id)
+    {
+        $customer = DB::table('customers')->where('id', $id)->first();
+        if (! $customer) {
+            abort(404, 'Customer not found');
+        }
+
+        $cards = DB::table('cards')->where('customer_id', $id)->orderBy('created_at', 'desc')->get();
+
+        return view('modules.cards.customer-show', compact('customer', 'cards'));
+    }
+
+    public function validators(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = DB::table('validator_devices')->latest('created_at');
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->addColumn('status_badge', function ($row) {
+                    $class = $row->status === 'ACTIVE' ? 'bg-label-success' : 'bg-label-danger';
+
+                    return '<span class="badge '.$class.'">'.e($row->status).'</span>';
+                })
+                ->editColumn('last_heartbeat_at', function ($row) {
+                    return $row->last_heartbeat_at ? Carbon::parse($row->last_heartbeat_at)->diffForHumans() : 'Never';
+                })
+                ->editColumn('created_at', function ($row) {
+                    return Carbon::parse($row->created_at)->format('M d, Y H:i');
+                })
+                ->addColumn('trips_count', function ($row) {
+                    return DB::table('validator_trips')->where('device_id', $row->id)->count();
+                })
+                ->addColumn('action', function ($row) {
+                    return '<a href="'.route('cards.validators.qr', $row->id).'" '
+                        .'class="btn btn-sm btn-outline-primary" title="View provisioning QR code">'
+                        .'<i class="bx bx-qr me-1"></i>QR</a>';
+                })
+                ->rawColumns(['status_badge', 'action'])
+                ->make(true);
+        }
+
+        return view('modules.cards.validators');
+    }
+
+    /**
+     * Show a single validator device with its provisioning QR code.
+     */
+    public function showValidator(string $id)
+    {
+        $device = DB::table('validator_devices')->where('id', $id)->first();
+        if (! $device) {
+            abort(404, 'Validator device not found');
+        }
+
+        $qr = $this->buildValidatorQrSvg($device);
+        $payload = $this->buildValidatorQrPayload($device);
+
+        $tripsCount = DB::table('validator_trips')->where('device_id', $device->id)->count();
+
+        return view('modules.cards.validator-qr', compact('device', 'qr', 'payload', 'tripsCount'));
+    }
+
+    /**
+     * Return the raw provisioning QR payload as JSON (machine-readable endpoint).
+     */
+    public function validatorQrPayload(string $id)
+    {
+        $device = DB::table('validator_devices')->where('id', $id)->first();
+        if (! $device) {
+            abort(404, 'Validator device not found');
+        }
+
+        return response()->json($this->buildValidatorQrPayload($device));
+    }
+
+    /**
+     * Build the QR payload that the validator's QrDeviceConfig.parse() accepts.
+     * Format matches hitee-validator/lib/features/device_setup/qr_scanner_page.dart.
+     */
+    private function buildValidatorQrPayload(object $device): array
+    {
+        return [
+            'deviceId' => (string) $device->device_id,
+            'vehicleId' => (string) ($device->vehicle_id ?? ''),
+            'routeId' => (string) ($device->route_id ?? ''),
+            'apiUrl' => $this->validatorApiUrl(),
+        ];
+    }
+
+    private function validatorApiUrl(): string
+    {
+        $configured = config('card_management.validator.qr_api_url');
+        if (! empty($configured)) {
+            return rtrim((string) $configured, '/');
+        }
+
+        return rtrim(config('app.url'), '/').'/api/v1';
+    }
+
+    private function buildValidatorQrSvg(object $device): string
+    {
+        $payload = json_encode(
+            $this->buildValidatorQrPayload($device),
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+
+        $qrCode = new QrCode(
+            data: $payload,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: 320,
+            margin: 10,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin,
+        );
+
+        $result = (new SvgWriter)->write(
+            $qrCode,
+            null,
+            null,
+            [SvgWriter::WRITER_OPTION_EXCLUDE_XML_DECLARATION => true],
+        );
+
+        return $result->getString();
+    }
+
+    public function settlement(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = DB::table('settlement_batches')->latest('created_at');
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->addColumn('status_badge', function ($row) {
+                    $colors = [
+                        'OPEN' => 'bg-label-info',
+                        'CALCULATED' => 'bg-label-warning',
+                        'CLOSED' => 'bg-label-success',
+                        'PAID' => 'bg-label-primary',
+                    ];
+                    $class = $colors[$row->status] ?? 'bg-label-secondary';
+
+                    return '<span class="badge '.$class.'">'.e($row->status).'</span>';
+                })
+                ->editColumn('settlement_date', function ($row) {
+                    return Carbon::parse($row->settlement_date)->format('M d, Y');
+                })
+                ->editColumn('created_at', function ($row) {
+                    return Carbon::parse($row->created_at)->format('M d, Y H:i');
+                })
+                ->addColumn('entries_count', function ($row) {
+                    return DB::table('settlement_entries')->where('batch_id', $row->id)->count();
+                })
+                ->rawColumns(['status_badge'])
+                ->make(true);
+        }
+
+        return view('modules.cards.settlement');
+    }
+
+    /**
+     * Show the form for issuing/registering a card.
+     */
     public function create(Request $request)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
-        
+        if (! auth()->user()->hasRole('super-admin')) {
+            abort(403);
+        }
+
         $card = new Card();
         $application = null;
 
@@ -175,25 +439,30 @@ class CardController extends Controller
             }
         }
 
-        $users = User::whereHas('roles', function($q){ $q->where('slug', 'customers'); })->get();
+        $users = User::whereHas('roles', function ($q) {
+            $q->where('slug', 'customers');
+        })->get();
+
         return view('modules.cards.create', compact('card', 'users', 'application'));
     }
 
     /**
-     * Store a newly created resource in storage.
-     *
-     * Uses StoreCardRequest for validation.
+     * Store a manually created card (admin enrollment without a reader).
      */
     public function store(StoreCardRequest $request)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        if (! auth()->user()->hasRole('super-admin')) {
+            abort(403);
+        }
 
         $user = User::find($request->user_id);
         if ($user && $user->cards()->exists()) {
             return back()->withInput()->with('error', 'This user already has a card linked to their account.');
         }
 
-        $data = $request->all();
+        $data = $request->validated();
+        $data['status'] = self::mapLegacyStatus($data['status'] ?? null);
+
         // If this card is being set as active for a user, deactivate their other cards
         if ($request->is_currently_active && $request->user_id) {
             Card::where('user_id', $request->user_id)->update(['is_currently_active' => false]);
@@ -213,12 +482,12 @@ class CardController extends Controller
                     'status' => 'approved',
                     'card_id' => $card->id,
                     'processed_at' => now(),
-                    'admin_remarks' => 'Card issued via management dashboard: ' . $request->get('remarks', '')
+                    'admin_remarks' => 'Card issued via management dashboard: '.$request->get('remarks', ''),
                 ]);
 
-                logActivity('card_application_processed', "Card application approved and issued", [
+                logActivity('card_application_processed', 'Card application approved and issued', [
                     'application_id' => $application->id,
-                    'card_number' => $card->card_number
+                    'card_number' => $card->card_number,
                 ]);
             }
         }
@@ -226,24 +495,23 @@ class CardController extends Controller
         return redirect()->route('cards.index')->with('success', 'Card issued successfully.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Card $card)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
-        $users = User::whereHas('roles', function($q){ $q->where('slug', 'customers'); })->get();
+        if (! auth()->user()->hasRole('super-admin')) {
+            abort(403);
+        }
+        $users = User::whereHas('roles', function ($q) {
+            $q->where('slug', 'customers');
+        })->get();
+
         return view('modules.cards.edit', compact('card', 'users'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * Uses UpdateCardRequest for validation.
-     */
     public function update(UpdateCardRequest $request, Card $card)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        if (! auth()->user()->hasRole('super-admin')) {
+            abort(403);
+        }
 
         if ($request->user_id && $request->user_id != $card->user_id) {
             $user = User::find($request->user_id);
@@ -257,7 +525,11 @@ class CardController extends Controller
             Card::where('user_id', $request->user_id)->where('id', '!=', $card->id)->update(['is_currently_active' => false]);
         }
 
-        $card->update($request->all());
+        $data = $request->validated();
+        $data['status'] = self::mapLegacyStatus($data['status'] ?? null);
+        unset($data['subscription_models']);
+
+        $card->update($data);
 
         if ($request->has('subscription_models')) {
             $card->subscriptionModels()->sync($request->subscription_models);
@@ -266,77 +538,123 @@ class CardController extends Controller
         return redirect()->route('cards.index')->with('success', 'Card updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Card $card)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
-        
+        if (! auth()->user()->hasRole('super-admin')) {
+            abort(403);
+        }
+
         if ($card->rides()->exists() || $card->taps()->exists()) {
             return redirect()->back()->with('error', 'Cannot delete card because it has usage history.');
         }
 
         $card->delete();
+
         return redirect()->route('cards.index')->with('success', 'Card deleted successfully.');
     }
 
     /**
-     * Toggle card status (Super Admin only)
+     * Bulk toggle card status (Super Admin only).
      */
-    public function toggleStatus(Card $card)
+    public function bulkToggleStatus(Request $request)
     {
-        if (!auth()->user()->hasRole('super-admin')) abort(403);
+        if (! auth()->user()->hasRole('super-admin')) {
+            abort(403);
+        }
 
-        $newStatus = $card->status === 'active' ? 'inactive' : 'active';
-        $card->update(['status' => $newStatus]);
-
-        logActivity('card_status_toggle', "Card {$card->card_number} status changed to {$newStatus}", [
-            'card_id' => $card->id,
-            'new_status' => $newStatus
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:cards,id',
+            'status' => 'required|in:active,inactive,ACTIVE,INACTIVE',
         ]);
+
+        $status = self::mapLegacyStatus($request->status);
+        Card::whereIn('id', $request->ids)->update(['status' => $status]);
 
         return response()->json([
             'status' => true,
-            'message' => "Card is now {$newStatus}.",
-            'new_status' => $newStatus
+            'message' => count($request->ids).' cards updated to '.strtolower($status).'.',
         ]);
     }
 
     /**
-     * Request a change for the card (Customer only)
+     * Toggle a single card between ACTIVE and INACTIVE (Super Admin only).
+     */
+    public function toggleStatus(Card $card)
+    {
+        if (! auth()->user()->hasRole('super-admin')) {
+            abort(403);
+        }
+
+        $newStatus = $card->status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        $card->update(['status' => $newStatus]);
+
+        logActivity('card_status_toggle', "Card {$card->card_number} status changed to {$newStatus}", [
+            'card_id' => $card->id,
+            'new_status' => $newStatus,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Card is now '.strtolower($newStatus).'.',
+            'new_status' => $newStatus,
+        ]);
+    }
+
+    /**
+     * Request a change for the card (Customer only).
      */
     public function requestChange(Request $request, Card $card)
     {
         // Ensure customer only requests for their own card
-        if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) abort(403);
+        if (auth()->user()->hasRole('customers') && $card->user_id != auth()->id()) {
+            abort(403);
+        }
 
         $request->validate([
             'type' => 'required|in:upgrade,enable,disable',
-            'message' => 'nullable|string|max:1000'
+            'message' => 'nullable|string|max:1000',
         ]);
 
         $typeLabel = 'Unknown';
-        if ($request->type === 'upgrade') $typeLabel = 'Card Upgrade';
-        elseif ($request->type === 'enable') $typeLabel = 'Card Activation';
-        elseif ($request->type === 'disable') $typeLabel = 'Card Deactivation';
+        if ($request->type === 'upgrade') {
+            $typeLabel = 'Card Upgrade';
+        } elseif ($request->type === 'enable') {
+            $typeLabel = 'Card Activation';
+        } elseif ($request->type === 'disable') {
+            $typeLabel = 'Card Deactivation';
+        }
 
         \App\Models\SupportRequest::create([
             'user_id' => auth()->id(),
             'subject' => "Card Change Request: {$typeLabel}",
-            'message' => "Request for [{$typeLabel}] for Card: {$card->card_number}. " . ($request->message ?? ''),
-            'status' => 'open'
+            'message' => "Request for [{$typeLabel}] for Card: {$card->card_number}. ".($request->message ?? ''),
+            'status' => 'open',
         ]);
 
         logActivity('card_request', "User requested card {$request->type}", [
             'card_id' => $card->id,
             'card_number' => $card->card_number,
-            'request_type' => $request->type
+            'request_type' => $request->type,
         ]);
 
         return response()->json([
             'status' => true,
-            'message' => 'Your request has been submitted successfully.'
+            'message' => 'Your request has been submitted successfully.',
         ]);
+    }
+
+    /**
+     * Map legacy lowercase status values from the admin forms onto the
+     * card lifecycle vocabulary (NEW/REGISTERED/…/ACTIVE/BLOCKED/…).
+     */
+    private static function mapLegacyStatus(?string $status): string
+    {
+        return match (strtolower((string) $status)) {
+            'active' => 'ACTIVE',
+            'inactive' => 'INACTIVE',
+            'blocked' => 'BLOCKED',
+            default => strtoupper((string) $status) ?: 'NEW',
+        };
     }
 }

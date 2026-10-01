@@ -8,7 +8,7 @@
         <h4 class="mb-0">
             <span class="text-muted fw-light">Card Management / Validators /</span> {{ $device->device_id }}
         </h4>
-        <a href="{{ route('card-management.validators.index') }}" class="btn btn-secondary">
+        <a href="{{ route('cards.validators.index') }}" class="btn btn-secondary">
             <i class="bx bx-arrow-back me-1"></i> Back to List
         </a>
     </div>
@@ -74,7 +74,7 @@
                         <button class="btn btn-sm btn-outline-secondary" onclick="copyPayload(this)">
                             <i class="bx bx-copy me-1"></i> Copy JSON
                         </button>
-                        <a href="{{ route('card-management.validators.payload', $device->id) }}"
+                        <a href="{{ route('cards.validators.payload', $device->id) }}"
                            class="btn btn-sm btn-outline-info" target="_blank">
                             <i class="bx bx-code-curly me-1"></i> Raw endpoint
                         </a>

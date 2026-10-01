@@ -23,7 +23,7 @@ class Ride extends Model
 
     protected $casts = [
         'user_id' => 'integer',
-        'card_id' => 'integer',
+        'card_id' => 'string',
         'merchant_id' => 'integer',
         'reference_id' => 'integer',
         'tap_in_id' => 'integer',

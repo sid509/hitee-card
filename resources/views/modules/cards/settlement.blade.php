@@ -36,7 +36,7 @@ $(function() {
     $('#cm-settlement-table').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ route("card-management.settlement.index") }}',
+        ajax: '{{ route("cards.settlement.index") }}',
         columns: [
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'id', name: 'id' },

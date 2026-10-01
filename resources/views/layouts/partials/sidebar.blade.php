@@ -143,19 +143,28 @@
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Cards & Identity</span>
         </li>
+        @if(auth()->user()->hasRole('customers'))
         <li class="menu-item {{ request()->routeIs('cards.index') ? 'active' : '' }}">
             <a href="{{ route('cards.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-credit-card"></i>
-                <div class="text-truncate">@if(auth()->user()->hasRole('customers')) My Cards @else All Cards @endif</div>
+                <div class="text-truncate">My Cards</div>
             </a>
         </li>
+        @endif
+
         @if(auth()->user()->hasRole('super-admin'))
-        <li class="menu-item {{ request()->routeIs('card-reader.*') ? 'active open' : '' }}">
+        <li class="menu-item {{ request()->routeIs('cards.*', 'card-reader.*', 'card-applications.*', 'subscription-models.*') ? 'active open' : '' }}">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-wifi"></i>
-                <div class="text-truncate">Card Reader</div>
+                <i class="menu-icon tf-icons bx bx-credit-card"></i>
+                <div class="text-truncate">Cards</div>
             </a>
             <ul class="menu-sub">
+                <li class="menu-item {{ request()->routeIs('cards.index', 'cards.show', 'cards.create', 'cards.edit') ? 'active' : '' }}">
+                    <a href="{{ route('cards.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-credit-card-front"></i>
+                        <div class="text-truncate">All Cards</div>
+                    </a>
+                </li>
                 <li class="menu-item {{ request()->routeIs('card-reader.enroll') ? 'active' : '' }}">
                     <a href="{{ route('card-reader.enroll') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-credit-card-alt"></i>
@@ -168,55 +177,37 @@
                         <div class="text-truncate">Tap Test</div>
                     </a>
                 </li>
-            </ul>
-        </li>
-        <li class="menu-item {{ request()->routeIs('subscription-models.*') ? 'active' : '' }}">
-            <a href="{{ route('subscription-models.index') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-category"></i>
-                <div class="text-truncate">Subscription Models</div>
-            </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('card-applications.*') ? 'active' : '' }}">
-            <a href="{{ route('card-applications.index') }}" class="menu-link d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <i class="menu-icon tf-icons bx bx-envelope"></i>
-                    <div class="text-truncate">Card Requests</div>
-                </div>
-                @if(isset($pendingCardApplicationsCount) && $pendingCardApplicationsCount > 0)
-                    <span class="badge badge-center rounded-pill bg-danger" style="width: 1.5rem; height: 1.5rem;">{{ $pendingCardApplicationsCount }}</span>
-                @endif
-            </a>
-        </li>
-        @endif
-
-        @if(auth()->user()->hasRole('super-admin'))
-        <!-- 3b. Card Management API (Issuer/Validator Backend) -->
-        <li class="menu-item {{ request()->routeIs('card-management.*') ? 'active open' : '' }}">
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-chip"></i>
-                <div class="text-truncate">Card Management API</div>
-            </a>
-            <ul class="menu-sub">
-                <li class="menu-item {{ request()->routeIs('card-management.index', 'card-management.show') ? 'active' : '' }}">
-                    <a href="{{ route('card-management.index') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-credit-card-front"></i>
-                        <div class="text-truncate">Cards</div>
+                <li class="menu-item {{ request()->routeIs('card-applications.*') ? 'active' : '' }}">
+                    <a href="{{ route('card-applications.index') }}" class="menu-link d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="menu-icon tf-icons bx bx-envelope"></i>
+                            <div class="text-truncate">Card Requests</div>
+                        </div>
+                        @if(isset($pendingCardApplicationsCount) && $pendingCardApplicationsCount > 0)
+                            <span class="badge badge-center rounded-pill bg-danger" style="width: 1.5rem; height: 1.5rem;">{{ $pendingCardApplicationsCount }}</span>
+                        @endif
                     </a>
                 </li>
-                <li class="menu-item {{ request()->routeIs('card-management.customers.*') ? 'active' : '' }}">
-                    <a href="{{ route('card-management.customers.index') }}" class="menu-link">
+                <li class="menu-item {{ request()->routeIs('subscription-models.*') ? 'active' : '' }}">
+                    <a href="{{ route('subscription-models.index') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-category"></i>
+                        <div class="text-truncate">Subscription Models</div>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('cards.customers.*') ? 'active' : '' }}">
+                    <a href="{{ route('cards.customers.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-user"></i>
                         <div class="text-truncate">Customers</div>
                     </a>
                 </li>
-                <li class="menu-item {{ request()->routeIs('card-management.validators.*') ? 'active' : '' }}">
-                    <a href="{{ route('card-management.validators.index') }}" class="menu-link">
+                <li class="menu-item {{ request()->routeIs('cards.validators.*') ? 'active' : '' }}">
+                    <a href="{{ route('cards.validators.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-bus"></i>
                         <div class="text-truncate">Validators</div>
                     </a>
                 </li>
-                <li class="menu-item {{ request()->routeIs('card-management.settlement.*') ? 'active' : '' }}">
-                    <a href="{{ route('card-management.settlement.index') }}" class="menu-link">
+                <li class="menu-item {{ request()->routeIs('cards.settlement.*') ? 'active' : '' }}">
+                    <a href="{{ route('cards.settlement.index') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money"></i>
                         <div class="text-truncate">Settlement</div>
                     </a>

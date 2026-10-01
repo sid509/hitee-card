@@ -35,7 +35,7 @@ class CardSeeder extends Seeder
             $card = Card::create([
                 'card_number' => "CRD-" . strtoupper(Str::random(10)),
                 'hwid' => "HW-" . strtoupper(Str::random(12)),
-                'status' => 'active',
+                'status' => 'ACTIVE',
                 'is_currently_active' => true,
                 'user_id' => $user->id,
             ]);
@@ -59,7 +59,7 @@ class CardSeeder extends Seeder
             $card = Card::create([
                 'card_number' => "CRD-" . strtoupper(Str::random(10)),
                 'hwid' => "HW-" . strtoupper(Str::random(12)),
-                'status' => ['inactive', 'blocked'][rand(0, 1)],
+                'status' => ['INACTIVE', 'BLOCKED'][rand(0, 1)],
                 'is_currently_active' => false,
                 'user_id' => $user->id,
             ]);
@@ -82,7 +82,7 @@ class CardSeeder extends Seeder
             $card = Card::create([
                 'card_number' => "INST-" . strtoupper(Str::random(8)),
                 'hwid' => "HW-" . strtoupper(Str::random(12)),
-                'status' => 'active',
+                'status' => 'ACTIVE',
                 'is_currently_active' => false, // Will be set true when used or linked
                 'user_id' => null,
             ]);

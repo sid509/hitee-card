@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
-use App\Models\CardManagement\Card;
+use App\Models\Card;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\KeyServiceClient;
 use App\Services\CardManagement\OperationService;
@@ -25,9 +25,9 @@ final class IssuanceController extends BaseCardManagementController
     public function __construct()
     {
         $this->operations = new OperationService(
-            'cm_card_issuance_operations',
-            'cm_card_issuance_checkpoints',
-            'cm_card_issuance_key_envelopes',
+            'card_issuance_operations',
+            'card_issuance_checkpoints',
+            'card_issuance_key_envelopes',
         );
     }
 
@@ -63,7 +63,7 @@ final class IssuanceController extends BaseCardManagementController
 
         $id = Str::uuid()->toString();
 
-        DB::table('cm_customers')->insert([
+        DB::table('customers')->insert([
             'id' => $id,
             'customer_number' => $validated['customerNumber'],
             'customer_type' => $validated['customerType'] ?? 'NAMED',
@@ -75,7 +75,7 @@ final class IssuanceController extends BaseCardManagementController
             'updated_at' => now(),
         ]);
 
-        $customer = DB::table('cm_customers')->where('id', $id)->first();
+        $customer = DB::table('customers')->where('id', $id)->first();
 
         return ResponseEnvelope::success([
             'customer' => [
@@ -94,7 +94,7 @@ final class IssuanceController extends BaseCardManagementController
         $query = $request->input('q', '');
         $type = $request->input('type');
 
-        $dbQuery = DB::table('cm_customers');
+        $dbQuery = DB::table('customers');
         if ($query) {
             $dbQuery->where(function ($q) use ($query) {
                 $q->where('customer_number', 'like', "%{$query}%")
@@ -135,7 +135,7 @@ final class IssuanceController extends BaseCardManagementController
             'expiryDate' => 'required|date|after:enableDate',
         ]);
 
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
@@ -165,40 +165,40 @@ final class IssuanceController extends BaseCardManagementController
 
     public function getActive(string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operation' => null]);
         }
 
         $operation = $this->operations->findActiveByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operation' => $operation ? $this->operations->toPublicArray($operation) : null,
         ]);
     }
 
     public function getHistory(Request $request, string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operations' => []]);
         }
 
         $operations = $this->operations->findByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operations' => array_map(fn ($op) => $this->operations->toPublicArray($op), $operations),
         ]);
     }
 
     public function getIssuanceDetails(string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
 
-        $operation = DB::table('cm_card_issuance_operations')
+        $operation = DB::table('card_issuance_operations')
             ->where('card_id', $card->id)
             ->orderBy('created_at', 'desc')
             ->first();
@@ -206,7 +206,7 @@ final class IssuanceController extends BaseCardManagementController
         if (!$operation) {
             // Return empty state — card is registered but not yet issued
             return ResponseEnvelope::success([
-                'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+                'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
                 'issuance' => null,
                 'customer' => null,
             ]);
@@ -214,7 +214,7 @@ final class IssuanceController extends BaseCardManagementController
 
         $customer = null;
         if ($operation->customer_id) {
-            $customerRow = DB::table('cm_customers')->where('id', $operation->customer_id)->first();
+            $customerRow = DB::table('customers')->where('id', $operation->customer_id)->first();
             if ($customerRow) {
                 $customer = [
                     'id' => $customerRow->id,
@@ -228,7 +228,7 @@ final class IssuanceController extends BaseCardManagementController
         }
 
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'issuance' => $this->operations->toPublicArray($operation),
             'customer' => $customer,
         ]);
@@ -266,7 +266,7 @@ final class IssuanceController extends BaseCardManagementController
             'recipient' => ['keyId' => $recipientKeyId, 'publicKey' => $recipientPublicKey],
         ], $this->requestId($request));
 
-        DB::table('cm_card_issuance_key_envelopes')->insert([
+        DB::table('card_issuance_key_envelopes')->insert([
             'operation_id' => $operation->id,
             'key_service_request_id' => Str::uuid()->toString(),
             'recipient_key_id' => $recipientKeyId,
@@ -297,7 +297,7 @@ final class IssuanceController extends BaseCardManagementController
             throw new CardManagementError('INVALID_CONFIRMATION_PHRASE', 403, 'confirmationPhrase is required.');
         }
 
-        DB::table('cm_card_issuance_operations')->where('id', $operation->id)->update([
+        DB::table('card_issuance_operations')->where('id', $operation->id)->update([
             'status' => 'AUTHORIZED',
             'expected_confirmation_sha256' => hash('sha256', $phrase),
             'physical_write_authorized_at' => now(),
@@ -314,7 +314,7 @@ final class IssuanceController extends BaseCardManagementController
     {
         $operation = $this->operations->findOrFail($operationId);
 
-        $envelopeRow = DB::table('cm_card_issuance_key_envelopes')
+        $envelopeRow = DB::table('card_issuance_key_envelopes')
             ->where('operation_id', $operation->id)
             ->first();
 
@@ -340,7 +340,7 @@ final class IssuanceController extends BaseCardManagementController
     {
         $operation = $this->operations->findOrFail($operationId);
 
-        DB::table('cm_card_issuance_key_envelopes')
+        DB::table('card_issuance_key_envelopes')
             ->where('operation_id', $operation->id)
             ->whereNull('acknowledged_at')
             ->update(['acknowledged_at' => now(), 'updated_at' => now()]);
@@ -376,13 +376,13 @@ final class IssuanceController extends BaseCardManagementController
         $this->operations->recordCheckpoint($operation->id, 'COMPLETED');
 
         // Update card status to ISSUED
-        DB::table('cm_cards')->where('id', $operation->card_id)->update([
+        DB::table('cards')->where('id', $operation->card_id)->update([
             'status' => 'ISSUED',
             'updated_at' => now(),
         ]);
 
         // Record lifecycle event
-        DB::table('cm_card_lifecycle_events')->insert([
+        DB::table('card_lifecycle_events')->insert([
             'id' => Str::uuid()->toString(),
             'card_id' => $operation->card_id,
             'from_status' => 'INITIALIZED',
@@ -427,7 +427,7 @@ final class IssuanceController extends BaseCardManagementController
             'reason' => 'nullable|string|max:500',
         ]);
 
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
@@ -442,12 +442,12 @@ final class IssuanceController extends BaseCardManagementController
         $oldStatus = $card->status;
         $newStatus = $actionMap[$validated['action']];
 
-        DB::table('cm_cards')->where('id', $card->id)->update([
+        DB::table('cards')->where('id', $card->id)->update([
             'status' => $newStatus,
             'updated_at' => now(),
         ]);
 
-        DB::table('cm_card_lifecycle_events')->insert([
+        DB::table('card_lifecycle_events')->insert([
             'id' => Str::uuid()->toString(),
             'card_id' => $card->id,
             'from_status' => $oldStatus,
@@ -458,24 +458,24 @@ final class IssuanceController extends BaseCardManagementController
         ]);
 
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'status' => $newStatus],
+            'card' => ['uid' => $card->card_uid, 'status' => $newStatus],
         ]);
     }
 
     public function lifecycleHistory(string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'events' => []]);
         }
 
-        $events = DB::table('cm_card_lifecycle_events')
+        $events = DB::table('card_lifecycle_events')
             ->where('card_id', $card->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'events' => $events->map(fn ($e) => [
                 'id' => $e->id,
                 'fromStatus' => $e->from_status,

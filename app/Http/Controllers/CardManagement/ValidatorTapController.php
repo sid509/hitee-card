@@ -50,7 +50,7 @@ class ValidatorTapController extends Controller
             return $this->error('CARD_NOT_FOUND', 'Card not registered on platform.', 404);
         }
 
-        if ($card->status !== 'active') {
+        if ($card->status !== 'ACTIVE') {
             return $this->error('CARD_INACTIVE', 'Card is ' . $card->status . '.', 403);
         }
 

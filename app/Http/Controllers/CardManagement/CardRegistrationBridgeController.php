@@ -16,15 +16,16 @@ use Illuminate\Support\Str;
 /**
  * Card registration bridge endpoint.
  *
- * The Node.js card-management-api (PostgreSQL) is the system of record
- * for card lifecycle (issuance, initialization, personalization). When a
- * new card is registered there, it calls this endpoint to create the
- * corresponding card record in the Laravel platform (MySQL) so that
- * validators can resolve the NFC UID to a wallet.
+ * Called by the Node.js card-issuer platform sync after a card is
+ * registered. The cards table is now the single registry for both the
+ * card-management lifecycle and the customer wallet, so this endpoint
+ * is a find-or-link:
+ *   - If the card already exists (e.g. registered via /v1/cards/register),
+ *     it is linked to a wallet owner and activated for wallet use.
+ *   - If it does not exist yet, the card record is created here.
  *
- * This creates:
- *   - A User (wallet owner) if one does not already exist.
- *   - A Card record with card_uid mapping.
+ * In both cases this ensures the card has:
+ *   - A User (wallet owner).
  *   - An initial BalanceIn ledger entry (opening top-up).
  */
 class CardRegistrationBridgeController extends Controller
@@ -42,17 +43,22 @@ class CardRegistrationBridgeController extends Controller
 
         try {
             return DB::transaction(function () use ($validated) {
-                // Idempotent: if the card_uid already exists, return it.
-                $existing = Card::where('card_uid', $validated['card_uid'])->first();
-                if ($existing) {
+                $initialBalance = $validated['initial_balance'] ?? 5000; // Rs 50.00 default
+
+                $card = Card::where('card_uid', $validated['card_uid'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($card && $card->user_id) {
+                    // Fully registered already — idempotent replay.
                     return response()->json([
                         'success' => true,
                         'data' => [
-                            'card_id'     => $existing->id,
-                            'card_number' => $existing->card_number,
-                            'card_uid'    => $existing->card_uid,
-                            'user_id'     => $existing->user_id,
-                            'status'      => $existing->status,
+                            'card_id'     => $card->id,
+                            'card_number' => $card->card_number,
+                            'card_uid'    => $card->card_uid,
+                            'user_id'     => $card->user_id,
+                            'status'      => $card->status,
                             'already_registered' => true,
                         ],
                     ]);
@@ -67,30 +73,43 @@ class CardRegistrationBridgeController extends Controller
                     'role'     => 'passenger',
                 ]);
 
-                // Generate a HITEE-format card number if the external one
-                // doesn't follow the CRD- pattern.
-                $cardNumber = $validated['card_number'];
-                if (!str_starts_with($cardNumber, 'CRD-')) {
-                    $cardNumber = 'CRD-' . strtoupper(Str::random(10));
-                }
-
-                // Generate a hardware ID.
                 $hwid = 'HW-' . strtoupper(Str::random(10));
 
-                $card = Card::create([
-                    'card_number'         => $cardNumber,
-                    'hwid'                => $hwid,
-                    'card_uid'            => $validated['card_uid'],
-                    'hitee_card_number'   => $validated['card_number'],
-                    'status'              => 'active',
-                    'is_currently_active' => true,
-                    'is_physical'         => true,
-                    'is_personalized'     => false,
-                    'user_id'             => $user->id,
-                ]);
+                if ($card) {
+                    // Card exists in the registry (registered via the CM
+                    // flow) — link the wallet owner and activate it.
+                    $card->update([
+                        'user_id'             => $user->id,
+                        'hwid'                => $card->hwid ?? $hwid,
+                        'hitee_card_number'   => $card->hitee_card_number ?? $validated['card_number'],
+                        'status'              => 'ACTIVE',
+                        'is_currently_active' => true,
+                        'is_physical'         => true,
+                    ]);
+                } else {
+                    // Generate a HITEE-format card number if the external one
+                    // doesn't follow the CRD- pattern.
+                    $cardNumber = $validated['card_number'];
+                    if (!str_starts_with($cardNumber, 'CRD-')) {
+                        $cardNumber = 'CRD-' . strtoupper(Str::random(10));
+                    }
+
+                    $card = Card::create([
+                        'card_number'         => $cardNumber,
+                        'hwid'                => $hwid,
+                        'card_uid'            => $validated['card_uid'],
+                        'hitee_card_number'   => $validated['card_number'],
+                        'card_type_code'      => $validated['card_type_code'] ?? '0100',
+                        'card_type_label'     => $validated['card_type_label'] ?? 'STANDARD',
+                        'status'              => 'ACTIVE',
+                        'is_currently_active' => true,
+                        'is_physical'         => true,
+                        'is_personalized'     => false,
+                        'user_id'             => $user->id,
+                    ]);
+                }
 
                 // Create an initial wallet top-up (BalanceIn).
-                $initialBalance = $validated['initial_balance'] ?? 5000; // Rs 50.00 default
                 if ($initialBalance > 0) {
                     DB::table('balance_ins')->insert([
                         'user_id'      => $user->id,
@@ -106,7 +125,7 @@ class CardRegistrationBridgeController extends Controller
 
                 Log::info('Card registered via bridge', [
                     'card_uid'    => $validated['card_uid'],
-                    'card_number' => $cardNumber,
+                    'card_number' => $card->card_number,
                     'user_id'     => $user->id,
                     'balance'     => $initialBalance,
                 ]);
@@ -115,10 +134,10 @@ class CardRegistrationBridgeController extends Controller
                     'success' => true,
                     'data' => [
                         'card_id'     => $card->id,
-                        'card_number' => $cardNumber,
+                        'card_number' => $card->card_number,
                         'card_uid'    => $validated['card_uid'],
                         'user_id'     => $user->id,
-                        'status'      => 'active',
+                        'status'      => 'ACTIVE',
                         'balance'     => $initialBalance,
                         'already_registered' => false,
                     ],

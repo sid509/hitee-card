@@ -13,9 +13,9 @@ use Illuminate\Support\Str;
  * Reversal, Issuance, and Replacement operation controllers.
  *
  * Each module has its own tables following the naming convention:
- *   cm_{prefix}_operations         — main operation record
- *   cm_{prefix}_checkpoints        — step checkpoints
- *   cm_{prefix}_key_envelopes      — key envelope delivery tracking
+ *   {prefix}_operations         — main operation record
+ *   {prefix}_checkpoints        — step checkpoints
+ *   {prefix}_key_envelopes      — key envelope delivery tracking
  *
  * This service provides the shared create/read/checkpoint/complete/fail/cancel
  * logic so controllers stay thin and consistent.

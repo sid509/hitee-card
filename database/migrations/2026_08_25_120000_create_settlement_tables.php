@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // ── Settlement batches ────────────────────────────────────────
-        Schema::create('cm_settlement_batches', function (Blueprint $table) {
+        Schema::create('settlement_batches', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->date('settlement_date');
             $table->string('status', 32)->default('OPEN'); // OPEN, CALCULATED, APPROVED, PAID, CLOSED
@@ -29,10 +29,10 @@ return new class extends Migration
         });
 
         // ── Settlement entries (per device/operator) ──────────────────
-        Schema::create('cm_settlement_entries', function (Blueprint $table) {
+        Schema::create('settlement_entries', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('batch_id');
-            $table->foreign('batch_id', 'fk_settle_entry_batch')->references('id')->on('cm_settlement_batches')->onDelete('cascade');
+            $table->foreign('batch_id', 'fk_settle_entry_batch')->references('id')->on('settlement_batches')->onDelete('cascade');
             $table->uuid('device_id')->nullable();
             $table->string('operator_id', 128)->nullable();   // merchant/operator ID
             $table->integer('trip_count')->default(0);
@@ -48,7 +48,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('cm_settlement_entries');
-        Schema::dropIfExists('cm_settlement_batches');
+        Schema::dropIfExists('settlement_entries');
+        Schema::dropIfExists('settlement_batches');
     }
 };

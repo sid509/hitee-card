@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
-use App\Models\CardManagement\AuditEvent;
+use App\Models\AuditEvent;
 use App\Services\CardManagement\ResponseEnvelope;
 use Illuminate\Http\Request;
 

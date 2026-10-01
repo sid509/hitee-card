@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware\CardManagement;
 
-use App\Models\CardManagement\AuditEvent;
+use App\Models\AuditEvent;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;

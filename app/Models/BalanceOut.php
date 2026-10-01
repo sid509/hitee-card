@@ -25,7 +25,7 @@ class BalanceOut extends Model
 
     protected $casts = [
         'user_id' => 'integer',
-        'card_id' => 'integer',
+        'card_id' => 'string',
         'merchant_id' => 'integer',
         'amount' => 'float',
         'reference_id' => 'integer',

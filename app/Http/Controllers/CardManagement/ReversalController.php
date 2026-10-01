@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
-use App\Models\CardManagement\Card;
+use App\Models\Card;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\OperationService;
 use App\Services\CardManagement\ResponseEnvelope;
@@ -24,9 +24,9 @@ final class ReversalController extends BaseCardManagementController
     public function __construct()
     {
         $this->operations = new OperationService(
-            'cm_wallet_recharge_reversal_operations',
-            'cm_wallet_recharge_reversal_checkpoints',
-            'cm_wallet_recharge_reversal_key_envelopes',
+            'wallet_recharge_reversal_operations',
+            'wallet_recharge_reversal_checkpoints',
+            'wallet_recharge_reversal_key_envelopes',
         );
     }
 
@@ -43,28 +43,28 @@ final class ReversalController extends BaseCardManagementController
 
     public function getActiveByCard(string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operation' => null]);
         }
 
         $operation = $this->operations->findActiveByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operation' => $operation ? $this->operations->toPublicArray($operation) : null,
         ]);
     }
 
     public function getHistoryByCard(Request $request, string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operations' => []]);
         }
 
         $operations = $this->operations->findByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operations' => array_map(fn ($op) => $this->operations->toPublicArray($op), $operations),
         ]);
     }
@@ -80,7 +80,7 @@ final class ReversalController extends BaseCardManagementController
             'reason' => 'nullable|string|max:256',
         ]);
 
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
@@ -90,7 +90,7 @@ final class ReversalController extends BaseCardManagementController
         // existing-reversal check before our insert commits.
         $workstationId = $this->workstationId($request);
         $operation = DB::transaction(function () use ($validated, $card, $uid, $workstationId) {
-            $originalRecharge = DB::table('cm_wallet_recharge_operations')
+            $originalRecharge = DB::table('wallet_recharge_operations')
                 ->where('id', $validated['originalRechargeOperationId'])
                 ->where('card_id', $card->id)
                 ->lockForUpdate()
@@ -110,7 +110,7 @@ final class ReversalController extends BaseCardManagementController
 
             // Any prior reversal that is not in a terminal state — or already
             // completed — blocks a second reversal for the same recharge.
-            $existingReversal = DB::table('cm_wallet_recharge_reversal_operations')
+            $existingReversal = DB::table('wallet_recharge_reversal_operations')
                 ->where('original_recharge_operation_id', $validated['originalRechargeOperationId'])
                 ->whereNotIn('status', ['FAILED', 'CANCELLED'])
                 ->lockForUpdate()
@@ -176,7 +176,7 @@ final class ReversalController extends BaseCardManagementController
             throw new CardManagementError('INVALID_CONFIRMATION_PHRASE', 403, 'confirmationPhrase is required.');
         }
 
-        DB::table('cm_wallet_recharge_reversal_operations')->where('id', $operation->id)->update([
+        DB::table('wallet_recharge_reversal_operations')->where('id', $operation->id)->update([
             'status' => 'AUTHORIZED',
             'operator_confirmation_sha256' => hash('sha256', $phrase),
             'physical_write_authorized_at' => now(),
@@ -192,7 +192,7 @@ final class ReversalController extends BaseCardManagementController
     public function getEnvelope(string $operationId)
     {
         $operation = $this->operations->findOrFail($operationId);
-        $envelopeRow = DB::table('cm_wallet_recharge_reversal_key_envelopes')
+        $envelopeRow = DB::table('wallet_recharge_reversal_key_envelopes')
             ->where('operation_id', $operation->id)
             ->first();
 
@@ -214,7 +214,7 @@ final class ReversalController extends BaseCardManagementController
     {
         $operation = $this->operations->findOrFail($operationId);
 
-        DB::table('cm_wallet_recharge_reversal_key_envelopes')
+        DB::table('wallet_recharge_reversal_key_envelopes')
             ->where('operation_id', $operation->id)
             ->whereNull('acknowledged_at')
             ->update(['acknowledged_at' => now(), 'updated_at' => now()]);

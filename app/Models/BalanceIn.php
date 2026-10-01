@@ -27,7 +27,7 @@ class BalanceIn extends Model
 
         protected $casts = [
         'user_id' => 'integer',
-        'card_id' => 'integer',
+        'card_id' => 'string',
         'amount' => 'float',
         'payload' => 'array',
         ];

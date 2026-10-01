@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Strategy:
  * 1. Fast path — Redis (Cache facade), sub-millisecond lookup.
- * 2. Durable path — `cm_idempotency_keys` table.
+ * 2. Durable path — `idempotency_keys` table.
  * 3. Atomic reservation — the (key, workstation, path) unique index is
  *    claimed with insertOrIgnore BEFORE the request executes, so two
  *    concurrent requests with the same key can never both run.
@@ -57,7 +57,7 @@ final class IdempotencyKey
 
         // 2. Atomic reservation — the unique index serializes concurrent
         //    requests; losers fall through and see the winner's reservation.
-        $reserved = DB::table('cm_idempotency_keys')->insertOrIgnore([
+        $reserved = DB::table('idempotency_keys')->insertOrIgnore([
             'idempotency_key' => $key,
             'workstation_id' => $workstationId,
             'path' => $path,
@@ -68,7 +68,7 @@ final class IdempotencyKey
         ]);
 
         if ($reserved === 0) {
-            $existing = DB::table('cm_idempotency_keys')
+            $existing = DB::table('idempotency_keys')
                 ->where('idempotency_key', $key)
                 ->where('workstation_id', $workstationId)
                 ->where('path', $path)
@@ -140,7 +140,7 @@ final class IdempotencyKey
 
     private function releaseReservation(string $key, string $workstationId, string $path): void
     {
-        DB::table('cm_idempotency_keys')
+        DB::table('idempotency_keys')
             ->where('idempotency_key', $key)
             ->where('workstation_id', $workstationId)
             ->where('path', $path)
@@ -193,7 +193,7 @@ final class IdempotencyKey
         }
 
         // Fill in the reservation row created before execution
-        DB::table('cm_idempotency_keys')
+        DB::table('idempotency_keys')
             ->where('idempotency_key', $key)
             ->where('workstation_id', $workstationId)
             ->where('path', $path)

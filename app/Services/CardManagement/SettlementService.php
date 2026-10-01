@@ -2,8 +2,8 @@
 
 namespace App\Services\CardManagement;
 
-use App\Models\CardManagement\ValidatorTrip;
-use App\Models\CardManagement\ValidatorDevice;
+use App\Models\ValidatorTrip;
+use App\Models\ValidatorDevice;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -54,7 +54,7 @@ class SettlementService
      */
     private function loadRulesConfig(): array
     {
-        $stored = DB::table('cm_settlement_rules')
+        $stored = DB::table('settlement_rules')
             ->where('is_active', true)
             ->orderBy('version', 'desc')
             ->first();
@@ -78,7 +78,7 @@ class SettlementService
         $dateOnly = $date->toDateString();
 
         // Check if a batch already exists for this date (idempotent).
-        $existing = DB::table('cm_settlement_batches')
+        $existing = DB::table('settlement_batches')
             ->where('settlement_date', $dateOnly)
             ->first();
 
@@ -94,7 +94,7 @@ class SettlementService
 
         DB::transaction(function () use ($batchId, $dateOnly, $date, $rulesConfig, $existing) {
             if (!$existing) {
-                DB::table('cm_settlement_batches')->insert([
+                DB::table('settlement_batches')->insert([
                     'id' => $batchId,
                     'settlement_date' => $dateOnly,
                     'status' => 'OPEN',
@@ -140,7 +140,7 @@ class SettlementService
 
             // Rebuild entries from scratch so a recalculation never leaves
             // stale rows from a previous run.
-            DB::table('cm_settlement_entries')->where('batch_id', $batchId)->delete();
+            DB::table('settlement_entries')->where('batch_id', $batchId)->delete();
 
             foreach ($byDevice as $deviceData) {
                 $fare = $deviceData['fare_minor_units'];
@@ -163,7 +163,7 @@ class SettlementService
                 $commission = $ruleResult->commissionMinorUnits;
                 $payout = $ruleResult->payoutMinorUnits;
 
-                DB::table('cm_settlement_entries')->insert([
+                DB::table('settlement_entries')->insert([
                     'id' => Str::uuid()->toString(),
                     'batch_id' => $batchId,
                     'device_id' => $deviceData['device_id'],
@@ -195,7 +195,7 @@ class SettlementService
             }
 
             // Update batch totals and mark as CALCULATED
-            DB::table('cm_settlement_batches')->where('id', $batchId)->update([
+            DB::table('settlement_batches')->where('id', $batchId)->update([
                 'status' => 'CALCULATED',
                 'total_trips' => $totalTrips,
                 'total_fare_minor_units' => $totalFare,
@@ -214,7 +214,7 @@ class SettlementService
      */
     public function approveBatch(string $batchId): object
     {
-        $batch = DB::table('cm_settlement_batches')->where('id', $batchId)->first();
+        $batch = DB::table('settlement_batches')->where('id', $batchId)->first();
         if (!$batch) {
             throw new CardManagementError('SETTLEMENT_NOT_FOUND', 404, 'Settlement batch not found.');
         }
@@ -223,13 +223,13 @@ class SettlementService
             throw new CardManagementError('INVALID_STATE_TRANSITION', 409, 'Batch must be CALCULATED to approve.');
         }
 
-        DB::table('cm_settlement_batches')->where('id', $batchId)->update([
+        DB::table('settlement_batches')->where('id', $batchId)->update([
             'status' => 'APPROVED',
             'approved_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return DB::table('cm_settlement_batches')->where('id', $batchId)->first();
+        return DB::table('settlement_batches')->where('id', $batchId)->first();
     }
 
     /**
@@ -237,7 +237,7 @@ class SettlementService
      */
     public function markPaid(string $batchId): object
     {
-        $batch = DB::table('cm_settlement_batches')->where('id', $batchId)->first();
+        $batch = DB::table('settlement_batches')->where('id', $batchId)->first();
         if (!$batch) {
             throw new CardManagementError('SETTLEMENT_NOT_FOUND', 404, 'Settlement batch not found.');
         }
@@ -246,13 +246,13 @@ class SettlementService
             throw new CardManagementError('INVALID_STATE_TRANSITION', 409, 'Batch must be APPROVED to mark as paid.');
         }
 
-        DB::table('cm_settlement_batches')->where('id', $batchId)->update([
+        DB::table('settlement_batches')->where('id', $batchId)->update([
             'status' => 'PAID',
             'paid_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return DB::table('cm_settlement_batches')->where('id', $batchId)->first();
+        return DB::table('settlement_batches')->where('id', $batchId)->first();
     }
 
     /**
@@ -260,7 +260,7 @@ class SettlementService
      */
     public function closeBatch(string $batchId): object
     {
-        $batch = DB::table('cm_settlement_batches')->where('id', $batchId)->first();
+        $batch = DB::table('settlement_batches')->where('id', $batchId)->first();
         if (!$batch) {
             throw new CardManagementError('SETTLEMENT_NOT_FOUND', 404, 'Settlement batch not found.');
         }
@@ -269,13 +269,13 @@ class SettlementService
             throw new CardManagementError('INVALID_STATE_TRANSITION', 409, 'Batch must be PAID to close.');
         }
 
-        DB::table('cm_settlement_batches')->where('id', $batchId)->update([
+        DB::table('settlement_batches')->where('id', $batchId)->update([
             'status' => 'CLOSED',
             'closed_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return DB::table('cm_settlement_batches')->where('id', $batchId)->first();
+        return DB::table('settlement_batches')->where('id', $batchId)->first();
     }
 
     /**
@@ -283,12 +283,12 @@ class SettlementService
      */
     public function getBatch(string $batchId): array
     {
-        $batch = DB::table('cm_settlement_batches')->where('id', $batchId)->first();
+        $batch = DB::table('settlement_batches')->where('id', $batchId)->first();
         if (!$batch) {
             throw new CardManagementError('SETTLEMENT_NOT_FOUND', 404, 'Settlement batch not found.');
         }
 
-        $entries = DB::table('cm_settlement_entries')
+        $entries = DB::table('settlement_entries')
             ->where('batch_id', $batchId)
             ->get();
 
@@ -303,7 +303,7 @@ class SettlementService
      */
     public function listBatches(int $limit = 50): array
     {
-        $batches = DB::table('cm_settlement_batches')
+        $batches = DB::table('settlement_batches')
             ->orderBy('settlement_date', 'desc')
             ->limit($limit)
             ->get();

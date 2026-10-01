@@ -19,7 +19,7 @@ return new class extends Migration
             $table->json('kyc_data')->nullable(); // For storing name, ID number, etc.
             $table->text('admin_remarks')->nullable();
             $table->timestamp('processed_at')->nullable();
-            $table->foreignId('card_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignUuid('card_id')->nullable()->constrained()->onDelete('set null');
             $table->softDeletes();
             $table->timestamps();
         });

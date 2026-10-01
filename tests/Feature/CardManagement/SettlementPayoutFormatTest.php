@@ -26,7 +26,7 @@ class SettlementPayoutFormatTest extends TestCase
         $batchId = Str::uuid()->toString();
         $date = '2026-08-26';
 
-        DB::table('cm_settlement_batches')->insert([
+        DB::table('settlement_batches')->insert([
             'id' => $batchId,
             'settlement_date' => $date,
             'status' => 'CALCULATED',
@@ -40,7 +40,7 @@ class SettlementPayoutFormatTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        DB::table('cm_settlement_entries')->insert([
+        DB::table('settlement_entries')->insert([
             'id' => Str::uuid()->toString(),
             'batch_id' => $batchId,
             'device_id' => 'VAL-001',
@@ -53,7 +53,7 @@ class SettlementPayoutFormatTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        DB::table('cm_settlement_entries')->insert([
+        DB::table('settlement_entries')->insert([
             'id' => Str::uuid()->toString(),
             'batch_id' => $batchId,
             'device_id' => 'VAL-002',

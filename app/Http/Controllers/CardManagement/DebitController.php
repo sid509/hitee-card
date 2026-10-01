@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
-use App\Models\CardManagement\Card;
+use App\Models\Card;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\KeyServiceClient;
 use App\Services\CardManagement\OperationService;
@@ -25,9 +25,9 @@ final class DebitController extends BaseCardManagementController
     public function __construct()
     {
         $this->operations = new OperationService(
-            'cm_wallet_debit_operations',
-            'cm_wallet_debit_checkpoints',
-            'cm_wallet_debit_key_envelopes',
+            'wallet_debit_operations',
+            'wallet_debit_checkpoints',
+            'wallet_debit_key_envelopes',
         );
     }
 
@@ -45,28 +45,28 @@ final class DebitController extends BaseCardManagementController
 
     public function getActiveByCard(string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operation' => null]);
         }
 
         $operation = $this->operations->findActiveByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operation' => $operation ? $this->operations->toPublicArray($operation) : null,
         ]);
     }
 
     public function getHistoryByCard(Request $request, string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operations' => []]);
         }
 
         $operations = $this->operations->findByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operations' => array_map(fn ($op) => $this->operations->toPublicArray($op), $operations),
         ]);
     }
@@ -80,7 +80,7 @@ final class DebitController extends BaseCardManagementController
             'terminalTransactionSequence' => 'required|integer',
         ]);
 
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
@@ -141,7 +141,7 @@ final class DebitController extends BaseCardManagementController
             'recipient' => ['keyId' => $recipientKeyId, 'publicKey' => $recipientPublicKey],
         ], $this->requestId($request));
 
-        DB::table('cm_wallet_debit_key_envelopes')->insert([
+        DB::table('wallet_debit_key_envelopes')->insert([
             'id' => Str::uuid()->toString(),
             'operation_id' => $operation->id,
             'key_service_request_id' => Str::uuid()->toString(),
@@ -174,7 +174,7 @@ final class DebitController extends BaseCardManagementController
             throw new CardManagementError('INVALID_CONFIRMATION_PHRASE', 403, 'confirmationPhrase is required.');
         }
 
-        DB::table('cm_wallet_debit_operations')->where('id', $operation->id)->update([
+        DB::table('wallet_debit_operations')->where('id', $operation->id)->update([
             'status' => 'AUTHORIZED',
             'operator_confirmation_sha256' => hash('sha256', $phrase),
             'physical_write_authorized_at' => now(),
@@ -191,7 +191,7 @@ final class DebitController extends BaseCardManagementController
     {
         $operation = $this->operations->findOrFail($operationId);
 
-        $envelopeRow = DB::table('cm_wallet_debit_key_envelopes')
+        $envelopeRow = DB::table('wallet_debit_key_envelopes')
             ->where('operation_id', $operation->id)
             ->first();
 
@@ -208,7 +208,7 @@ final class DebitController extends BaseCardManagementController
             throw new CardManagementError('KEY_ENVELOPE_EXPIRED', 410, 'Key envelope TTL exceeded.');
         }
 
-        DB::table('cm_wallet_debit_key_envelopes')
+        DB::table('wallet_debit_key_envelopes')
             ->where('operation_id', $operation->id)
             ->update([
                 'delivery_count' => $envelopeRow->delivery_count + 1,
@@ -233,7 +233,7 @@ final class DebitController extends BaseCardManagementController
     {
         $operation = $this->operations->findOrFail($operationId);
 
-        $updated = DB::table('cm_wallet_debit_key_envelopes')
+        $updated = DB::table('wallet_debit_key_envelopes')
             ->where('operation_id', $operation->id)
             ->whereNull('acknowledged_at')
             ->update(['acknowledged_at' => now(), 'updated_at' => now()]);
@@ -264,7 +264,7 @@ final class DebitController extends BaseCardManagementController
             'offlineCounterAfter' => 'nullable|integer',
         ]);
 
-        DB::table('cm_wallet_debit_operations')->where('id', $operation->id)->update([
+        DB::table('wallet_debit_operations')->where('id', $operation->id)->update([
             'status' => 'DEBIT_PENDING_VERIFICATION',
             'debit_command_attempted' => true,
             'balance_before' => $validated['balanceBefore'],

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\CardManagement;
 
-use App\Models\CardManagement\Card;
+use App\Models\Card;
 use App\Services\CardManagement\CardManagementError;
 use App\Services\CardManagement\KeyServiceClient;
 use App\Services\CardManagement\OperationService;
@@ -25,9 +25,9 @@ final class WalletController extends BaseCardManagementController
     public function __construct()
     {
         $this->operations = new OperationService(
-            'cm_wallet_recharge_operations',
-            'cm_wallet_recharge_checkpoints',
-            'cm_wallet_recharge_key_envelopes',
+            'wallet_recharge_operations',
+            'wallet_recharge_checkpoints',
+            'wallet_recharge_key_envelopes',
         );
     }
 
@@ -45,28 +45,28 @@ final class WalletController extends BaseCardManagementController
 
     public function getActiveByCard(string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operation' => null]);
         }
 
         $operation = $this->operations->findActiveByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operation' => $operation ? $this->operations->toPublicArray($operation) : null,
         ]);
     }
 
     public function getHistoryByCard(Request $request, string $uid)
     {
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             return ResponseEnvelope::success(['card' => null, 'operations' => []]);
         }
 
         $operations = $this->operations->findByCard($card->id);
         return ResponseEnvelope::success([
-            'card' => ['uid' => $card->uid, 'cardNumber' => $card->card_number],
+            'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operations' => array_map(fn ($op) => $this->operations->toPublicArray($op), $operations),
         ]);
     }
@@ -80,7 +80,7 @@ final class WalletController extends BaseCardManagementController
             'purpose' => 'nullable|string|max:40',
         ]);
 
-        $card = Card::where('uid', $uid)->first();
+        $card = Card::where('card_uid', $uid)->first();
         if (!$card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
@@ -375,11 +375,11 @@ final class WalletController extends BaseCardManagementController
 
     private function operationsTable(): string
     {
-        return 'cm_wallet_recharge_operations';
+        return 'wallet_recharge_operations';
     }
 
     private function envelopeTable(): string
     {
-        return 'cm_wallet_recharge_key_envelopes';
+        return 'wallet_recharge_key_envelopes';
     }
 }

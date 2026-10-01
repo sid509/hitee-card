@@ -287,7 +287,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $card = Card::create([
             'user_id' => $this->id,
             'card_number' => 'HIT' . str_pad($this->id, 8, '0', STR_PAD_LEFT) . rand(1000, 9999),
-            'status' => 'active',
+            'status' => 'ACTIVE',
             'is_currently_active' => true,
             'is_physical' => false,
             'is_personalized' => $this->kyc_status === 'approved',
