@@ -21,6 +21,9 @@ class ParkingAttributeSeeder extends Seeder
             'Valet Service',
             'Disabled Access',
             'Fire Safety',
+            'Helmet Facility',
+            'Monthly Parking',
+            'QR Enabled',
         ];
 
         foreach ($attributes as $name) {

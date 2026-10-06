@@ -11,12 +11,28 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">{{ __('messages.parkings') }} {{ __('messages.list') }}</h5>
         @if(auth()->user()->hasRole('super-admin'))
-        <a href="{{ route('parkings.create') }}" class="btn btn-primary">
-            <i class="bx bx-plus me-1"></i> {{ __('messages.add') }} {{ __('messages.parkings') }}
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('parkings.import') }}" class="btn btn-label-primary">
+                <i class="bx bx-import me-1"></i> Import
+            </a>
+            <a href="{{ route('parkings.create') }}" class="btn btn-primary">
+                <i class="bx bx-plus me-1"></i> {{ __('messages.add') }} {{ __('messages.parkings') }}
+            </a>
+        </div>
         @endif
     </div>
     <div class="card-body">
+        @if(session('import_errors'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>Some lots couldn't be imported:</strong>
+            <ul class="mb-0 mt-1">
+                @foreach(session('import_errors') as $importError)
+                    <li>{{ $importError }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
         <div class="table-responsive text-nowrap">
             <style>
                 table.data-table {

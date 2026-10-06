@@ -11,6 +11,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\BusController;
 use App\Http\Controllers\ParkingController;
+use App\Http\Controllers\ParkingImportController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SupportController;
@@ -287,6 +288,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:super-admin,merchant,staff'])->group(function () {
         Route::post('/buses/{bus}/toggle-status', [BusController::class, 'toggleStatus'])->name('buses.toggle-status');
         Route::resource('buses', BusController::class);
+        Route::middleware(['role:super-admin'])->group(function () {
+            Route::get('/parkings/import', [ParkingImportController::class, 'create'])->name('parkings.import');
+            Route::post('/parkings/import', [ParkingImportController::class, 'store'])->name('parkings.import.store');
+        });
         Route::post('/parkings/{parking}/toggle-status', [ParkingController::class, 'toggleStatus'])->name('parkings.toggle-status');
         Route::resource('parkings', ParkingController::class);
         Route::resource('service-partners', ServicePartnerController::class);

@@ -45,6 +45,24 @@
                                 <span class="fw-medium me-2">Merchant:</span>
                                 <span>{{ $parking->merchant->name ?? 'N/A' }}</span>
                             </li>
+                            @if($parking->owner_name)
+                            <li class="mb-3">
+                                <span class="fw-medium me-2">Owner:</span>
+                                <span>{{ $parking->owner_name }}</span>
+                            </li>
+                            @endif
+                            @if($parking->owner_phone)
+                            <li class="mb-3">
+                                <span class="fw-medium me-2">Owner Phone:</span>
+                                <span>{{ $parking->owner_phone }}</span>
+                            </li>
+                            @endif
+                            @if($parking->notes)
+                            <li class="mb-3">
+                                <span class="fw-medium me-2">Notes:</span>
+                                <span>{{ $parking->notes }}</span>
+                            </li>
+                            @endif
                             <li class="mt-4 mb-2">
                                 <h6 class="text-primary border-bottom pb-2">Fee Structure</h6>
                             </li>

@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
+            HiteeSolutionMerchantSeeder::class,
             SubscriptionModelSeeder::class,
             NotificationTemplateSeeder::class,
             

@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\Media;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
@@ -18,18 +19,51 @@ trait HasMedia
     {
         $fileName = $customName ?? $file->getClientOriginalName();
         $extension = $file->getClientOriginalExtension() ?: 'png';
-        
+
         // Ensure filename has extension
         if (!str_contains($fileName, '.')) {
             $fileName .= '.' . $extension;
         }
 
+        return $this->storeImageMedia($file->get(), $fileName, $collection);
+    }
+
+    /**
+     * Download a remote image and attach it to a media collection.
+     * Returns null when the URL can't be fetched or isn't an image.
+     */
+    public function addMediaFromUrl(string $url, $collection = 'default', $customName = null)
+    {
+        $response = Http::timeout(20)->retry(2, 500)->get($url);
+
+        if (!$response->successful()) {
+            return null;
+        }
+
+        $mime = strtolower((string) $response->header('Content-Type'));
+        if (!str_starts_with($mime, 'image/')) {
+            return null;
+        }
+
+        $fileName = $customName ?? basename((string) parse_url($url, PHP_URL_PATH));
+        if ($fileName === '') {
+            $fileName = uniqid('media_');
+        }
+        if (!str_contains($fileName, '.')) {
+            $fileName .= '.png';
+        }
+
+        return $this->storeImageMedia($response->body(), $fileName, $collection);
+    }
+
+    protected function storeImageMedia($contents, string $fileName, string $collection)
+    {
         $folder = 'media/' . $collection;
         $path = $folder . '/' . uniqid() . '_' . $fileName;
 
         // Process Image with Intervention
         $manager = new ImageManager(new Driver());
-        $image = $manager->decode($file);
+        $image = $manager->decode($contents);
 
         // Define dimensions based on collection
         if ($collection === 'avatar') {
@@ -42,7 +76,7 @@ trait HasMedia
         }
 
         $encoded = $image->encodeUsingFileExtension('png')->toString();
-        
+
         Storage::disk('public')->put($path, $encoded);
 
         return $this->media()->create([
