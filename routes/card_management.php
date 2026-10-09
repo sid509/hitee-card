@@ -5,6 +5,7 @@ use App\Http\Controllers\CardManagement\CardsController;
 use App\Http\Controllers\CardManagement\DebitController;
 use App\Http\Controllers\CardManagement\InitializationController;
 use App\Http\Controllers\CardManagement\IssuanceController;
+use App\Http\Controllers\CardManagement\PsamController;
 use App\Http\Controllers\CardManagement\ReceiptsController;
 use App\Http\Controllers\CardManagement\RecoveryController;
 use App\Http\Controllers\CardManagement\ReplacementController;
@@ -190,6 +191,19 @@ Route::prefix('v1')->group(function () {
 
         // ── Receipts (§5.10) ───────────────────────────────────────────
         Route::get('receipts/{operationType}/{operationId}', [ReceiptsController::class, 'getReceipt']);
+
+        // ── PSAM Registry (Phases 57-58, ADR 0015/0016) ─────────────
+        // Metadata only — the personalization ceremony on card-desktop
+        // reports PSAM number/ATR/mode/result here. Key material is
+        // never accepted or stored.
+        Route::prefix('psams')->group(function () {
+            Route::post('/', [PsamController::class, 'register']);
+            Route::get('/', [PsamController::class, 'index']);
+            Route::get('{psamNumber}', [PsamController::class, 'show'])
+                ->where('psamNumber', '[0-9]{12}');
+            Route::post('{psamNumber}/bind-device', [PsamController::class, 'bindDevice'])
+                ->where('psamNumber', '[0-9]{12}');
+        });
 
         // ── Settlement Engine (Phase 61) ──────────────────────────────
         Route::prefix('settlement')->group(function () {
