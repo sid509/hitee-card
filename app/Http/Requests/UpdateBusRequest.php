@@ -19,8 +19,8 @@ class UpdateBusRequest extends BaseRequest
             'total_capacity' => 'required|integer|min:0',
             'status' => 'required|in:active,inactive',
             'route_id' => 'nullable|exists:routes,id',
-            'featured_image' => 'nullable|image|max:2048',
-            'gallery_images.*' => 'nullable|image|max:2048',
+            'featured_image' => 'nullable|image|max:10240',
+            'gallery_images.*' => 'nullable|image|max:10240',
         ];
 
         // Only Super Admin can update these fields usually, but we define the rules here

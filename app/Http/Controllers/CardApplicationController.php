@@ -68,7 +68,7 @@ class CardApplicationController extends Controller
             'full_name' => 'required_if:type,personalized|string|max:255',
             'id_type' => 'required_if:type,personalized|string|max:255',
             'id_number' => 'required_if:type,personalized|string|max:255',
-            'kyc_document' => 'required_if:type,personalized|image|max:2048',
+            'kyc_document' => 'required_if:type,personalized|image|max:10240',
         ]);
 
         $application = CardApplication::create([

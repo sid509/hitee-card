@@ -17,8 +17,8 @@ class StoreBusRequest extends BaseRequest
             'merchant_id' => 'nullable|exists:users,id',
             'route_id' => 'nullable|exists:routes,id',
             'status' => 'required|in:active,inactive',
-            'featured_image' => 'nullable|image|max:2048',
-            'gallery_images.*' => 'nullable|image|max:2048',
+            'featured_image' => 'nullable|image|max:10240',
+            'gallery_images.*' => 'nullable|image|max:10240',
         ];
     }
 }

@@ -22,8 +22,8 @@ class StoreParkingRequest extends BaseRequest
             'fees.*.price_pts' => 'required|numeric|min:0',
             'attributes' => 'nullable|array',
             'attributes.*' => 'exists:parking_attributes,id',
-            'featured_image' => 'nullable|image|max:2048',
-            'gallery_images.*' => 'nullable|image|max:2048',
+            'featured_image' => 'nullable|image|max:10240',
+            'gallery_images.*' => 'nullable|image|max:10240',
         ];
     }
 }

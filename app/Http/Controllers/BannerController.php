@@ -92,12 +92,12 @@ class BannerController extends Controller
             // Validation for Single
             'title'  => 'required_if:type,single|nullable|string|max:255',
             'link'   => 'required_if:type,single|nullable|url|max:500',
-            'image'  => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'image'  => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             // Validation for Carousel
             'items'  => 'required_if:type,carousel|array|min:1',
             'items.*.title' => 'required_with:items|string|max:255',
             'items.*.link'  => 'required_with:items|url|max:500',
-            'items.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'items.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
 
         $data = [
