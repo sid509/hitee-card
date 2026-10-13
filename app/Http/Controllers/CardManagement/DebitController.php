@@ -127,7 +127,7 @@ final class DebitController extends BaseCardManagementController
         $card = Card::where('id', $operation->card_id)->firstOrFail();
         $fingerprint = hash('sha256', $recipientPublicKey);
 
-        $keyService = KeyServiceClient::make();
+        $keyService = \App\Services\CardManagement\KeyProvision\KeyProviderFactory::make();
         $result = $keyService->prepareKeyEnvelope([
             'requestId' => $this->requestId($request),
             'operationId' => $operation->id,

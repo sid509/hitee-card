@@ -15,6 +15,21 @@ return [
         'internal_service_token' => env('KEY_SERVICE_INTERNAL_TOKEN'),
     ],
 
+    /*
+    | Key envelope provider selection (ADR 0018).
+    |   service → remote Node.js Key Service (the ONLY production provider)
+    |   lab     → in-process PHP provider using the encrypted lab keystore
+    |             (refuses to run unless card_profile.environment === 'LAB')
+    */
+    'key_provider' => [
+        'driver' => env('CARD_KEY_PROVIDER', 'service'),
+        'lab' => [
+            'keystore_path' => env('LAB_KEYSTORE_PATH', storage_path('app/keys/hitee-lab-keystore.json')),
+            'kek' => env('LAB_KEYSTORE_KEK'),
+            'kek_file' => env('LAB_KEYSTORE_KEK_FILE'),
+        ],
+    ],
+
     'auth' => [
         // Secure by default: the v1 API requires the workstation bearer token
         // unless explicitly disabled (local dev / tests only).
@@ -63,6 +78,21 @@ return [
                 'PINU' => ['L3'],
                 'PINR' => ['L3'],
             ],
+            // FMCOS key IDs per key type — must match key-service
+            // configuration/keyProfiles.js (hitee-lab-v1).
+            'key_ids' => [
+                'DCCK' => '39',
+                'DCMK' => '36',
+                'DACK' => '39',
+                'DAMK' => '36',
+                'DPK1' => '3E:01',
+                'DPK2' => '3E:02',
+                'DLK1' => '3F:01',
+                'DLK2' => '3F:02',
+                'TAC' => '34',
+                'PINU' => '37',
+                'PINR' => '38',
+            ],
         ],
         'lab_card_uid_allowlist' => array_filter(
             array_map('trim', explode(',', env('LAB_CARD_UID_ALLOWLIST', '')))
@@ -70,6 +100,8 @@ return [
     ],
 
     'wallet' => [
+        // Opening BalanceIn applied when a card is issued (ADR 0018).
+        'opening_balance_minor_units' => (int) env('CM_WALLET_OPENING_BALANCE', 5000),
         'lab_recharge_writes_enabled' => (bool) env('LAB_RECHARGE_WRITES_ENABLED', true),
         'lab_recharge_uid_allowlist' => array_filter(
             array_map('trim', explode(',', env('LAB_RECHARGE_UID_ALLOWLIST', '')))

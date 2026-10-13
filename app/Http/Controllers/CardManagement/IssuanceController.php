@@ -5,9 +5,11 @@ namespace App\Http\Controllers\CardManagement;
 use App\Enums\CardStatus;
 use App\Models\Card;
 use App\Services\CardManagement\CardManagementError;
-use App\Services\CardManagement\KeyServiceClient;
+use App\Services\CardManagement\CardWalletProvisioner;
+use App\Services\CardManagement\KeyProvision\KeyProviderFactory;
 use App\Services\CardManagement\OperationService;
 use App\Services\CardManagement\ResponseEnvelope;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -99,9 +101,9 @@ final class IssuanceController extends BaseCardManagementController
         if ($query) {
             $dbQuery->where(function ($q) use ($query) {
                 $q->where('customer_number', 'like', "%{$query}%")
-                  ->orWhere('full_name', 'like', "%{$query}%")
-                  ->orWhere('phone', 'like', "%{$query}%")
-                  ->orWhere('email', 'like', "%{$query}%");
+                    ->orWhere('full_name', 'like', "%{$query}%")
+                    ->orWhere('phone', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%");
             });
         }
         if ($type) {
@@ -137,7 +139,7 @@ final class IssuanceController extends BaseCardManagementController
         ]);
 
         $card = Card::where('card_uid', $uid)->first();
-        if (!$card) {
+        if (! $card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
 
@@ -167,11 +169,12 @@ final class IssuanceController extends BaseCardManagementController
     public function getActive(string $uid)
     {
         $card = Card::where('card_uid', $uid)->first();
-        if (!$card) {
+        if (! $card) {
             return ResponseEnvelope::success(['card' => null, 'operation' => null]);
         }
 
         $operation = $this->operations->findActiveByCard($card->id);
+
         return ResponseEnvelope::success([
             'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operation' => $operation ? $this->operations->toPublicArray($operation) : null,
@@ -181,11 +184,12 @@ final class IssuanceController extends BaseCardManagementController
     public function getHistory(Request $request, string $uid)
     {
         $card = Card::where('card_uid', $uid)->first();
-        if (!$card) {
+        if (! $card) {
             return ResponseEnvelope::success(['card' => null, 'operations' => []]);
         }
 
         $operations = $this->operations->findByCard($card->id);
+
         return ResponseEnvelope::success([
             'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
             'operations' => array_map(fn ($op) => $this->operations->toPublicArray($op), $operations),
@@ -195,7 +199,7 @@ final class IssuanceController extends BaseCardManagementController
     public function getIssuanceDetails(string $uid)
     {
         $card = Card::where('card_uid', $uid)->first();
-        if (!$card) {
+        if (! $card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
 
@@ -204,7 +208,7 @@ final class IssuanceController extends BaseCardManagementController
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if (!$operation) {
+        if (! $operation) {
             // Return empty state — card is registered but not yet issued
             return ResponseEnvelope::success([
                 'card' => ['uid' => $card->card_uid, 'cardNumber' => $card->card_number],
@@ -246,14 +250,14 @@ final class IssuanceController extends BaseCardManagementController
 
         $recipientKeyId = $request->input('recipientKeyId');
         $recipientPublicKey = $request->input('recipientPublicKey');
-        if (!$recipientKeyId || !$recipientPublicKey) {
+        if (! $recipientKeyId || ! $recipientPublicKey) {
             throw new CardManagementError('AMOUNT_INVALID', 400, 'recipientKeyId and recipientPublicKey are required.');
         }
 
         $card = Card::where('id', $operation->card_id)->firstOrFail();
         $fingerprint = hash('sha256', $recipientPublicKey);
 
-        $keyService = KeyServiceClient::make();
+        $keyService = KeyProviderFactory::make();
         $result = $keyService->prepareKeyEnvelope([
             'requestId' => $this->requestId($request),
             'operationId' => $operation->id,
@@ -294,7 +298,7 @@ final class IssuanceController extends BaseCardManagementController
         }
 
         $phrase = $request->input('confirmationPhrase');
-        if (!$phrase) {
+        if (! $phrase) {
             throw new CardManagementError('INVALID_CONFIRMATION_PHRASE', 403, 'confirmationPhrase is required.');
         }
 
@@ -319,7 +323,7 @@ final class IssuanceController extends BaseCardManagementController
             ->where('operation_id', $operation->id)
             ->first();
 
-        if (!$envelopeRow) {
+        if (! $envelopeRow) {
             throw new CardManagementError('KEY_ENVELOPE_NOT_READY', 409, 'Key envelope not yet prepared.');
         }
 
@@ -331,7 +335,7 @@ final class IssuanceController extends BaseCardManagementController
             'keyEnvelope' => [
                 'operationId' => $operation->id,
                 'envelope' => json_decode($envelopeRow->envelope, true),
-                'expiresAt' => \Carbon\Carbon::parse($envelopeRow->expires_at)->toIso8601ZuluString(),
+                'expiresAt' => Carbon::parse($envelopeRow->expires_at)->toIso8601ZuluString(),
             ],
             'operation' => $this->operations->toPublicArray($operation),
         ]);
@@ -382,6 +386,21 @@ final class IssuanceController extends BaseCardManagementController
             'updated_at' => now(),
         ]);
 
+        // ADR 0018: issuing the card is the moment it becomes live — link the
+        // wallet owner, set hitee_card_number + ACTIVE, and apply the opening
+        // balance so the validator can tap it without any external sync.
+        $card = Card::findOrFail($operation->card_id);
+        $operatorName = null;
+        if ($operation->customer_id) {
+            $operatorName = DB::table('customers')->where('id', $operation->customer_id)->value('full_name');
+        }
+        app(CardWalletProvisioner::class)->provision(
+            $card->card_uid,
+            $card->hitee_card_number ?? $card->card_number,
+            null,
+            $operatorName,
+        );
+
         // Record lifecycle event
         DB::table('card_lifecycle_events')->insert([
             'id' => Str::uuid()->toString(),
@@ -429,7 +448,7 @@ final class IssuanceController extends BaseCardManagementController
         ]);
 
         $card = Card::where('card_uid', $uid)->first();
-        if (!$card) {
+        if (! $card) {
             throw new CardManagementError('CARD_NOT_REGISTERED', 404, 'Card not found.');
         }
 
@@ -466,7 +485,7 @@ final class IssuanceController extends BaseCardManagementController
     public function lifecycleHistory(string $uid)
     {
         $card = Card::where('card_uid', $uid)->first();
-        if (!$card) {
+        if (! $card) {
             return ResponseEnvelope::success(['card' => null, 'events' => []]);
         }
 

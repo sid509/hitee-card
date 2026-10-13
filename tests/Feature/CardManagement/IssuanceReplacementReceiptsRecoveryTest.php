@@ -5,6 +5,7 @@ namespace Tests\Feature\CardManagement;
 use App\Models\Card;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class IssuanceReplacementReceiptsRecoveryTest extends TestCase
@@ -146,9 +147,45 @@ class IssuanceReplacementReceiptsRecoveryTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.operation.status', 'COMPLETED');
 
-        // Card status should be ISSUED
+        // ADR 0018: issuance completion provisions the wallet — the card
+        // transitions ISSUED → ACTIVE with user_id, hitee_card_number, and
+        // an opening BalanceIn so it is immediately tap-able.
         $card = Card::where('card_uid', 'DEADFBEB')->first();
-        $this->assertEquals('ISSUED', $card->status);
+        $this->assertEquals('ACTIVE', $card->status);
+        $this->assertNotNull($card->user_id, 'wallet owner not linked');
+        $this->assertNotNull($card->hitee_card_number, 'on-card number not stored');
+        $this->assertTrue((bool) $card->is_currently_active);
+    }
+
+    public function test_issuance_complete_creates_wallet_and_opening_balance(): void
+    {
+        $this->registerCard();
+
+        $create = $this->withHeaders($this->headers())->postJson('/api/v1/issuance/cards/DEADFBEB/operations', [
+            'idempotencyKey' => 'issuance-key-wallet',
+            'issuanceMode' => 'NEW',
+            'cardCategory' => 'STANDARD',
+            'cardTypeCode' => '0001',
+            'applicationType' => '01',
+            'enableDate' => '2026-01-01',
+            'expiryDate' => '2029-01-01',
+        ]);
+        $operationId = $create->json('data.operation.id');
+        $version = $create->json('data.operation.lockVersion');
+
+        $this->withHeaders($this->headers())->postJson("/api/v1/issuance/operations/{$operationId}/complete", [
+            'expectedVersion' => $version,
+        ])->assertOk();
+
+        $card = Card::where('card_uid', 'DEADFBEB')->first();
+        $user = \App\Models\User::find($card->user_id);
+        $this->assertNotNull($user);
+        $this->assertSame('card_deadfbeb@hitee.cards', $user->email);
+
+        // Opening balance (default 5000 minor units = Rs 50.00) posted to the ledger.
+        $balanceIn = DB::table('balance_ins')->where('user_id', $user->id)->where('card_id', $card->id)->first();
+        $this->assertNotNull($balanceIn, 'opening BalanceIn missing');
+        $this->assertEquals(50.0, (float) $balanceIn->amount);
     }
 
     public function test_issuance_lifecycle_action(): void

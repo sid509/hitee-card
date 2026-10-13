@@ -24,3 +24,6 @@ Homestead.yaml
 Thumbs.db
 .env.testing
 parking-lots-*.json
+
+# Lab key material (AES-256-GCM encrypted keystore) — never commit.
+/storage/app/keys/
