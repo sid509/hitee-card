@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::table('taps', function (Blueprint $table) {
             $table->decimal('latitude', 10, 8)->nullable()->change();
             $table->decimal('longitude', 11, 8)->nullable()->change();
-            $table->unsignedBigInteger('stop_id')->nullable()->change();
+            if (Schema::hasColumn('taps', 'stop_id')) {
+                $table->unsignedBigInteger('stop_id')->nullable()->change();
+            }
         });
     }
 
@@ -26,7 +28,9 @@ return new class extends Migration
         Schema::table('taps', function (Blueprint $table) {
             $table->decimal('latitude', 10, 8)->nullable(false)->change();
             $table->decimal('longitude', 11, 8)->nullable(false)->change();
-            $table->unsignedBigInteger('stop_id')->nullable(false)->change();
+            if (Schema::hasColumn('taps', 'stop_id')) {
+                $table->unsignedBigInteger('stop_id')->nullable(false)->change();
+            }
         });
     }
 };
