@@ -7,6 +7,7 @@ use App\Models\Bus;
 use App\Models\Parking;
 use App\Models\Route;
 use App\Models\Stop;
+use App\Services\RoutingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -19,14 +20,16 @@ class MiscController extends Controller
 {
     /**
      * GET /api/misc/nearby
-     * 
+     *
      * Find nearby buses and/or parkings based on lat, long, and radius.
-     * Returns a combined or filtered list of items within the specified radius.
-     * 
+     * Items are filtered and sorted by road-network distance (OSRM) when the
+     * routing backend is reachable; distance_source is 'straight_line' when
+     * it falls back. Returns a combined or filtered list.
+     *
      * @queryParam lat float required Latitude for proximity search.
      * @queryParam long float required Longitude for proximity search.
      * @queryParam radius float (optional) Search radius in km. Defaults to 10.
-     * @queryParam type string (optional) Filter by type: 'bus' or 'parking'.
+     * @queryParam type string (optional) Filter by type: 'bus', 'parking', 'service_partner' or 'stop'.
      */
     public function nearby(Request $request)
     {
@@ -34,52 +37,123 @@ class MiscController extends Controller
             'lat'    => 'required|numeric',
             'long'   => 'required|numeric',
             'radius' => 'nullable|numeric',
-            'type'   => 'nullable|string|in:bus,parking',
+            'type'   => 'nullable|string|in:bus,parking,service_partner,stop',
         ]);
 
-        $lat = $request->lat;
-        $lng = $request->long;
+        $lat = (float) $request->lat;
+        $lng = (float) $request->long;
         $radius = (float) $request->get('radius', 10);
         $type = $request->get('type');
         $perPage = 25;
 
         $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
-        $haversineBindings = [(float) $lat, (float) $lng, (float) $lat];
+        $haversineBindings = [$lat, $lng, $lat];
+
+        // Candidate sets — haversine pre-filter is safe because road distance
+        // is never shorter than straight-line distance.
+        $sets = [];
+
+        if (!$type || $type === 'bus') {
+            $sets['buses'] = Bus::with(['merchant:id,name', 'route:id,name,direction'])
+                ->where('status', 'active')
+                ->select('*')
+                ->selectRaw("{$haversine} AS straight_distance", $haversineBindings)
+                ->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])
+                ->get();
+        }
+
+        if (!$type || $type === 'parking') {
+            $sets['parkings'] = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
+                ->where('status', 'opened')
+                ->select('*')
+                ->selectRaw("{$haversine} AS straight_distance", $haversineBindings)
+                ->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])
+                ->get();
+        }
+
+        if (!$type || $type === 'service_partner') {
+            $sets['service_partners'] = \App\Models\ServicePartner::with(['merchant:id,name'])
+                ->where('status', 'active')
+                ->select('*')
+                ->selectRaw("{$haversine} AS straight_distance", $haversineBindings)
+                ->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])
+                ->get();
+        }
+
+        if (!$type || $type === 'stop') {
+            $sets['stops'] = Stop::select('*')
+                ->selectRaw("{$haversine} AS straight_distance", $haversineBindings)
+                ->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])
+                ->get();
+        }
+
+        // One routing call covers every candidate type.
+        $destinations = [];
+        foreach ($sets as $items) {
+            foreach ($items as $m) {
+                $destinations[] = ['lat' => (float) $m->latitude, 'lng' => (float) $m->longitude];
+            }
+        }
+        $road = app(RoutingService::class)->distancesFrom($lat, $lng, $destinations);
 
         $results = [];
         $pagination = [];
+        $pageParams = [
+            'buses' => 'bus_page',
+            'parkings' => 'parking_page',
+            'service_partners' => 'sp_page',
+            'stops' => 'stop_page',
+        ];
 
-        $isSqlite = config('database.default') === 'sqlite';
+        $cursor = 0;
+        foreach ($sets as $key => $items) {
+            $items = $items->map(function ($m) use (&$cursor, $road) {
+                $leg = $road[$cursor++] ?? null;
+                $m->distance = $leg['distance_km'] ?? $m->straight_distance;
+                $m->duration_min = $leg['duration_min'] ?? null;
+                $m->distance_source = $leg === null ? 'straight_line' : 'road';
+                return $m;
+            })->filter(fn ($m) => $m->distance <= $radius)->sortBy('distance')->values();
 
-        // 1. Fetch Buses if requested or no type specified
-        if (!$type || $type === 'bus') {
-            $busQuery = Bus::with(['merchant:id,name', 'route:id,name,direction'])
-                ->where('status', 'active')
-                ->select('*')
-                ->selectRaw("{$haversine} AS distance", $haversineBindings);
+            $pageParam = $pageParams[$key];
+            $page = (int) $request->input($pageParam, 1);
+            $paginator = new LengthAwarePaginator(
+                $items->forPage($page, $perPage)->values(),
+                $items->count(),
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'pageName' => $pageParam]
+            );
 
-            if ($isSqlite) {
-                $allBuses = $busQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
-                $buses = new LengthAwarePaginator(
-                    $allBuses->forPage($request->input('bus_page', 1), $perPage),
-                    $allBuses->count(),
-                    $perPage,
-                    $request->input('bus_page', 1),
-                    ['path' => $request->url(), 'pageName' => 'bus_page']
-                );
-            } else {
-                $busQuery->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])->orderBy('distance');
-                $buses = $busQuery->paginate($perPage, ['*'], 'bus_page');
-            }
+            $results[$key] = collect($paginator->items())->map($this->nearbyMapper($key));
+            $pagination[$key] = [
+                'total'        => $paginator->total(),
+                'per_page'     => $paginator->perPage(),
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+            ];
+        }
 
-            $results['buses'] = collect($buses->items())->map(fn($bus) => [
+        return apiResponse(true, 'Nearby items fetched successfully', $results, 200, [], $pagination);
+    }
+
+    private function nearbyMapper(string $type): callable
+    {
+        $distance = fn ($m) => [
+            'distance_km'     => isset($m->distance) ? round((float) $m->distance, 2) : null,
+            'duration_min'    => isset($m->duration_min) && $m->duration_min !== null ? round((float) $m->duration_min, 1) : null,
+            'distance_source' => $m->distance_source ?? null,
+        ];
+
+        return match ($type) {
+            'buses' => fn ($bus) => [
                 'id'          => $bus->id,
                 'name'        => $bus->name,
                 'bus_number'  => $bus->bus_number,
                 'status'      => $bus->status,
                 'latitude'    => $bus->latitude,
                 'longitude'   => $bus->longitude,
-                'distance_km' => round((float) $bus->distance, 2),
+                ...$distance($bus),
                 'merchant'    => $bus->merchant?->name,
                 'route'       => $bus->route ? [
                     'id'        => $bus->route->id,
@@ -88,140 +162,43 @@ class MiscController extends Controller
                 ] : null,
                 'image_url'   => $bus->featured_image_url,
                 'type'        => 'bus',
-            ]);
-
-            $pagination['buses'] = [
-                'total'        => $buses->total(),
-                'per_page'     => $buses->perPage(),
-                'current_page' => $buses->currentPage(),
-                'last_page'    => $buses->lastPage(),
-            ];
-        }
-
-        // 2. Fetch Parkings if requested or no type specified
-        if (!$type || $type === 'parking') {
-            $parkingQuery = Parking::with(['merchant:id,name', 'attributes:id,name,icon', 'media'])
-                ->where('status', 'opened')
-                ->select('*')
-                ->selectRaw("{$haversine} AS distance", $haversineBindings);
-
-            if ($isSqlite) {
-                $allParkings = $parkingQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
-                $parkings = new LengthAwarePaginator(
-                    $allParkings->forPage($request->input('parking_page', 1), $perPage),
-                    $allParkings->count(),
-                    $perPage,
-                    $request->input('parking_page', 1),
-                    ['path' => $request->url(), 'pageName' => 'parking_page']
-                );
-            } else {
-                $parkingQuery->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])->orderBy('distance');
-                $parkings = $parkingQuery->paginate($perPage, ['*'], 'parking_page');
-            }
-
-            $results['parkings'] = collect($parkings->items())->map(fn($p) => [
+            ],
+            'parkings' => fn ($p) => [
                 'id'               => $p->id,
                 'name'             => $p->name,
                 'location'         => $p->location,
                 'status'           => $p->status,
                 'latitude'         => $p->latitude,
                 'longitude'        => $p->longitude,
-                'distance_km'      => round((float) $p->distance, 2),
+                ...$distance($p),
                 'merchant'         => $p->merchant?->name,
-                'attributes'       => $p->attributes->map(fn($a) => [
+                'attributes'       => $p->attributes->map(fn ($a) => [
                     'name' => $a->name,
                     'icon' => $a->icon_url,
                 ]),
                 'image_url'        => $p->featured_image_url,
                 'type'             => 'parking',
-            ]);
-
-            $pagination['parkings'] = [
-                'total'        => $parkings->total(),
-                'per_page'     => $parkings->perPage(),
-                'current_page' => $parkings->currentPage(),
-                'last_page'    => $parkings->lastPage(),
-            ];
-        }
-
-        // 3. Fetch Service Partners
-        if (!$type || $type === 'service_partner') {
-            $spQuery = \App\Models\ServicePartner::with(['merchant:id,name'])
-                ->where('status', 'active')
-                ->select('*')
-                ->selectRaw("{$haversine} AS distance", $haversineBindings);
-
-            if ($isSqlite) {
-                $allSp = $spQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
-                $sPartners = new LengthAwarePaginator(
-                    $allSp->forPage($request->input('sp_page', 1), $perPage),
-                    $allSp->count(),
-                    $perPage,
-                    $request->input('sp_page', 1),
-                    ['path' => $request->url(), 'pageName' => 'sp_page']
-                );
-            } else {
-                $spQuery->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])->orderBy('distance');
-                $sPartners = $spQuery->paginate($perPage, ['*'], 'sp_page');
-            }
-
-            $results['service_partners'] = collect($sPartners->items())->map(fn($sp) => [
-                'id'          => $sp->id,
-                'name'        => $sp->name,
-                'service_type'=> $sp->service_type,
-                'address'     => $sp->address,
-                'latitude'    => $sp->latitude,
-                'longitude'   => $sp->longitude,
-                'distance_km' => round((float) $sp->distance, 2),
-                'merchant'    => $sp->merchant?->name,
-                'type'        => 'service_partner',
-            ]);
-
-            $pagination['service_partners'] = [
-                'total'        => $sPartners->total(),
-                'per_page'     => $sPartners->perPage(),
-                'current_page' => $sPartners->currentPage(),
-                'last_page'    => $sPartners->lastPage(),
-            ];
-        }
-
-        // 4. Fetch Stops
-        if (!$type || $type === 'stop') {
-            $stopQuery = Stop::select('*')
-                ->selectRaw("{$haversine} AS distance", $haversineBindings);
-
-            if ($isSqlite) {
-                $allStops = $stopQuery->get()->where('distance', '<=', $radius)->sortBy('distance');
-                $stops = new LengthAwarePaginator(
-                    $allStops->forPage($request->input('stop_page', 1), $perPage),
-                    $allStops->count(),
-                    $perPage,
-                    $request->input('stop_page', 1),
-                    ['path' => $request->url(), 'pageName' => 'stop_page']
-                );
-            } else {
-                $stopQuery->whereRaw("{$haversine} <= ?", [...$haversineBindings, $radius])->orderBy('distance');
-                $stops = $stopQuery->paginate($perPage, ['*'], 'stop_page');
-            }
-
-            $results['stops'] = collect($stops->items())->map(fn($s) => [
+            ],
+            'service_partners' => fn ($sp) => [
+                'id'           => $sp->id,
+                'name'         => $sp->name,
+                'service_type' => $sp->service_type,
+                'address'      => $sp->address,
+                'latitude'     => $sp->latitude,
+                'longitude'    => $sp->longitude,
+                ...$distance($sp),
+                'merchant'     => $sp->merchant?->name,
+                'type'         => 'service_partner',
+            ],
+            'stops' => fn ($s) => [
                 'id'          => $s->id,
                 'name'        => $s->name,
                 'latitude'    => $s->latitude,
                 'longitude'   => $s->longitude,
-                'distance_km' => round((float) $s->distance, 2),
+                ...$distance($s),
                 'type'        => 'stop',
-            ]);
-
-            $pagination['stops'] = [
-                'total'        => $stops->total(),
-                'per_page'     => $stops->perPage(),
-                'current_page' => $stops->currentPage(),
-                'last_page'    => $stops->lastPage(),
-            ];
-        }
-
-        return apiResponse(true, 'Nearby items fetched successfully', $results, 200, [], $pagination);
+            ],
+        };
     }
 
     /**

@@ -59,4 +59,18 @@ return [
         'currency' => env('STRIPE_CURRENCY', 'usd'),
     ],
 
+    /*
+    | OSRM-compatible routing backend used for road-network distances.
+    | The default points at the public demo server — fine for development,
+    | but rate-limited and not for production. Point OSRM_BASE_URL at a
+    | self-hosted OSRM instance for real traffic. Set it empty to disable
+    | routing and always fall back to straight-line distance.
+    */
+    'osrm' => [
+        'base_url'  => env('OSRM_BASE_URL', 'https://router.project-osrm.org'),
+        'profile'   => env('OSRM_PROFILE', 'driving'),
+        'timeout'   => env('OSRM_TIMEOUT', 4),
+        'cache_ttl' => env('OSRM_CACHE_TTL', 300),
+    ],
+
 ];

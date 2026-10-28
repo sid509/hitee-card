@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\Customer;
 use App\Http\Controllers\Controller;
 use App\Models\Bus;
 use App\Models\Parking;
+use App\Services\RoutingService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * @group CustomerApi
@@ -23,7 +25,9 @@ class HomepageController extends Controller
      * GET /api/buses (socket)
      *
      * Returns a searchable, paginated list of active buses for the homepage.
-     * Proximity sorting/filtering is applied only if both latitude and longitude are provided.
+     * When latitude and longitude are provided, results are filtered and sorted
+     * by road-network distance (OSRM); distance_source indicates 'road' or
+     * 'straight_line' when routing is unavailable.
      * Use the 'buses' socket channel for real-time location updates.
      *
      * @queryParam search string (optional) Search by name or bus number. Example: KTM-01
@@ -67,16 +71,11 @@ class HomepageController extends Controller
         $lng = is_numeric($lng) ? (float) $lng : null;
 
         if ($lat !== null && $lng !== null) {
-            $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
             $radius = (float) $request->get('radius', 10);
-            $query->selectRaw("{$haversine} AS distance", [$lat, $lng, $lat])
-                  ->having('distance', '<=', $radius)
-                  ->orderBy('distance');
+            $buses = $this->paginateByRoadDistance($query, $lat, $lng, $radius, $perPage, max(1, (int) $request->get('page', 1)));
         } else {
-            $query->orderBy('name');
+            $buses = $query->orderBy('name')->paginate($perPage);
         }
-
-        $buses = $query->paginate($perPage);
 
         $mapped = collect($buses->items())->map(fn($bus) => [
             'id'          => $bus->id,
@@ -86,6 +85,8 @@ class HomepageController extends Controller
             'latitude'    => $bus->latitude,
             'longitude'   => $bus->longitude,
             'distance_km' => isset($bus->distance) ? round((float) $bus->distance, 2) : null,
+            'duration_min' => isset($bus->duration_min) && $bus->duration_min !== null ? round((float) $bus->duration_min, 1) : null,
+            'distance_source' => $bus->distance_source ?? null,
             'merchant'    => $bus->merchant?->name,
             'route'       => $bus->route ? [
                 'id'        => $bus->route->id,
@@ -115,7 +116,9 @@ class HomepageController extends Controller
      * GET /api/parkings
      *
      * Returns a searchable, paginated list of active parking lots.
-     * Proximity sorting/filtering is applied only if both latitude and longitude are provided.
+     * When latitude and longitude are provided, results are filtered and sorted
+     * by road-network distance (OSRM); distance_source indicates 'road' or
+     * 'straight_line' when routing is unavailable.
      *
      * @queryParam search string (optional) Search by name or location. Example: Durbar
      * @queryParam latitude float (optional) Latitude for proximity search.
@@ -158,16 +161,11 @@ class HomepageController extends Controller
         $lng = is_numeric($lng) ? (float) $lng : null;
 
         if ($lat !== null && $lng !== null) {
-            $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
             $radius = (float) $request->get('radius', 10);
-            $query->selectRaw("{$haversine} AS distance", [$lat, $lng, $lat])
-                  ->having('distance', '<=', $radius)
-                  ->orderBy('distance');
+            $parkings = $this->paginateByRoadDistance($query, $lat, $lng, $radius, $perPage, max(1, (int) $request->get('page', 1)));
         } else {
-            $query->orderBy('name');
+            $parkings = $query->orderBy('name')->paginate($perPage);
         }
-
-        $parkings = $query->paginate($perPage);
 
         $mapped = collect($parkings->items())->map(fn($p) => [
             'id'               => $p->id,
@@ -177,6 +175,8 @@ class HomepageController extends Controller
             'latitude'         => $p->latitude,
             'longitude'        => $p->longitude,
             'distance_km'      => isset($p->distance) ? round((float) $p->distance, 2) : null,
+            'duration_min'     => isset($p->duration_min) && $p->duration_min !== null ? round((float) $p->duration_min, 1) : null,
+            'distance_source'  => $p->distance_source ?? null,
             'merchant'         => $p->merchant?->name,
             'fees'             => $p->fees->map(fn($f) => [
                 'title'     => $f->title,
@@ -209,6 +209,46 @@ class HomepageController extends Controller
             ],
             'content'  => $mapped,
         ]);
+    }
+
+    /**
+     * Filter + sort candidates by road-network distance (OSRM), falling back
+     * to straight-line distance when the routing backend is unavailable or a
+     * destination is unroutable.
+     */
+    private function paginateByRoadDistance($query, float $lat, float $lng, float $radius, int $perPage, int $page): LengthAwarePaginator
+    {
+        $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
+        $bindings = [$lat, $lng, $lat];
+
+        // Straight-line pre-filter: road distance is never shorter than
+        // haversine, so every match inside the road radius is in this set.
+        if (empty($query->getQuery()->columns)) {
+            $query->select('*');
+        }
+        $candidates = $query->selectRaw("{$haversine} AS straight_distance", $bindings)
+            ->whereRaw("{$haversine} <= ?", [...$bindings, $radius])
+            ->get();
+
+        $road = app(RoutingService::class)->distancesFrom(
+            $lat, $lng,
+            $candidates->map(fn ($m) => ['lat' => (float) $m->latitude, 'lng' => (float) $m->longitude])->all()
+        );
+
+        $items = $candidates->map(function ($m, $i) use ($road) {
+            $leg = $road[$i] ?? null;
+            $m->distance = $leg['distance_km'] ?? $m->straight_distance;
+            $m->duration_min = $leg['duration_min'] ?? null;
+            $m->distance_source = $leg === null ? 'straight_line' : 'road';
+            return $m;
+        })->filter(fn ($m) => $m->distance <= $radius)->sortBy('distance')->values();
+
+        return new LengthAwarePaginator(
+            $items->forPage($page, $perPage)->values(),
+            $items->count(),
+            $perPage,
+            $page
+        );
     }
 
     /**
