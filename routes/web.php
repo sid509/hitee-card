@@ -77,9 +77,12 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
         return redirect()->route('login')->with('error', 'The verification link is invalid.');
     }
 
-    // 2. Already Verified
+    // 2. Already Verified — still activate if the account is pending
     if ($user->hasVerifiedEmail()) {
-        return redirect()->route('login')->with('info', 'Your email is already verified. You can sign in once your account is approved by an administrator.');
+        if ($user->status == User::STATUS_PENDING) {
+            $user->update(['status' => User::STATUS_ACTIVE]);
+        }
+        return redirect()->route('login')->with('info', 'Your email is already verified. You can sign in to the app.');
     }
 
     // 3. Mark as Verified
@@ -87,7 +90,13 @@ Route::get('/email/verify/{id}/{hash}', function (Request $request, $id, $hash) 
         event(new Verified($user));
     }
 
-    return redirect()->route('login')->with('success', 'Thank you! Your email has been verified. Your account is now awaiting administrative approval, and you will be notified once activated.');
+    // 4. Email verification is the approval step — activate pending accounts.
+    //    Deactivated (INACTIVE) accounts are never re-enabled this way.
+    if ($user->status == User::STATUS_PENDING) {
+        $user->update(['status' => User::STATUS_ACTIVE]);
+    }
+
+    return redirect()->route('login')->with('success', 'Thank you! Your email has been verified and your account is now active. You can sign in.');
 })->middleware(['signed'])->name('verification.verify');
 
 Route::post('/email/resend', function (Request $request) {

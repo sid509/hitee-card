@@ -174,9 +174,10 @@ class AuthApiTest extends TestCase
     }
 
     /**
-     * Test login failure when account is pending.
+     * Test login auto-activates a pending account once the email is verified.
+     * Email verification is the approval step — no admin action needed.
      */
-    public function test_login_failure_pending_account()
+    public function test_login_auto_activates_pending_verified_account()
     {
         $user = User::factory()->create([
             'phone_number' => '9812345678',
@@ -190,11 +191,73 @@ class AuthApiTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertStatus(403)
-            ->assertJson([
-                'status' => false,
-                'message' => 'Your account is pending admin approval. You will be notified once activated.',
-            ]);
+        $response->assertStatus(200)
+            ->assertJson(['status' => true]);
+
+        $this->assertEquals(User::STATUS_ACTIVE, $user->fresh()->status);
+    }
+
+    /**
+     * Test email verification activates a pending user.
+     */
+    public function test_email_verification_activates_pending_user()
+    {
+        $user = User::factory()->create([
+            'status' => User::STATUS_PENDING,
+            'email_verified_at' => null,
+        ]);
+
+        $url = \Illuminate\Support\Facades\URL::signedRoute('verification.verify', [
+            'id'   => $user->id,
+            'hash' => sha1($user->getEmailForVerification()),
+        ]);
+
+        $response = $this->get($url);
+
+        $response->assertRedirect(route('login'));
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+        $this->assertEquals(User::STATUS_ACTIVE, $user->fresh()->status);
+    }
+
+    /**
+     * Test verification does not reactivate a deactivated account.
+     */
+    public function test_email_verification_does_not_reactivate_deactivated_user()
+    {
+        $user = User::factory()->create([
+            'status' => User::STATUS_INACTIVE,
+            'email_verified_at' => null,
+        ]);
+
+        $url = \Illuminate\Support\Facades\URL::signedRoute('verification.verify', [
+            'id'   => $user->id,
+            'hash' => sha1($user->getEmailForVerification()),
+        ]);
+
+        $this->get($url);
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+        $this->assertEquals(User::STATUS_INACTIVE, $user->fresh()->status);
+    }
+
+    /**
+     * Test login failure for a deactivated account.
+     */
+    public function test_login_failure_deactivated_account()
+    {
+        $user = User::factory()->create([
+            'phone_number' => '9812345678',
+            'password' => Hash::make('password'),
+            'status' => User::STATUS_INACTIVE,
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'phone_number' => '9812345678',
+            'password' => 'password',
+        ]);
+
+        $response->assertStatus(403);
     }
 
     /**

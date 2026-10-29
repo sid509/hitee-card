@@ -84,6 +84,12 @@ class AuthController extends Controller
                 return apiResponse(false, __('messages.verify_email_first'), ['needs_verification' => true], 403);
             }
 
+            // Email verification doubles as the approval step — activate a
+            // pending account. Deactivated accounts still require admin action.
+            if ($user->status == User::STATUS_PENDING) {
+                $user->update(['status' => User::STATUS_ACTIVE]);
+            }
+
             // 3. Check account activation status (1 = Active)
             if ($user->status != User::STATUS_ACTIVE) {
                 if ($user->status == User::STATUS_PENDING) {
@@ -119,6 +125,12 @@ class AuthController extends Controller
         }
 
         $user = $token->tokenable;
+
+        // Email verification doubles as the approval step — a verified account
+        // is approved; a pending one only stays pending if it was never verified.
+        if ($user->status == User::STATUS_PENDING && $user->hasVerifiedEmail()) {
+            $user->update(['status' => User::STATUS_ACTIVE]);
+        }
 
         // Check account activation status (1 = Active)
         if ($user->status != User::STATUS_ACTIVE) {
